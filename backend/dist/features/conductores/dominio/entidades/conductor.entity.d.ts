@@ -1,0 +1,35 @@
+import { ConductorProps } from './conductor.props.js';
+export declare class Conductor {
+    private readonly _id;
+    private _nombreCompleto;
+    private _email;
+    private _telefono;
+    private _passwordHash;
+    private _fotoUrl;
+    private _vehiculoMarca;
+    private _vehiculoModelo;
+    private _vehiculoColor;
+    private _vehiculoPlaca;
+    private _estadoAprobacion;
+    private _estadoDisponibilidad;
+    private _ultimaUbicacionLat;
+    private _ultimaUbicacionLng;
+    private constructor();
+    static crear(props: ConductorProps): Conductor;
+    get id(): string;
+    get nombreCompleto(): string;
+    get email(): string;
+    get telefono(): string;
+    get passwordHash(): string;
+    get fotoUrl(): string | null;
+    get vehiculoMarca(): string;
+    get vehiculoModelo(): string;
+    get vehiculoColor(): string;
+    get vehiculoPlaca(): string;
+    get estadoAprobacion(): string;
+    get estadoDisponibilidad(): string;
+    get ultimaUbicacionLat(): number | null;
+    get ultimaUbicacionLng(): number | null;
+    aprobar(): void;
+    private validar;
+}

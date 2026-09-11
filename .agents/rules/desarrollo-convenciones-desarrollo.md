@@ -1,0 +1,191 @@
+---
+description: SOLID, Clean Architecture, nomenclatura, DI — modo desarrollo
+alwaysApply: false
+---
+# Convenciones de Desarrollo - SOLID + Clean Architecture
+
+## Propósito
+
+Este documento define las convenciones de desarrollo obligatorias para todo código generado o modificado en este proyecto. Aplica principios SOLID, Clean Architecture y buenas prácticas de ingeniería de software.
+
+---
+
+## Idioma del Código
+
+**Todo el código se escribe en español**, sin excepción. Aplica a todos los lenguajes del proyecto:
+
+- Nombres de carpetas, archivos, clases, métodos, variables, constantes → español
+- Docstrings y comentarios → español
+- Mensajes de error y logs → español
+- Nombres de tablas y columnas en BD → español (snake_case)
+- DTOs y schemas → español (camelCase solo en serialización JSON hacia el frontend)
+
+---
+
+## Estructura de Carpetas Base
+
+Todo proyecto sigue esta estructura raíz, independientemente del lenguaje:
+
+```
+src/
+├── app/                    ← Código de la aplicación (capas de Clean Architecture)
+│   ├── dominio/
+│   ├── aplicacion/
+│   ├── infraestructura/
+│   └── presentacion/
+├── migraciones/            ← Scripts de migración de BD
+├── scripts/                ← Scripts auxiliares (seeds, utils)
+└── configuracion/          ← Configuración de la app (settings, env)
+```
+
+- `src/app/` contiene exclusivamente el código de la aplicación organizado por capas.
+- Todo lo que NO es código de la app (migraciones, scripts, config) va en `src/` pero fuera de `app/`.
+
+---
+
+## Principios SOLID
+
+### S - Single Responsibility Principle (Principio de Responsabilidad Única)
+
+- Cada clase, módulo o función debe tener **una sola razón para cambiar**.
+- Si una clase hace más de una cosa, sepárala en clases distintas.
+- Los servicios no deben mezclar lógica de negocio con acceso a datos o presentación.
+
+### O - Open/Closed Principle (Principio Abierto/Cerrado)
+
+- Las entidades de software deben estar **abiertas para extensión, cerradas para modificación**.
+- Usa abstracciones (interfaces, clases abstractas) para permitir nuevos comportamientos sin modificar código existente.
+- Prefiere composición sobre herencia cuando sea posible.
+
+### L - Liskov Substitution Principle (Principio de Sustitución de Liskov)
+
+- Las clases derivadas deben poder sustituir a sus clases base sin alterar el comportamiento esperado.
+- No sobrescribas métodos para lanzar excepciones no esperadas o cambiar contratos.
+
+### I - Interface Segregation Principle (Principio de Segregación de Interfaces)
+
+- No fuerces a las clases a implementar interfaces que no usan.
+- Prefiere interfaces pequeñas y específicas sobre interfaces grandes y genéricas.
+- Divide interfaces grandes en contratos más cohesivos.
+
+### D - Dependency Inversion Principle (Principio de Inversión de Dependencias)
+
+- Los módulos de alto nivel no deben depender de módulos de bajo nivel. Ambos deben depender de abstracciones.
+- Usa inyección de dependencias (DI) en lugar de instanciar dependencias directamente.
+- Registra dependencias en el contenedor de IoC correspondiente.
+
+---
+
+## Clean Architecture - Capas
+
+### Estructura de Capas (de interior a exterior)
+
+```
+┌─────────────────────────────────────────┐
+│           Presentación / API            │  ← Controllers, ViewModels, DTOs de respuesta
+├─────────────────────────────────────────┤
+│           Aplicación                    │  ← Casos de uso, Commands, Queries, DTOs
+├─────────────────────────────────────────┤
+│           Dominio                       │  ← Entidades, Value Objects, Interfaces de repositorio
+├─────────────────────────────────────────┤
+│           Infraestructura               │  ← Implementaciones de repositorios, servicios externos
+└─────────────────────────────────────────┘
+```
+
+### Regla de Dependencia
+
+- Las dependencias siempre apuntan **hacia adentro** (de infraestructura hacia dominio).
+- El dominio **nunca** depende de capas externas.
+- La capa de aplicación orquesta, el dominio contiene la lógica de negocio pura.
+
+### Capa de Dominio
+
+- Contiene: Entidades, Value Objects, Enumeraciones de dominio, Eventos de dominio, Interfaces de repositorio, Excepciones de dominio.
+- **No** tiene dependencias a frameworks, bases de datos, ni librerías externas.
+- Las entidades encapsulan su propia lógica de validación y comportamiento.
+
+### Capa de Aplicación
+
+- Contiene: Casos de uso (Commands/Queries), DTOs, Interfaces de servicios de aplicación, Validadores, Mappers.
+- Orquesta el flujo entre dominio e infraestructura.
+- Un caso de uso = una operación de negocio completa.
+
+### Capa de Infraestructura
+
+- Contiene: Implementaciones de repositorios, Configuración de BD, Clientes HTTP, Servicios de email/notificaciones, Configuración de frameworks.
+- Implementa las interfaces definidas en Dominio y Aplicación.
+
+### Capa de Presentación / API
+
+- Contiene: Controllers/Endpoints, Middlewares, Filtros, DTOs de request/response.
+- Solo traduce HTTP (o el protocolo) a llamadas de la capa de aplicación.
+- **Nunca** contiene lógica de negocio.
+
+---
+
+## Convenciones Generales de Código
+
+### Nomenclatura
+
+| Elemento | Convención | Ejemplo |
+|----------|-----------|---------|
+| Clases | PascalCase | `UserService`, `OrderRepository` |
+| Interfaces | PascalCase con prefijo I (en .NET) o sin prefijo (otros) | `IUserRepository` / `UserRepository` |
+| Métodos | PascalCase (.NET) / camelCase (JS/TS/Python) | `GetUserById` / `getUserById` |
+| Variables locales | camelCase | `userName`, `orderTotal` |
+| Constantes | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| Archivos | Coincide con la clase/módulo principal | `UserService.cs`, `user.service.ts` |
+
+### Organización de Archivos
+
+- **Una clase o interfaz pública por archivo** (Clean Architecture / greenfield). No mezclar DTOs, controllers, casos de uso ni schemas en el mismo archivo.
+- El nombre del archivo coincide con la clase/interfaz principal.
+- Agrupar por feature/dominio, NO por tipo técnico (no carpetas `models/`, `services/` globales).
+- Estructura de carpetas refleja la arquitectura de capas.
+- **TypeScript (`apiRest`, `appAdmin`):** detalle en `convention-typescript.md`.
+- **Dart (`appdriver`):** detalle en `convention-dart.md` (excepción: `Widget` + su `State`).
+- **Kotlin (`apptable`, `appPayment`):** detalle en `convention-kotlin.md`.
+
+### Tipado TypeScript (obligatorio en greenfield)
+
+- **Prohibido** `Record<string, …>` / `Record<string, unknown>` en código nuevo o refactors.
+- Usar tipos/interfaces con forma explícita (`ReqConductor`, `MetaEmail`, `CuerpoIdempotencia`, mapped types, etc.).
+- Presentación HTML/email/branding → **infraestructura**, nunca dominio.
+- Plantillas de correo y PDF no viven en `dominio/`.
+
+### Manejo de Errores
+
+- Usa excepciones de dominio tipadas (no excepciones genéricas).
+- Maneja errores en el nivel apropiado (no tragar excepciones silenciosamente).
+- Devuelve respuestas de error consistentes en la capa de presentación.
+- Loguea errores con contexto suficiente para depuración.
+
+### Validación
+
+Detalle obligatorio:  (validación de entrada, inyección, secretos).
+
+Resumen: validar en la frontera del sistema; reglas de negocio en el dominio; nunca confiar en input sin validar.
+
+### Inyección de Dependencias
+
+- Todas las dependencias se inyectan por constructor.
+- Registra servicios con el ciclo de vida apropiado (Singleton, Scoped, Transient).
+- No uses service locator pattern (anti-pattern).
+
+### Testing
+
+Detalle y generación: skill `unit-testing` (`.agents/skills/unit-testing/SKILL.md`).
+
+Resumen: Arrange/Act/Assert; nombres `DebeX_CuandoY`; mockear externos, no el dominio; mínimo dominio + aplicación.
+---
+
+## Reglas para el Agente
+
+1. **Antes de crear código nuevo**, verifica si ya existe algo similar que pueda reutilizarse o extenderse.
+2. **Respeta la estructura de capas** existente en el proyecto. No mezcles responsabilidades.
+3. **Crea interfaces** antes de implementaciones cuando se trate de servicios o repositorios.
+4. **Documenta** decisiones de diseño no obvias con comentarios breves.
+5. **No introduzcas dependencias** nuevas sin justificación. Prefiere las que ya usa el proyecto.
+6. **Aplica DRY** (Don't Repeat Yourself) pero sin abstracciones prematuras.
+7. **Mantén los métodos cortos** (idealmente < 20 líneas). Si crece, refactoriza.
+8. **Usa nombres descriptivos** que revelen intención, no implementación.

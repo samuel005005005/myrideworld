@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "triptap-mongodb": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "tools/mcp-mongodb/src/index.ts"
+      ],
+      "cwd": "tools/mcp-mongodb",
+      "env": {}
+    }
+  }
+}
