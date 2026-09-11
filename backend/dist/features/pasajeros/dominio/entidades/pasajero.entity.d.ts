@@ -17,5 +17,9 @@ export declare class Pasajero {
     get telefono(): string;
     get passwordHash(): string;
     get fechaRegistro(): Date;
+    actualizarPerfil(datos: {
+        nombreCompleto?: string;
+        telefono?: string;
+    }): void;
     private validar;
 }

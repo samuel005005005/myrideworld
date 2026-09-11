@@ -14,7 +14,9 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CALIFICACION_REPOSITORY } from '../../dominio/repositorios/calificacion.repository.js';
 import { Calificacion } from '../../dominio/entidades/calificacion.entity.js';
 import { VIAJE_REPOSITORY } from '../../../viajes/dominio/repositorios/viaje.repository.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let CalificarConductorUseCase = class CalificarConductorUseCase {
     calificacionRepository;
     viajeRepository;
@@ -25,17 +27,17 @@ let CalificarConductorUseCase = class CalificarConductorUseCase {
     async ejecutar(pasajeroId, dto) {
         const viaje = await this.viajeRepository.obtenerPorId(dto.viajeId);
         if (!viaje) {
-            throw new NotFoundException('Viaje no encontrado');
+            throw new NotFoundException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO);
         }
         if (viaje.pasajeroId !== pasajeroId) {
-            throw new Error('Solo el pasajero del viaje puede calificar al conductor.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.SOLO_PASAJERO_CALIFICA);
         }
         if (viaje.estado !== EstadosViaje.COMPLETADO) {
-            throw new Error('Solo se pueden calificar viajes completados.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.SOLO_COMPLETADOS);
         }
-        const yaCalificado = await this.calificacionRepository.existeCalificacion(viaje.id);
-        if (yaCalificado) {
-            throw new Error('Este viaje ya fue calificado.');
+        const existeCalificacion = await this.calificacionRepository.existeCalificacion(dto.viajeId);
+        if (existeCalificacion) {
+            throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.YA_CALIFICADO);
         }
         const calificacion = Calificacion.crear({
             viajeId: viaje.id,

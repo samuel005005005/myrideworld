@@ -15,12 +15,16 @@ import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { EstimarTarifaUseCase } from '../../../tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 let SolicitarViajeUseCase = class SolicitarViajeUseCase {
     viajeRepository;
+    conductorRepository;
     estimarTarifa;
     viajesGateway;
-    constructor(viajeRepository, estimarTarifa, viajesGateway) {
+    constructor(viajeRepository, conductorRepository, estimarTarifa, viajesGateway) {
         this.viajeRepository = viajeRepository;
+        this.conductorRepository = conductorRepository;
         this.estimarTarifa = estimarTarifa;
         this.viajesGateway = viajesGateway;
     }
@@ -40,14 +44,33 @@ let SolicitarViajeUseCase = class SolicitarViajeUseCase {
             tarifaEstimada: tarifa.precio,
         });
         const guardado = await this.viajeRepository.guardar(viaje);
-        this.viajesGateway.notificarNuevoViaje(guardado.id);
+        const conductores = await this.conductorRepository.obtenerDisponibles();
+        let conductorSugerido = null;
+        let minimaDistancia = Infinity;
+        for (const c of conductores) {
+            if (guardado.conductoresRechazados.includes(c.id))
+                continue;
+            if (c.ultimaUbicacionLat === null || c.ultimaUbicacionLng === null)
+                continue;
+            const distancia = calcularDistanciaKm(guardado.origenLat, guardado.origenLng, c.ultimaUbicacionLat, c.ultimaUbicacionLng);
+            if (distancia < minimaDistancia) {
+                minimaDistancia = distancia;
+                conductorSugerido = c;
+            }
+        }
+        if (conductorSugerido) {
+            this.viajesGateway.notificarNuevoViaje(guardado.id, conductorSugerido.id);
+        }
+        else {
+        }
         return guardado;
     }
 };
 SolicitarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, EstimarTarifaUseCase,
+    __param(1, Inject(CONDUCTOR_REPOSITORY)),
+    __metadata("design:paramtypes", [Object, Object, EstimarTarifaUseCase,
         ViajesGateway])
 ], SolicitarViajeUseCase);
 export { SolicitarViajeUseCase };

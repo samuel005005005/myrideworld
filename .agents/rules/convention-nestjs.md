@@ -37,6 +37,8 @@ Define la estructura y mejores prácticas obligatorias exclusivas para el Backen
 │       │   ├── 📁 persistencia/
 │       │   │   ├── 📁 entidades/          # Entidades ORM
 │       │   │   │   └── usuario.orm-entity.ts
+│       │   │   ├── 📁 mappers/            # Mapeadores (Dominio <-> ORM)
+│       │   │   │   └── usuario.orm-mapper.ts
 │       │   │   └── 📁 repositorios/       # Implementaciones
 │       │   │       └── usuario.repository.impl.ts
 │       │   └── 📁 servicios/
@@ -184,23 +186,73 @@ export class CrearUsuarioUseCase {
 }
 ```
 
-### Aplicación - DTOs con Validación (Zod)
+### Aplicación - DTOs con Validación (Zod v4)
 
 ```typescript
 // src/features/usuarios/aplicacion/dto/crear-usuario.dto.ts
 
 import { z } from 'zod';
+import { ApiProperty } from '@nestjs/swagger';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+
+// Alias cortos para no repetir la ruta completa
+const V = MENSAJES.VALIDACION.COMUNES;
+const S = MENSAJES.SWAGGER.USUARIOS; // (ajustar al dominio correspondiente)
 
 export const crearUsuarioSchema = z.object({
-  nombre: z.string().min(1, 'El nombre es obligatorio').max(100),
-  email: z.string().email('El email no es válido'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  // ✅ Zod v4: z.email() reemplaza a z.string().email() (deprecated)
+  email: z.email({ error: V.EMAIL_INVALIDO }),
+  nombre: z.string().min(1, V.NOMBRE_OBLIGATORIO).max(100),
+  password: z.string().min(8, V.PASSWORD_MIN),
 });
 
-export type CrearUsuarioDto = z.infer<typeof crearUsuarioSchema>;
+export class CrearUsuarioDto {
+  @ApiProperty({ example: S.EJEMPLO_NOMBRE, description: S.DESC_NOMBRE })
+  nombre: string;
+
+  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_EMAIL, description: MENSAJES.SWAGGER.COMUNES.DESC_EMAIL })
+  email: string;
+
+  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_PASSWORD })
+  password: string;
+}
 ```
 
-### Infraestructura - Repositorio (Mappers)
+> **⚠️ Zod v4 — Cambio importante:**
+> - ❌ **PROHIBIDO**: `z.string().email('mensaje')` → está marcado como `@deprecated`
+> - ✅ **CORRECTO**: `z.email({ error: 'mensaje' })`
+
+### Infraestructura - Persistencia (Mappers)
+
+```typescript
+// src/features/usuarios/infraestructura/persistencia/mappers/usuario.orm-mapper.ts
+
+import { Usuario } from '../../../dominio/entidades/usuario.entity';
+import { UsuarioOrmEntity } from '../entidades/usuario.orm-entity';
+
+export class UsuarioOrmMapper {
+  static toDomain(entity: UsuarioOrmEntity): Usuario {
+    return Usuario.crear({
+      id: entity.id,
+      nombre: entity.nombre,
+      email: entity.email,
+      estado: entity.estado,
+      fechaCreacion: entity.fechaCreacion,
+    });
+  }
+
+  static toOrm(usuario: Usuario): Partial<UsuarioOrmEntity> {
+    return {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      estado: usuario.estado,
+    };
+  }
+}
+```
+
+### Infraestructura - Repositorio
 
 ```typescript
 // src/features/usuarios/infraestructura/persistencia/repositorios/usuario.repository.impl.ts
@@ -212,6 +264,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IUsuarioRepository } from '../../../dominio/repositorios/usuario.repository';
 import { Usuario } from '../../../dominio/entidades/usuario.entity';
 import { UsuarioOrmEntity } from '../entidades/usuario.orm-entity';
+import { UsuarioOrmMapper } from '../mappers/usuario.orm-mapper';
 
 @Injectable()
 export class UsuarioRepositoryImpl implements IUsuarioRepository {
@@ -222,37 +275,17 @@ export class UsuarioRepositoryImpl implements IUsuarioRepository {
 
   async obtenerPorId(id: string): Promise<Usuario | null> {
     const entity = await this.ormRepo.findOne({ where: { id } });
-    return entity ? this.toDomain(entity) : null;
+    return entity ? UsuarioOrmMapper.toDomain(entity) : null;
   }
 
   async guardar(usuario: Usuario): Promise<Usuario> {
-    const entity = this.toOrm(usuario);
+    const entity = UsuarioOrmMapper.toOrm(usuario);
     const saved = await this.ormRepo.save(entity);
-    return this.toDomain(saved);
+    return UsuarioOrmMapper.toDomain(saved);
   }
 
   async existeEmail(email: string): Promise<boolean> {
     return await this.ormRepo.exists({ where: { email } });
-  }
-
-  // Mappers (Domain <-> ORM)
-  private toDomain(entity: UsuarioOrmEntity): Usuario {
-    return Usuario.crear({
-      id: entity.id,
-      nombre: entity.nombre,
-      email: entity.email,
-      estado: entity.estado,
-      fechaCreacion: entity.fechaCreacion,
-    });
-  }
-
-  private toOrm(usuario: Usuario): Partial<UsuarioOrmEntity> {
-    return {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      email: usuario.email,
-      estado: usuario.estado,
-    };
   }
 
   // ... demás métodos
@@ -333,3 +366,13 @@ export class UsuariosController {
    - **¡ATENCIÓN!** Esto incluye las interfaces de propiedades (`Props`). Deben extraerse a su propio archivo (ej. `usuario.props.ts`).
    - Cada DTO (`FareViajeDto`, `CancelarViajeDto`, …) = su propio archivo bajo `aplicacion/dto/`.
    - Controllers solo exportan la clase del controller; no definir DTOs internamente.
+5. **Mappers ORM separados**. La lógica de transformación entre entidades ORM y Dominio (`toDomain`, `toOrm`) debe estar en clases estáticas exclusivas dentro de `infraestructura/persistencia/mappers/` y NO como métodos privados dentro del Repositorio.
+6. **Strings centralizados en `MENSAJES` (OBLIGATORIO)**.
+   - **PROHIBIDO** escribir strings literales en DTOs, Entidades, Casos de Uso o Controladores.
+   - Toda cadena de texto (mensajes de validación, errores de dominio, ejemplos de Swagger) debe estar en `src/compartidos/constantes/mensajes.const.ts`.
+   - La constante `MENSAJES` tiene 3 secciones: `VALIDACION` (Zod), `EXCEPCIONES` (Domain/HTTP errors), `SWAGGER` (`@ApiProperty`).
+   - En el archivo que los use, crear alias al inicio: `const V = MENSAJES.VALIDACION.COMUNES;` para mantener líneas cortas.
+7. **Zod v4 — API actualizada**.
+   - ❌ `z.string().email('msg')` → deprecated, no usar.
+   - ✅ `z.email({ error: MENSAJES.VALIDACION.COMUNES.EMAIL_INVALIDO })` → correcto.
+   - Los DTOs deben ser `class` (no `type`) cuando se usen decoradores `@ApiProperty` de Swagger.

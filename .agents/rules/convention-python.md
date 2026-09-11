@@ -68,6 +68,9 @@ Define la estructura obligatoria para proyectos Python (FastAPI, Django, scripts
 ├── 📁 infrastructure/                     # Capa de Infraestructura
 │   ├── 📁 persistence/
 │   │   ├── __init__.py
+│   │   ├── 📁 mappers/                    # Mapeadores ORM <-> Dominio
+│   │   │   ├── __init__.py
+│   │   │   └── usuario_orm_mapper.py
 │   │   ├── 📁 models/                     # Modelos SQLAlchemy/Tortoise
 │   │   │   └── usuario_model.py
 │   │   ├── 📁 repositories/
@@ -280,6 +283,40 @@ class UsuarioResponse(BaseModel):
         from_attributes = True
 ```
 
+### Infraestructura - Persistencia (Mappers)
+
+```python
+# infrastructure/persistence/mappers/usuario_orm_mapper.py
+
+from domain.entities.usuario import Usuario
+from domain.value_objects.email import Email
+from infrastructure.persistence.models.usuario_model import UsuarioModel
+
+
+class UsuarioOrmMapper:
+    """Mapea entre la entidad de dominio y el modelo ORM."""
+
+    @staticmethod
+    def to_domain(model: UsuarioModel) -> Usuario:
+        return Usuario(
+            id=model.id,
+            nombre=model.nombre,
+            email=Email(model.email),
+            estado=model.estado,
+            fecha_creacion=model.fecha_creacion,
+        )
+
+    @staticmethod
+    def to_orm(domain: Usuario) -> UsuarioModel:
+        return UsuarioModel(
+            id=domain.id,
+            nombre=domain.nombre,
+            email=str(domain.email),
+            estado=domain.estado,
+            fecha_creacion=domain.fecha_creacion,
+        )
+```
+
 ### Infraestructura - Repositorio
 
 ```python
@@ -293,7 +330,7 @@ from domain.entities.usuario import Usuario
 from domain.repositories.usuario_repository import IUsuarioRepository
 from domain.value_objects.email import Email
 from infrastructure.persistence.models.usuario_model import UsuarioModel
-
+from infrastructure.persistence.mappers.usuario_orm_mapper import UsuarioOrmMapper
 
 class UsuarioRepositoryImpl(IUsuarioRepository):
     """Implementación del repositorio con SQLAlchemy."""
@@ -303,16 +340,10 @@ class UsuarioRepositoryImpl(IUsuarioRepository):
 
     async def obtener_por_id(self, id: UUID) -> Optional[Usuario]:
         result = await self._session.get(UsuarioModel, id)
-        return self._to_entity(result) if result else None
+        return UsuarioOrmMapper.to_domain(result) if result else None
 
     async def guardar(self, usuario: Usuario) -> Usuario:
-        model = UsuarioModel(
-            id=usuario.id,
-            nombre=usuario.nombre,
-            email=str(usuario.email),
-            estado=usuario.estado,
-            fecha_creacion=usuario.fecha_creacion,
-        )
+        model = UsuarioOrmMapper.to_orm(usuario)
         self._session.add(model)
         await self._session.flush()
         return usuario
@@ -321,15 +352,6 @@ class UsuarioRepositoryImpl(IUsuarioRepository):
         stmt = select(UsuarioModel).where(UsuarioModel.email == email)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
-
-    def _to_entity(self, model: UsuarioModel) -> Usuario:
-        return Usuario(
-            id=model.id,
-            nombre=model.nombre,
-            email=Email(model.email),
-            estado=model.estado,
-            fecha_creacion=model.fecha_creacion,
-        )
 
     # ... demás métodos
 ```
@@ -422,3 +444,4 @@ async def obtener_usuario(
 8. **Imports absolutos** desde la raíz del proyecto. No usar imports relativos.
 9. **Manejo de errores** con excepciones de dominio tipadas, nunca `Exception` genérica.
 10. **Tests con pytest**. Usa fixtures, parametrize, y async fixtures para tests de integración.
+11. **Mappers ORM separados**. La lógica de transformación entre modelos ORM y Entidades de Dominio (`to_domain`, `to_orm`) debe estar en clases estáticas/exclusivas dentro de `infrastructure/persistence/mappers/` y NO como métodos privados dentro del Repositorio.

@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import type { IConductorRepository } from '../../dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../dominio/repositorios/conductor.repository.js';
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 @Injectable()
 export class AprobarConductorUseCase {
@@ -10,10 +11,10 @@ export class AprobarConductorUseCase {
     private readonly conductorRepository: IConductorRepository,
   ) {}
 
-  async ejecutar(conductorId: string): Promise<Conductor> {
-    const conductor = await this.conductorRepository.obtenerPorId(conductorId);
+  async ejecutar(id: string): Promise<Conductor> {
+    const conductor = await this.conductorRepository.obtenerPorId(id);
     if (!conductor) {
-      throw new NotFoundException('Conductor no encontrado');
+      throw new NotFoundException(MENSAJES.EXCEPCIONES.CONDUCTORES.NO_ENCONTRADO);
     }
 
     conductor.aprobar();

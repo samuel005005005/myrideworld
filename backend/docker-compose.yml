@@ -1,7 +1,27 @@
 version: '3.8'
 
 services:
-  postgres:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myride_api
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=myride_user
+      - DB_PASS=myride_password
+      - DB_NAME=myride_db
+      - JWT_SECRET=super-secret-key-prod
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - myride_network
+
+  db:
     image: postgres:15-alpine
     container_name: myride_db
     environment:

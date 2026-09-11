@@ -13,76 +13,59 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Viaje } from '../../../dominio/entidades/viaje.entity.js';
 import { ViajeOrmEntity } from '../entidades/viaje.orm-entity.js';
+import { ViajeOrmMapper } from '../mappers/viaje.orm-mapper.js';
+import { EstadosViaje } from '../../../../../compartidos/constantes/estados-viaje.enum.js';
 let ViajeRepositoryImpl = class ViajeRepositoryImpl {
     ormRepo;
     constructor(ormRepo) {
         this.ormRepo = ormRepo;
     }
     async obtenerPorId(id) {
-        const entity = await this.ormRepo.findOne({ where: { id } });
-        return entity ? this.toDomain(entity) : null;
+        const entity = await this.ormRepo.findOne({
+            where: { id },
+            relations: { pasajero: true, conductor: true },
+        });
+        return entity ? ViajeOrmMapper.toDomain(entity) : null;
     }
     async obtenerPorPasajero(pasajeroId) {
-        const entities = await this.ormRepo.find({ where: { pasajeroId } });
-        return entities.map(e => this.toDomain(e));
+        const entities = await this.ormRepo.find({
+            where: { pasajeroId },
+            relations: { conductor: true },
+            order: { fechaSolicitud: 'DESC' },
+        });
+        return entities.map(e => ViajeOrmMapper.toDomain(e));
     }
     async obtenerPorConductor(conductorId) {
-        const entities = await this.ormRepo.find({ where: { conductorId } });
-        return entities.map(e => this.toDomain(e));
+        const entities = await this.ormRepo.find({
+            where: { conductorId },
+            relations: { pasajero: true },
+            order: { fechaSolicitud: 'DESC' },
+        });
+        return entities.map(e => ViajeOrmMapper.toDomain(e));
     }
     async guardar(viaje) {
-        const entity = this.toOrm(viaje);
+        const entity = ViajeOrmMapper.toOrm(viaje);
         const saved = await this.ormRepo.save(entity);
-        return this.toDomain(saved);
+        return ViajeOrmMapper.toDomain(saved);
     }
     async listar(filtros) {
-        const whereClause = {};
+        const where = {};
         if (filtros?.pasajeroId)
-            whereClause.pasajeroId = filtros.pasajeroId;
+            where.pasajeroId = filtros.pasajeroId;
         if (filtros?.conductorId)
-            whereClause.conductorId = filtros.conductorId;
-        const entities = await this.ormRepo.find({ where: whereClause, order: { fechaSolicitud: 'DESC' } });
-        return entities.map(e => this.toDomain(e));
+            where.conductorId = filtros.conductorId;
+        const entities = await this.ormRepo.find({ where });
+        return entities.map(e => ViajeOrmMapper.toDomain(e));
     }
-    toDomain(entity) {
-        return Viaje.solicitar({
-            id: entity.id,
-            pasajeroId: entity.pasajeroId,
-            conductorId: entity.conductorId ?? undefined,
-            origenLat: entity.origenLat,
-            origenLng: entity.origenLng,
-            destinoLat: Number(entity.destinoLat),
-            destinoLng: Number(entity.destinoLng),
-            estado: entity.estado,
-            tarifaEstimada: Number(entity.tarifaEstimada),
-            metodoPago: entity.metodoPago ?? undefined,
-            canceladoPor: entity.canceladoPor ?? undefined,
-            motivoCancelacion: entity.motivoCancelacion ?? undefined,
-            fechaSolicitud: entity.fechaSolicitud,
-            fechaInicio: entity.fechaInicio ?? undefined,
-            fechaFin: entity.fechaFin ?? undefined,
-        });
-    }
-    toOrm(viaje) {
-        return {
-            id: viaje.id,
-            pasajeroId: viaje.pasajeroId,
-            conductorId: viaje.conductorId ?? undefined,
-            origenLat: viaje.origenLat,
-            origenLng: viaje.origenLng,
-            destinoLat: viaje.destinoLat,
-            destinoLng: viaje.destinoLng,
-            estado: viaje.estado,
-            tarifaEstimada: viaje.tarifaEstimada,
-            metodoPago: viaje.metodoPago ?? undefined,
-            canceladoPor: viaje.canceladoPor ?? undefined,
-            motivoCancelacion: viaje.motivoCancelacion ?? undefined,
-            fechaSolicitud: viaje.fechaSolicitud,
-            fechaInicio: viaje.fechaInicio ?? undefined,
-            fechaFin: viaje.fechaFin ?? undefined,
-        };
+    async obtenerViajesVencidos(minutos) {
+        const fechaLimite = new Date(Date.now() - minutos * 60000);
+        const entities = await this.ormRepo
+            .createQueryBuilder('viaje')
+            .where('viaje.estado = :estado', { estado: EstadosViaje.SOLICITADO })
+            .andWhere('viaje.fechaSolicitud <= :fechaLimite', { fechaLimite })
+            .getMany();
+        return entities.map(e => ViajeOrmMapper.toDomain(e));
     }
 };
 ViajeRepositoryImpl = __decorate([

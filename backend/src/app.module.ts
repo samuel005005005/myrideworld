@@ -13,6 +13,9 @@ import { PagosBalancesModule } from './features/pagos-balances/pagos-balances.mo
 import { ConfiguracionModule } from './features/configuracion/configuracion.module.js';
 import { AuthModule } from './features/auth/auth.module.js';
 import { CalificacionesModule } from './features/calificaciones/calificaciones.module.js';
+import { BitacoraModule } from './features/bitacora/bitacora.module.js';
+import { ProcesosBatchModule } from './features/procesos-batch/procesos-batch.module.js';
+import { IdempotenciaModule } from './features/idempotencia/idempotencia.module.js';
 
 @Module({
   imports: [
@@ -45,6 +48,9 @@ import { CalificacionesModule } from './features/calificaciones/calificaciones.m
     ConfiguracionModule,
     AuthModule,
     CalificacionesModule,
+    BitacoraModule,
+    ProcesosBatchModule,
+    IdempotenciaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

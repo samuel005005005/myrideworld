@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
 
 @Entity('conductores')
 export class ConductorOrmEntity {
@@ -32,10 +33,16 @@ export class ConductorOrmEntity {
   @Column({ type: 'varchar', unique: true })
   vehiculoPlaca: string;
 
-  @Column({ type: 'varchar', default: 'Pendiente' })
+  @Column({ name: 'licencia_url', type: 'varchar', nullable: true })
+  licenciaUrl: string;
+
+  @Column({ name: 'seguro_url', type: 'varchar', nullable: true })
+  seguroUrl: string;
+
+  @Column({ type: 'varchar', default: EstadosConductor.PENDIENTE })
   estadoAprobacion: string;
 
-  @Column({ type: 'varchar', default: 'Desconectado' })
+  @Column({ type: 'varchar', default: EstadosDisponibilidadConductor.DESCONECTADO })
   estadoDisponibilidad: string;
 
   @Column({ type: 'float', nullable: true })

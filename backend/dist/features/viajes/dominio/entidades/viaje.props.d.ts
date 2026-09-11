@@ -14,6 +14,7 @@ export interface ViajeProps {
     canceladoPor?: Roles | null;
     motivoCancelacion?: string | null;
     fechaSolicitud?: Date;
-    fechaInicio?: Date;
-    fechaFin?: Date;
+    fechaInicio?: Date | null;
+    fechaFin?: Date | null;
+    conductoresRechazados?: string[];
 }

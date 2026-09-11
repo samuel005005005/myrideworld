@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
@@ -23,9 +23,12 @@ import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.us
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
+import { RechazarViajeUseCase } from '../../aplicacion/casos-uso/rechazar-viaje.use-case.js';
+import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
 import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
+import { IdempotenciaInterceptor } from '../../../idempotencia/presentacion/interceptores/idempotencia.interceptor.js';
 let ViajesController = class ViajesController {
     solicitarViaje;
     aceptarViaje;
@@ -34,7 +37,8 @@ let ViajesController = class ViajesController {
     completarViaje;
     cancelarViaje;
     listarViajes;
-    constructor(solicitarViaje, aceptarViaje, marcarLlegada, iniciarViaje, completarViaje, cancelarViaje, listarViajes) {
+    rechazarViaje;
+    constructor(solicitarViaje, aceptarViaje, marcarLlegada, iniciarViaje, completarViaje, cancelarViaje, listarViajes, rechazarViaje) {
         this.solicitarViaje = solicitarViaje;
         this.aceptarViaje = aceptarViaje;
         this.marcarLlegada = marcarLlegada;
@@ -42,52 +46,48 @@ let ViajesController = class ViajesController {
         this.completarViaje = completarViaje;
         this.cancelarViaje = cancelarViaje;
         this.listarViajes = listarViajes;
+        this.rechazarViaje = rechazarViaje;
     }
     async listarTodos(req) {
         const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol);
-        return viajes.map(v => this.mapearViaje(v));
+        return viajes.map(v => ViajeMapper.toResponse(v));
     }
     async misViajes(req) {
         const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol);
-        return viajes.map(v => this.mapearViaje(v));
+        return viajes.map(v => ViajeMapper.toResponse(v));
     }
     async solicitar(dto, req) {
-        return await this.solicitarViaje.ejecutar(dto);
+        const viaje = await this.solicitarViaje.ejecutar(dto);
+        return ViajeMapper.toResponse(viaje);
     }
     async aceptar(id, dto, req) {
         dto.conductorId = req.user.sub;
-        return await this.aceptarViaje.ejecutar(id, dto);
+        const viaje = await this.aceptarViaje.ejecutar(id, dto);
+        return ViajeMapper.toResponse(viaje);
     }
     async llegada(id, req) {
         const conductorId = req.user.sub;
-        return await this.marcarLlegada.ejecutar(id, conductorId);
+        const viaje = await this.marcarLlegada.ejecutar(id, conductorId);
+        return ViajeMapper.toResponse(viaje);
     }
     async iniciar(id) {
-        return await this.iniciarViaje.ejecutar(id);
+        const viaje = await this.iniciarViaje.ejecutar(id);
+        return ViajeMapper.toResponse(viaje);
     }
     async completar(id) {
-        return await this.completarViaje.ejecutar(id);
+        const viaje = await this.completarViaje.ejecutar(id);
+        return ViajeMapper.toResponse(viaje);
     }
     async cancelar(id, dto, req) {
         const actorId = req.user.sub;
         const rol = req.user.rol;
-        return await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+        const viaje = await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+        return ViajeMapper.toResponse(viaje);
     }
-    mapearViaje(v) {
-        return {
-            id: v.id,
-            pasajeroId: v.pasajeroId,
-            conductorId: v.conductorId,
-            origenLat: v.origenLat,
-            origenLng: v.origenLng,
-            destinoLat: v.destinoLat,
-            destinoLng: v.destinoLng,
-            estado: v.estado,
-            tarifaEstimada: v.tarifaEstimada,
-            fechaSolicitud: v.fechaSolicitud,
-            fechaInicio: v.fechaInicio,
-            fechaFin: v.fechaFin,
-        };
+    async rechazar(id, req) {
+        const conductorId = req.user.sub;
+        const viaje = await this.rechazarViaje.ejecutar(id, conductorId);
+        return ViajeMapper.toResponse(viaje);
     }
 };
 __decorate([
@@ -113,6 +113,7 @@ __decorate([
 __decorate([
     Post(),
     UseGuards(AuthGuard, RolesGuard),
+    UseInterceptors(IdempotenciaInterceptor),
     Roles(RolesEnum.PASAJERO),
     HttpCode(HttpStatus.CREATED),
     ApiOperation({ summary: 'Solicitar un nuevo viaje (Solo Pasajeros)' }),
@@ -182,6 +183,18 @@ __decorate([
     __metadata("design:paramtypes", [String, CancelarViajeDto, Object]),
     __metadata("design:returntype", Promise)
 ], ViajesController.prototype, "cancelar", null);
+__decorate([
+    Post(':id/rechazar'),
+    UseGuards(AuthGuard, RolesGuard),
+    Roles(RolesEnum.CONDUCTOR),
+    HttpCode(HttpStatus.OK),
+    ApiOperation({ summary: 'Rechazar un viaje sugerido (asigna al siguiente conductor)' }),
+    __param(0, Param('id')),
+    __param(1, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], ViajesController.prototype, "rechazar", null);
 ViajesController = __decorate([
     ApiTags('Viajes'),
     ApiBearerAuth(),
@@ -192,7 +205,8 @@ ViajesController = __decorate([
         IniciarViajeUseCase,
         CompletarViajeUseCase,
         CancelarViajeUseCase,
-        ListarViajesUseCase])
+        ListarViajesUseCase,
+        RechazarViajeUseCase])
 ], ViajesController);
 export { ViajesController };
 //# sourceMappingURL=viajes.controller.js.map

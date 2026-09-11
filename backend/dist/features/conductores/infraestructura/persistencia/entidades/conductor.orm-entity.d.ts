@@ -9,6 +9,8 @@ export declare class ConductorOrmEntity {
     vehiculoModelo: string;
     vehiculoColor: string;
     vehiculoPlaca: string;
+    licenciaUrl: string;
+    seguroUrl: string;
     estadoAprobacion: string;
     estadoDisponibilidad: string;
     ultimaUbicacionLat: number;

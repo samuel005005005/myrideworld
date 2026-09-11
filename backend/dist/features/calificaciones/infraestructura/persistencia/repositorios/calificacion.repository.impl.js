@@ -13,42 +13,20 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Calificacion } from '../../../dominio/entidades/calificacion.entity.js';
 import { CalificacionOrmEntity } from '../entidades/calificacion.orm-entity.js';
+import { CalificacionOrmMapper } from '../mappers/calificacion.orm-mapper.js';
 let CalificacionRepositoryImpl = class CalificacionRepositoryImpl {
     ormRepo;
     constructor(ormRepo) {
         this.ormRepo = ormRepo;
     }
     async guardar(calificacion) {
-        const entity = this.toOrm(calificacion);
+        const entity = CalificacionOrmMapper.toOrm(calificacion);
         const guardado = await this.ormRepo.save(entity);
-        return this.toDomain(guardado);
+        return CalificacionOrmMapper.toDomain(guardado);
     }
     async existeCalificacion(viajeId) {
         return await this.ormRepo.exists({ where: { viajeId } });
-    }
-    toDomain(entity) {
-        return Calificacion.crear({
-            id: entity.id,
-            viajeId: entity.viajeId,
-            pasajeroId: entity.pasajeroId,
-            conductorId: entity.conductorId,
-            puntuacion: entity.puntuacion,
-            comentario: entity.comentario ?? undefined,
-            fecha: entity.fecha,
-        });
-    }
-    toOrm(calificacion) {
-        return {
-            id: calificacion.id,
-            viajeId: calificacion.viajeId,
-            pasajeroId: calificacion.pasajeroId,
-            conductorId: calificacion.conductorId,
-            puntuacion: calificacion.puntuacion,
-            comentario: calificacion.comentario ?? undefined,
-            fecha: calificacion.fecha,
-        };
     }
 };
 CalificacionRepositoryImpl = __decorate([

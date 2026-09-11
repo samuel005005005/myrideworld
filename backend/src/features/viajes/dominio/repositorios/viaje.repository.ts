@@ -6,6 +6,7 @@ export interface IViajeRepository {
   obtenerPorConductor(conductorId: string): Promise<Viaje[]>;
   guardar(viaje: Viaje): Promise<Viaje>;
   listar(filtros?: { pasajeroId?: string; conductorId?: string }): Promise<Viaje[]>;
+  obtenerViajesVencidos(minutos: number): Promise<Viaje[]>;
 }
 
 export const VIAJE_REPOSITORY = Symbol('IViajeRepository');

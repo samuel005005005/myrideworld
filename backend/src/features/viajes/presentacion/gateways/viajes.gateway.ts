@@ -8,7 +8,11 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UseGuards } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { WsJwtGuard } from '../../../../compartidos/middlewares/ws-jwt.guard.js';
 
 @Injectable()
 @WebSocketGateway({
@@ -16,14 +20,32 @@ import { Injectable, Logger } from '@nestjs/common';
     origin: '*',
   },
 })
+@UseGuards(WsJwtGuard)
 export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ViajesGateway.name);
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: Socket) {
-    this.logger.log(`Cliente conectado a Sockets: ${client.id}`);
+  async handleConnection(client: Socket) {
+    try {
+      const secret = this.configService.get<string>('JWT_SECRET', 'super-secret-key');
+      const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1];
+      
+      if (!token) throw new Error(MENSAJES.EXCEPCIONES.AUTH.TOKEN_AUSENTE);
+      
+      const payload = await this.jwtService.verifyAsync(token, { secret });
+      (client as any).user = payload;
+      this.logger.log(`Cliente autenticado y conectado a Sockets: ${client.id} (Rol: ${payload.rol})`);
+    } catch (err) {
+      this.logger.warn(`Cliente rechazado en Sockets (Sin token / Inválido): ${client.id}`);
+      client.disconnect(true);
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -39,6 +61,17 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const room = `viaje_${data.viajeId}`;
     client.join(room);
     this.logger.log(`Cliente ${client.id} se unió a la sala ${room}`);
+  }
+
+  // El conductor llama a este evento para recibir alertas directas
+  @SubscribeMessage('identificarConductor')
+  handleIdentificarConductor(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conductorId: string },
+  ) {
+    const room = `conductor_${data.conductorId}`;
+    client.join(room);
+    this.logger.log(`Conductor ${data.conductorId} (Socket ${client.id}) se unió a su sala privada ${room}`);
   }
 
   // El conductor llama a este evento cada segundo transmitiendo su lat/lng
@@ -60,9 +93,11 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Métodos expuestos para inyectar en Casos de Uso
   // ==========================================
 
-  notificarNuevoViaje(viajeId: string) {
-    // Alerta a los conductores conectados (broadcast general para el MVP)
-    this.server.emit('nuevoViajeDisponible', { viajeId });
+  notificarNuevoViaje(viajeId: string, conductorId: string) {
+    // Alerta SÓLO al conductor más cercano
+    const room = `conductor_${conductorId}`;
+    this.server.to(room).emit('nuevoViajeDisponible', { viajeId });
+    this.logger.log(`Notificado viaje ${viajeId} al conductor ${conductorId}`);
   }
 
   notificarViajeAceptado(viajeId: string, conductorId: string) {

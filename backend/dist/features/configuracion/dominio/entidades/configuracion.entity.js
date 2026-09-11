@@ -1,3 +1,5 @@
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 export class Configuracion {
     _id;
     _clave;
@@ -22,15 +24,15 @@ export class Configuracion {
     get actualizadoEn() { return this._actualizadoEn; }
     actualizarValor(nuevoValor) {
         if (!nuevoValor)
-            throw new Error('El valor no puede estar vacío.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.VALOR_VACIO);
         this._valor = nuevoValor;
         this._actualizadoEn = new Date();
     }
     validar() {
         if (!this._clave)
-            throw new Error('La clave es obligatoria.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_OBLIGATORIA);
         if (!this._valor)
-            throw new Error('El valor es obligatorio.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.VALOR_OBLIGATORIO);
     }
 }
 //# sourceMappingURL=configuracion.entity.js.map

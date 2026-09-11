@@ -9,14 +9,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+const V = MENSAJES.VALIDACION.VIAJES;
+const S = MENSAJES.SWAGGER.VIAJES;
 export const aceptarViajeSchema = z.object({
-    conductorId: z.string().uuid('ID de conductor inválido'),
+    conductorId: z.string().uuid(V.CONDUCTOR_ID_UUID),
 });
 export class AceptarViajeDto {
     conductorId;
 }
 __decorate([
-    ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174001', description: 'ID del Conductor' }),
+    ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID_2, description: S.DESC_CONDUCTOR_ID }),
     __metadata("design:type", String)
 ], AceptarViajeDto.prototype, "conductorId", void 0);
 //# sourceMappingURL=aceptar-viaje.dto.js.map

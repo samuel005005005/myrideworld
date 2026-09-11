@@ -10,6 +10,8 @@ import { PasajeroOrmEntity } from './infraestructura/persistencia/entidades/pasa
 import { PasajeroRepositoryImpl } from './infraestructura/persistencia/repositorios/pasajero.repository.impl.js';
 import { PASAJERO_REPOSITORY } from './dominio/repositorios/pasajero.repository.js';
 import { CrearPasajeroUseCase } from './aplicacion/casos-uso/crear-pasajero.use-case.js';
+import { ObtenerPasajeroUseCase } from './aplicacion/casos-uso/obtener-pasajero.use-case.js';
+import { ActualizarPasajeroUseCase } from './aplicacion/casos-uso/actualizar-pasajero.use-case.js';
 import { PasajerosController } from './presentacion/controladores/pasajeros.controller.js';
 let PasajerosModule = class PasajerosModule {
 };
@@ -23,8 +25,10 @@ PasajerosModule = __decorate([
                 useClass: PasajeroRepositoryImpl,
             },
             CrearPasajeroUseCase,
+            ObtenerPasajeroUseCase,
+            ActualizarPasajeroUseCase,
         ],
-        exports: [PASAJERO_REPOSITORY, CrearPasajeroUseCase],
+        exports: [PASAJERO_REPOSITORY, CrearPasajeroUseCase, ObtenerPasajeroUseCase, ActualizarPasajeroUseCase],
     })
 ], PasajerosModule);
 export { PasajerosModule };

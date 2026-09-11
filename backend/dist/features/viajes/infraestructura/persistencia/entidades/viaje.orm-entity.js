@@ -29,6 +29,7 @@ let ViajeOrmEntity = class ViajeOrmEntity {
     fechaSolicitud;
     fechaInicio;
     fechaFin;
+    conductoresRechazados;
 };
 __decorate([
     PrimaryGeneratedColumn('uuid'),
@@ -97,9 +98,13 @@ __decorate([
     __metadata("design:type", Date)
 ], ViajeOrmEntity.prototype, "fechaInicio", void 0);
 __decorate([
-    Column({ type: 'timestamp', nullable: true }),
-    __metadata("design:type", Date)
+    Column({ name: 'fecha_fin', type: 'timestamp', nullable: true }),
+    __metadata("design:type", Object)
 ], ViajeOrmEntity.prototype, "fechaFin", void 0);
+__decorate([
+    Column({ name: 'conductores_rechazados', type: 'simple-json', default: '[]' }),
+    __metadata("design:type", Array)
+], ViajeOrmEntity.prototype, "conductoresRechazados", void 0);
 ViajeOrmEntity = __decorate([
     Entity('viajes')
 ], ViajeOrmEntity);

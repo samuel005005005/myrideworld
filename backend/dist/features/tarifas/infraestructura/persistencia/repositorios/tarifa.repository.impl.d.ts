@@ -8,6 +8,4 @@ export declare class TarifaRepositoryImpl implements ITarifaRepository {
     obtenerPorId(id: string): Promise<Tarifa | null>;
     obtenerTarifaActiva(origen: string, destino: string): Promise<Tarifa | null>;
     guardar(tarifa: Tarifa): Promise<Tarifa>;
-    private toDomain;
-    private toOrm;
 }

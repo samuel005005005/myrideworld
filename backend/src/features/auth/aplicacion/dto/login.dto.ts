@@ -1,18 +1,22 @@
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+
+const V = MENSAJES.VALIDACION.COMUNES;
+const S = MENSAJES.SWAGGER.COMUNES;
 
 export const loginSchema = z.object({
-  email: z.string().email('El email no es válido'),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
+  email: z.email({ error: V.EMAIL_INVALIDO }),
+  password: z.string().min(1, V.PASSWORD_MIN),
   rol: z.enum([Roles.PASAJERO, Roles.CONDUCTOR, Roles.ADMIN]),
 });
 
 export class LoginDto {
-  @ApiProperty({ example: 'pasajero@example.com', description: 'Correo del usuario' })
+  @ApiProperty({ example: S.EJEMPLO_EMAIL, description: S.DESC_EMAIL })
   email: string;
 
-  @ApiProperty({ example: '123456', description: 'Contraseña secreta' })
+  @ApiProperty({ example: S.EJEMPLO_PASSWORD, description: S.DESC_PASSWORD })
   password: string;
 
   @ApiProperty({ enum: Roles, example: Roles.PASAJERO })

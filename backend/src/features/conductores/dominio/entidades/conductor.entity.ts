@@ -1,5 +1,7 @@
 import { ConductorProps } from './conductor.props.js';
 import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 export class Conductor {
   private readonly _id: string;
@@ -12,6 +14,8 @@ export class Conductor {
   private _vehiculoModelo: string;
   private _vehiculoColor: string;
   private _vehiculoPlaca: string;
+  private _licenciaUrl: string | null;
+  private _seguroUrl: string | null;
   private _estadoAprobacion: EstadosConductor;
   private _estadoDisponibilidad: EstadosDisponibilidadConductor;
   private _ultimaUbicacionLat: number | null;
@@ -28,6 +32,8 @@ export class Conductor {
     this._vehiculoModelo = props.vehiculoModelo;
     this._vehiculoColor = props.vehiculoColor;
     this._vehiculoPlaca = props.vehiculoPlaca;
+    this._licenciaUrl = props.licenciaUrl ?? null;
+    this._seguroUrl = props.seguroUrl ?? null;
     this._estadoAprobacion = props.estadoAprobacion ?? EstadosConductor.PENDIENTE;
     this._estadoDisponibilidad = props.estadoDisponibilidad ?? EstadosDisponibilidadConductor.DESCONECTADO;
     this._ultimaUbicacionLat = props.ultimaUbicacionLat ?? null;
@@ -50,6 +56,8 @@ export class Conductor {
   get vehiculoModelo(): string { return this._vehiculoModelo; }
   get vehiculoColor(): string { return this._vehiculoColor; }
   get vehiculoPlaca(): string { return this._vehiculoPlaca; }
+  get licenciaUrl(): string | null { return this._licenciaUrl; }
+  get seguroUrl(): string | null { return this._seguroUrl; }
   get estadoAprobacion(): EstadosConductor { return this._estadoAprobacion; }
   get estadoDisponibilidad(): EstadosDisponibilidadConductor { return this._estadoDisponibilidad; }
   get ultimaUbicacionLat(): number | null { return this._ultimaUbicacionLat; }
@@ -57,15 +65,38 @@ export class Conductor {
 
   aprobar(): void {
     if (this._estadoAprobacion !== EstadosConductor.PENDIENTE) {
-      throw new Error('Solo se pueden aprobar conductores en estado pendiente.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.SOLO_PENDIENTE_APROBAR);
     }
     this._estadoAprobacion = EstadosConductor.APROBADO;
     this._estadoDisponibilidad = EstadosDisponibilidadConductor.CONECTADO;
   }
 
+  actualizarDocumentos(rutas: { fotoPerfil?: string; licencia?: string; seguro?: string }): void {
+    if (rutas.fotoPerfil) this._fotoUrl = rutas.fotoPerfil;
+    if (rutas.licencia) this._licenciaUrl = rutas.licencia;
+    if (rutas.seguro) this._seguroUrl = rutas.seguro;
+  }
+
+  actualizarPerfil(datos: {
+    nombreCompleto?: string;
+    telefono?: string;
+    vehiculoMarca?: string;
+    vehiculoModelo?: string;
+    vehiculoColor?: string;
+    vehiculoPlaca?: string;
+  }): void {
+    if (datos.nombreCompleto) this._nombreCompleto = datos.nombreCompleto;
+    if (datos.telefono) this._telefono = datos.telefono;
+    if (datos.vehiculoMarca) this._vehiculoMarca = datos.vehiculoMarca;
+    if (datos.vehiculoModelo) this._vehiculoModelo = datos.vehiculoModelo;
+    if (datos.vehiculoColor) this._vehiculoColor = datos.vehiculoColor;
+    if (datos.vehiculoPlaca) this._vehiculoPlaca = datos.vehiculoPlaca;
+    this.validar();
+  }
+
   private validar(): void {
-    if (!this._nombreCompleto?.trim()) throw new Error('El nombre es obligatorio.');
-    if (!this._email?.includes('@')) throw new Error('El email no es válido.');
-    if (!this._vehiculoPlaca?.trim()) throw new Error('La placa del vehículo es obligatoria.');
+    if (!this._nombreCompleto?.trim()) throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.NOMBRE_OBLIGATORIO);
+    if (!this._email?.includes('@')) throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.EMAIL_INVALIDO);
+    if (!this._vehiculoPlaca?.trim()) throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.PLACA_OBLIGATORIA);
   }
 }

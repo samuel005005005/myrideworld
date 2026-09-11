@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { DomainException } from '../excepciones/domain.exception.js';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -24,10 +25,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       const res = exception.getResponse();
       message = typeof res === 'string' ? res : (res as any).message || res;
-    } else if (exception instanceof Error) {
-      // Tratamos los errores estándar lanzados por nuestras Entidades (Domain Errors) como Bad Requests
+    } else if (exception instanceof DomainException) {
       status = HttpStatus.BAD_REQUEST;
       message = exception.message;
+    } else if (exception instanceof Error) {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = 'Ha ocurrido un error interno';
     }
 
     // Log the error for internal auditing without exposing stack traces to the client

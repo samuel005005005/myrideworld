@@ -10,6 +10,8 @@ export interface ConductorProps {
     vehiculoModelo: string;
     vehiculoColor: string;
     vehiculoPlaca: string;
+    licenciaUrl?: string;
+    seguroUrl?: string;
     estadoAprobacion?: EstadosConductor;
     estadoDisponibilidad?: EstadosDisponibilidadConductor;
     ultimaUbicacionLat?: number | null;

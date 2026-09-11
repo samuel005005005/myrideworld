@@ -55,6 +55,9 @@ export class ViajeOrmEntity {
   @Column({ type: 'timestamp', nullable: true })
   fechaInicio: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  fechaFin: Date;
+  @Column({ name: 'fecha_fin', type: 'timestamp', nullable: true })
+  fechaFin: Date | null;
+
+  @Column({ name: 'conductores_rechazados', type: 'simple-json', default: '[]' })
+  conductoresRechazados: string[];
 }

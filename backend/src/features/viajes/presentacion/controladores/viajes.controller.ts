@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
@@ -12,10 +12,12 @@ import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.us
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
+import { RechazarViajeUseCase } from '../../aplicacion/casos-uso/rechazar-viaje.use-case.js';
 import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
 import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
+import { IdempotenciaInterceptor } from '../../../idempotencia/presentacion/interceptores/idempotencia.interceptor.js';
 
 @ApiTags('Viajes')
 @ApiBearerAuth()
@@ -29,6 +31,7 @@ export class ViajesController {
     private readonly completarViaje: CompletarViajeUseCase,
     private readonly cancelarViaje: CancelarViajeUseCase,
     private readonly listarViajes: ListarViajesUseCase,
+    private readonly rechazarViaje: RechazarViajeUseCase,
   ) {}
 
   @Get()
@@ -51,6 +54,7 @@ export class ViajesController {
 
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
+  @UseInterceptors(IdempotenciaInterceptor)
   @Roles(RolesEnum.PASAJERO)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Solicitar un nuevo viaje (Solo Pasajeros)' })
@@ -131,6 +135,20 @@ export class ViajesController {
     const actorId = req.user.sub;
     const rol = req.user.rol;
     const viaje = await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+    return ViajeMapper.toResponse(viaje);
+  }
+
+  @Post(':id/rechazar')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.CONDUCTOR)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rechazar un viaje sugerido (asigna al siguiente conductor)' })
+  async rechazar(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    const conductorId = req.user.sub;
+    const viaje = await this.rechazarViaje.ejecutar(id, conductorId);
     return ViajeMapper.toResponse(viaje);
   }
 }

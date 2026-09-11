@@ -8,6 +8,4 @@ export declare class PasajeroRepositoryImpl implements IPasajeroRepository {
     obtenerPorId(id: string): Promise<Pasajero | null>;
     obtenerPorEmail(email: string): Promise<Pasajero | null>;
     guardar(pasajero: Pasajero): Promise<Pasajero>;
-    private toDomain;
-    private toOrm;
 }

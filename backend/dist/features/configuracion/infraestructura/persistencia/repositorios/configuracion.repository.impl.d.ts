@@ -7,6 +7,4 @@ export declare class ConfiguracionRepositoryImpl implements IConfiguracionReposi
     constructor(ormRepo: Repository<ConfiguracionOrmEntity>);
     obtenerValor(clave: string, defaultValue: string): Promise<string>;
     guardar(configuracion: Configuracion): Promise<Configuracion>;
-    private toDomain;
-    private toOrm;
 }

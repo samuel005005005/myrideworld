@@ -13,12 +13,34 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var ViajesGateway_1;
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket, MessageBody, } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UseGuards } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { WsJwtGuard } from '../../../../compartidos/middlewares/ws-jwt.guard.js';
 let ViajesGateway = ViajesGateway_1 = class ViajesGateway {
+    jwtService;
+    configService;
     logger = new Logger(ViajesGateway_1.name);
+    constructor(jwtService, configService) {
+        this.jwtService = jwtService;
+        this.configService = configService;
+    }
     server;
-    handleConnection(client) {
-        this.logger.log(`Cliente conectado a Sockets: ${client.id}`);
+    async handleConnection(client) {
+        try {
+            const secret = this.configService.get('JWT_SECRET', 'super-secret-key');
+            const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1];
+            if (!token)
+                throw new Error(MENSAJES.EXCEPCIONES.AUTH.TOKEN_AUSENTE);
+            const payload = await this.jwtService.verifyAsync(token, { secret });
+            client.user = payload;
+            this.logger.log(`Cliente autenticado y conectado a Sockets: ${client.id} (Rol: ${payload.rol})`);
+        }
+        catch (err) {
+            this.logger.warn(`Cliente rechazado en Sockets (Sin token / Inválido): ${client.id}`);
+            client.disconnect(true);
+        }
     }
     handleDisconnect(client) {
         this.logger.log(`Cliente desconectado de Sockets: ${client.id}`);
@@ -28,6 +50,11 @@ let ViajesGateway = ViajesGateway_1 = class ViajesGateway {
         client.join(room);
         this.logger.log(`Cliente ${client.id} se unió a la sala ${room}`);
     }
+    handleIdentificarConductor(client, data) {
+        const room = `conductor_${data.conductorId}`;
+        client.join(room);
+        this.logger.log(`Conductor ${data.conductorId} (Socket ${client.id}) se unió a su sala privada ${room}`);
+    }
     handleActualizarUbicacion(client, data) {
         const room = `viaje_${data.viajeId}`;
         client.to(room).emit('ubicacionActualizada', {
@@ -36,8 +63,10 @@ let ViajesGateway = ViajesGateway_1 = class ViajesGateway {
             timestamp: new Date().toISOString(),
         });
     }
-    notificarNuevoViaje(viajeId) {
-        this.server.emit('nuevoViajeDisponible', { viajeId });
+    notificarNuevoViaje(viajeId, conductorId) {
+        const room = `conductor_${conductorId}`;
+        this.server.to(room).emit('nuevoViajeDisponible', { viajeId });
+        this.logger.log(`Notificado viaje ${viajeId} al conductor ${conductorId}`);
     }
     notificarViajeAceptado(viajeId, conductorId) {
         const room = `viaje_${viajeId}`;
@@ -65,6 +94,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ViajesGateway.prototype, "handleUnirseAViaje", null);
 __decorate([
+    SubscribeMessage('identificarConductor'),
+    __param(0, ConnectedSocket()),
+    __param(1, MessageBody()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Socket, Object]),
+    __metadata("design:returntype", void 0)
+], ViajesGateway.prototype, "handleIdentificarConductor", null);
+__decorate([
     SubscribeMessage('actualizarUbicacion'),
     __param(0, ConnectedSocket()),
     __param(1, MessageBody()),
@@ -78,7 +115,10 @@ ViajesGateway = ViajesGateway_1 = __decorate([
         cors: {
             origin: '*',
         },
-    })
+    }),
+    UseGuards(WsJwtGuard),
+    __metadata("design:paramtypes", [JwtService,
+        ConfigService])
 ], ViajesGateway);
 export { ViajesGateway };
 //# sourceMappingURL=viajes.gateway.js.map

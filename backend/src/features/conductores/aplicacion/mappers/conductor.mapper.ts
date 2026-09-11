@@ -7,6 +7,9 @@ export class ConductorMapper {
       nombreCompleto: conductor.nombreCompleto,
       email: conductor.email,
       telefono: conductor.telefono,
+      fotoUrl: conductor.fotoUrl,
+      licenciaUrl: conductor.licenciaUrl,
+      seguroUrl: conductor.seguroUrl,
       estadoAprobacion: conductor.estadoAprobacion,
       estadoDisponibilidad: conductor.estadoDisponibilidad,
       vehiculo: {
@@ -19,7 +22,6 @@ export class ConductorMapper {
   }
 
   static toResponseList(conductor: Conductor) {
-    // Para las listas omitimos algunos detalles si lo deseamos
     return {
       id: conductor.id,
       nombreCompleto: conductor.nombreCompleto,

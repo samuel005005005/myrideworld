@@ -9,9 +9,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+const V = MENSAJES.VALIDACION.CALIFICACIONES;
+const S = MENSAJES.SWAGGER.CALIFICACIONES;
 export const calificarConductorSchema = z.object({
-    viajeId: z.string().uuid(),
-    puntuacion: z.number().int().min(1).max(5),
+    viajeId: z.string().uuid(V.VIAJE_ID_UUID),
+    puntuacion: z.number().int().min(1, V.PUNTUACION_RANGO).max(5, V.PUNTUACION_RANGO),
     comentario: z.string().optional(),
 });
 export class CalificarConductorDto {
@@ -20,15 +23,15 @@ export class CalificarConductorDto {
     comentario;
 }
 __decorate([
-    ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'ID del Viaje completado' }),
+    ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID, description: S.DESC_VIAJE_ID }),
     __metadata("design:type", String)
 ], CalificarConductorDto.prototype, "viajeId", void 0);
 __decorate([
-    ApiProperty({ example: 5, description: 'Calificación de 1 a 5 estrellas' }),
+    ApiProperty({ example: 5, description: S.DESC_PUNTUACION }),
     __metadata("design:type", Number)
 ], CalificarConductorDto.prototype, "puntuacion", void 0);
 __decorate([
-    ApiProperty({ example: 'Excelente conductor, muy amable.', required: false }),
+    ApiProperty({ example: S.EJEMPLO_COMENTARIO, required: false }),
     __metadata("design:type", String)
 ], CalificarConductorDto.prototype, "comentario", void 0);
 //# sourceMappingURL=calificar-conductor.dto.js.map

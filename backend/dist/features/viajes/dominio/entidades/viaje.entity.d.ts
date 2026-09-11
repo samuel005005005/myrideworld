@@ -17,6 +17,7 @@ export declare class Viaje {
     private readonly _fechaSolicitud;
     private _fechaInicio;
     private _fechaFin;
+    private _conductoresRechazados;
     private constructor();
     static solicitar(props: ViajeProps): Viaje;
     get id(): string;
@@ -34,10 +35,13 @@ export declare class Viaje {
     get fechaSolicitud(): Date;
     get fechaInicio(): Date | null;
     get fechaFin(): Date | null;
+    get conductoresRechazados(): string[];
     asignarConductor(conductorId: string): void;
     marcarLlegada(): void;
     iniciarViaje(): void;
     completarViaje(): void;
     cancelar(actor: Roles, motivo?: string): void;
+    rechazar(conductorId: string): void;
+    private calcularTarifaEstimada;
     private validar;
 }

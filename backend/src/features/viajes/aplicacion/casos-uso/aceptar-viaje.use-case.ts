@@ -4,6 +4,8 @@ import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { AceptarViajeDto } from '../dto/aceptar-viaje.dto.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 @Injectable()
 export class AceptarViajeUseCase {
@@ -17,7 +19,7 @@ export class AceptarViajeUseCase {
     const viaje = await this.viajeRepository.obtenerPorId(viajeId);
 
     if (!viaje) {
-      throw new Error('Viaje no encontrado.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
     }
 
     // TODO: En un escenario completo se validaría aquí en IConductorRepository si el conductor existe y está disponible

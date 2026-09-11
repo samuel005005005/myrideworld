@@ -1,4 +1,6 @@
 import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 export class Conductor {
     _id;
     _nombreCompleto;
@@ -10,6 +12,8 @@ export class Conductor {
     _vehiculoModelo;
     _vehiculoColor;
     _vehiculoPlaca;
+    _licenciaUrl;
+    _seguroUrl;
     _estadoAprobacion;
     _estadoDisponibilidad;
     _ultimaUbicacionLat;
@@ -25,6 +29,8 @@ export class Conductor {
         this._vehiculoModelo = props.vehiculoModelo;
         this._vehiculoColor = props.vehiculoColor;
         this._vehiculoPlaca = props.vehiculoPlaca;
+        this._licenciaUrl = props.licenciaUrl ?? null;
+        this._seguroUrl = props.seguroUrl ?? null;
         this._estadoAprobacion = props.estadoAprobacion ?? EstadosConductor.PENDIENTE;
         this._estadoDisponibilidad = props.estadoDisponibilidad ?? EstadosDisponibilidadConductor.DESCONECTADO;
         this._ultimaUbicacionLat = props.ultimaUbicacionLat ?? null;
@@ -44,24 +50,49 @@ export class Conductor {
     get vehiculoModelo() { return this._vehiculoModelo; }
     get vehiculoColor() { return this._vehiculoColor; }
     get vehiculoPlaca() { return this._vehiculoPlaca; }
+    get licenciaUrl() { return this._licenciaUrl; }
+    get seguroUrl() { return this._seguroUrl; }
     get estadoAprobacion() { return this._estadoAprobacion; }
     get estadoDisponibilidad() { return this._estadoDisponibilidad; }
     get ultimaUbicacionLat() { return this._ultimaUbicacionLat; }
     get ultimaUbicacionLng() { return this._ultimaUbicacionLng; }
     aprobar() {
         if (this._estadoAprobacion !== EstadosConductor.PENDIENTE) {
-            throw new Error('Solo se pueden aprobar conductores en estado pendiente.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.SOLO_PENDIENTE_APROBAR);
         }
         this._estadoAprobacion = EstadosConductor.APROBADO;
         this._estadoDisponibilidad = EstadosDisponibilidadConductor.CONECTADO;
     }
+    actualizarDocumentos(rutas) {
+        if (rutas.fotoPerfil)
+            this._fotoUrl = rutas.fotoPerfil;
+        if (rutas.licencia)
+            this._licenciaUrl = rutas.licencia;
+        if (rutas.seguro)
+            this._seguroUrl = rutas.seguro;
+    }
+    actualizarPerfil(datos) {
+        if (datos.nombreCompleto)
+            this._nombreCompleto = datos.nombreCompleto;
+        if (datos.telefono)
+            this._telefono = datos.telefono;
+        if (datos.vehiculoMarca)
+            this._vehiculoMarca = datos.vehiculoMarca;
+        if (datos.vehiculoModelo)
+            this._vehiculoModelo = datos.vehiculoModelo;
+        if (datos.vehiculoColor)
+            this._vehiculoColor = datos.vehiculoColor;
+        if (datos.vehiculoPlaca)
+            this._vehiculoPlaca = datos.vehiculoPlaca;
+        this.validar();
+    }
     validar() {
         if (!this._nombreCompleto?.trim())
-            throw new Error('El nombre es obligatorio.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.NOMBRE_OBLIGATORIO);
         if (!this._email?.includes('@'))
-            throw new Error('El email no es válido.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.EMAIL_INVALIDO);
         if (!this._vehiculoPlaca?.trim())
-            throw new Error('La placa del vehículo es obligatoria.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.PLACA_OBLIGATORIA);
     }
 }
 //# sourceMappingURL=conductor.entity.js.map

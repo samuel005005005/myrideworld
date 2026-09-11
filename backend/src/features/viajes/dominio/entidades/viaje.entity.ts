@@ -1,6 +1,8 @@
 import { ViajeProps } from './viaje.props.js';
 import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 export class Viaje {
   private readonly _id: string;
@@ -18,6 +20,7 @@ export class Viaje {
   private readonly _fechaSolicitud: Date;
   private _fechaInicio: Date | null;
   private _fechaFin: Date | null;
+  private _conductoresRechazados: string[];
 
   private constructor(props: ViajeProps) {
     this._id = props.id ?? crypto.randomUUID();
@@ -35,6 +38,7 @@ export class Viaje {
     this._fechaSolicitud = props.fechaSolicitud ?? new Date();
     this._fechaInicio = props.fechaInicio ?? null;
     this._fechaFin = props.fechaFin ?? null;
+    this._conductoresRechazados = props.conductoresRechazados ?? [];
 
     this.validar();
   }
@@ -58,10 +62,11 @@ export class Viaje {
   get fechaSolicitud(): Date { return this._fechaSolicitud; }
   get fechaInicio(): Date | null { return this._fechaInicio; }
   get fechaFin(): Date | null { return this._fechaFin; }
+  get conductoresRechazados(): string[] { return this._conductoresRechazados; }
 
   asignarConductor(conductorId: string): void {
     if (this._estado !== EstadosViaje.SOLICITADO && this._estado !== EstadosViaje.BUSCANDO) {
-      throw new Error('El viaje no está disponible para asignación.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_DISPONIBLE_ASIGNACION);
     }
     this._conductorId = conductorId;
     this._estado = EstadosViaje.ASIGNADO;
@@ -69,14 +74,14 @@ export class Viaje {
 
   marcarLlegada(): void {
     if (this._estado !== EstadosViaje.ASIGNADO && this._estado !== EstadosViaje.EN_CAMINO) {
-      throw new Error('El viaje debe estar asignado o en camino para marcar llegada.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.SOLO_ASIGNADO_CAMINO_LLEGADA);
     }
     this._estado = EstadosViaje.LLEGO;
   }
 
   iniciarViaje(): void {
     if (this._estado !== EstadosViaje.EN_CAMINO && this._estado !== EstadosViaje.LLEGO && this._estado !== EstadosViaje.ASIGNADO) {
-      throw new Error('El conductor debe estar asignado, en camino o haber llegado para iniciar el viaje.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.SOLO_INICIO_VALIDO);
     }
     this._estado = EstadosViaje.EN_CURSO;
     this._fechaInicio = new Date();
@@ -84,7 +89,7 @@ export class Viaje {
 
   completarViaje(): void {
     if (this._estado !== EstadosViaje.EN_CURSO) {
-      throw new Error('El viaje debe estar en curso para ser completado.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.SOLO_CURSO_COMPLETAR);
     }
     this._estado = EstadosViaje.COMPLETADO;
     this._fechaFin = new Date();
@@ -92,7 +97,7 @@ export class Viaje {
 
   cancelar(actor: Roles, motivo?: string): void {
     if (this._estado === EstadosViaje.COMPLETADO || this._estado === EstadosViaje.CANCELADO) {
-      throw new Error('El viaje no puede ser cancelado en su estado actual.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_CANCELABLE);
     }
     this._estado = EstadosViaje.CANCELADO;
     this._canceladoPor = actor;
@@ -100,8 +105,22 @@ export class Viaje {
     this._fechaFin = new Date();
   }
 
+  rechazar(conductorId: string): void {
+    if (this._estado !== EstadosViaje.SOLICITADO) {
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.SOLO_RECHAZABLE_SOLICITADO);
+    }
+    if (!this._conductoresRechazados.includes(conductorId)) {
+      this._conductoresRechazados.push(conductorId);
+    }
+  }
+
+  private calcularTarifaEstimada(): void {
+    if (!this._pasajeroId) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.PASAJERO_ID_OBLIGATORIO);
+    if (this._tarifaEstimada < 0) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.TARIFA_NEGATIVA);
+  }
+
   private validar(): void {
-    if (!this._pasajeroId) throw new Error('El ID del pasajero es obligatorio.');
-    if (this._tarifaEstimada < 0) throw new Error('La tarifa no puede ser negativa.');
+    if (!this._pasajeroId) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.PASAJERO_ID_OBLIGATORIO);
+    if (this._tarifaEstimada < 0) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.TARIFA_NEGATIVA);
   }
 }

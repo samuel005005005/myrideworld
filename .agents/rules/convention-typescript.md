@@ -47,6 +47,8 @@ Define la estructura obligatoria para proyectos JS/TS (Node.js backend, Angular,
 │   ├── 📁 persistence/
 │   │   ├── 📁 entities/                   # Entidades ORM (TypeORM/Prisma)
 │   │   │   └── usuario.orm-entity.ts
+│   │   ├── 📁 mappers/                    # Mapeadores ORM <-> Dominio
+│   │   │   └── usuario.orm-mapper.ts
 │   │   ├── 📁 repositories/
 │   │   │   └── usuario.repository.impl.ts
 │   │   ├── 📁 migrations/
@@ -263,6 +265,36 @@ export const crearUsuarioSchema = z.object({
 export type CrearUsuarioDto = z.infer<typeof crearUsuarioSchema>;
 ```
 
+### Infraestructura - Persistencia (Mappers)
+
+```typescript
+// infrastructure/persistence/mappers/usuario.orm-mapper.ts
+
+import { Usuario } from '../../../domain/entities/usuario.entity';
+import { UsuarioOrmEntity } from '../entities/usuario.orm-entity';
+
+export class UsuarioOrmMapper {
+  static toDomain(entity: UsuarioOrmEntity): Usuario {
+    return Usuario.crear({
+      id: entity.id,
+      nombre: entity.nombre,
+      email: entity.email,
+      estado: entity.estado,
+      fechaCreacion: entity.fechaCreacion,
+    });
+  }
+
+  static toOrm(usuario: Usuario): Partial<UsuarioOrmEntity> {
+    return {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      estado: usuario.estado,
+    };
+  }
+}
+```
+
 ### Infraestructura - Repositorio
 
 ```typescript
@@ -275,6 +307,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IUsuarioRepository } from '../../../domain/repositories/usuario.repository';
 import { Usuario } from '../../../domain/entities/usuario.entity';
 import { UsuarioOrmEntity } from '../entities/usuario.orm-entity';
+import { UsuarioOrmMapper } from '../mappers/usuario.orm-mapper';
 
 @Injectable()
 export class UsuarioRepositoryImpl implements IUsuarioRepository {
@@ -285,36 +318,17 @@ export class UsuarioRepositoryImpl implements IUsuarioRepository {
 
   async obtenerPorId(id: string): Promise<Usuario | null> {
     const entity = await this.ormRepo.findOne({ where: { id } });
-    return entity ? this.toDomain(entity) : null;
+    return entity ? UsuarioOrmMapper.toDomain(entity) : null;
   }
 
   async guardar(usuario: Usuario): Promise<Usuario> {
-    const entity = this.toOrm(usuario);
+    const entity = UsuarioOrmMapper.toOrm(usuario);
     const saved = await this.ormRepo.save(entity);
-    return this.toDomain(saved);
+    return UsuarioOrmMapper.toDomain(saved);
   }
 
   async existeEmail(email: string): Promise<boolean> {
     return await this.ormRepo.exists({ where: { email } });
-  }
-
-  private toDomain(entity: UsuarioOrmEntity): Usuario {
-    return Usuario.crear({
-      id: entity.id,
-      nombre: entity.nombre,
-      email: entity.email,
-      estado: entity.estado,
-      fechaCreacion: entity.fechaCreacion,
-    });
-  }
-
-  private toOrm(usuario: Usuario): Partial<UsuarioOrmEntity> {
-    return {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      email: usuario.email,
-      estado: usuario.estado,
-    };
   }
 
   // ... demás métodos
@@ -416,6 +430,7 @@ export class UsuariosController {
 10. **Error handling** con clases de error tipadas. No lanzar strings ni Error genérico.
 11. **Barrel exports** (`index.ts`) por módulo para imports limpios, pero no en la raíz del proyecto.
 12. **Prohibido `Record<…>`**. Ver sección siguiente.
+13. **Mappers ORM separados**. La lógica de transformación entre entidades ORM y Dominio (`toDomain`, `toOrm`) debe estar en clases estáticas exclusivas dentro de `infrastructure/persistence/mappers/` y NO como métodos privados dentro del Repositorio.
 
 ---
 

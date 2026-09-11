@@ -8,5 +8,6 @@ export interface IViajeRepository {
         pasajeroId?: string;
         conductorId?: string;
     }): Promise<Viaje[]>;
+    obtenerViajesVencidos(minutos: number): Promise<Viaje[]>;
 }
 export declare const VIAJE_REPOSITORY: unique symbol;

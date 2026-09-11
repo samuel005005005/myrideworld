@@ -13,8 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PagoBalance } from '../../../dominio/entidades/pago-balance.entity.js';
 import { PagoBalanceOrmEntity } from '../entidades/pago-balance.orm-entity.js';
+import { PagoBalanceOrmMapper } from '../mappers/pago-balance.orm-mapper.js';
 let PagoBalanceRepositoryImpl = class PagoBalanceRepositoryImpl {
     ormRepo;
     constructor(ormRepo) {
@@ -22,43 +22,20 @@ let PagoBalanceRepositoryImpl = class PagoBalanceRepositoryImpl {
     }
     async obtenerPorId(id) {
         const entity = await this.ormRepo.findOne({ where: { id } });
-        return entity ? this.toDomain(entity) : null;
+        return entity ? PagoBalanceOrmMapper.toDomain(entity) : null;
     }
     async obtenerPorViaje(viajeId) {
         const entity = await this.ormRepo.findOne({ where: { viajeId } });
-        return entity ? this.toDomain(entity) : null;
+        return entity ? PagoBalanceOrmMapper.toDomain(entity) : null;
     }
     async obtenerPorConductor(conductorId) {
         const entities = await this.ormRepo.find({ where: { conductorId } });
-        return entities.map(e => this.toDomain(e));
+        return entities.map(e => PagoBalanceOrmMapper.toDomain(e));
     }
     async guardar(pago) {
-        const entity = this.toOrm(pago);
+        const entity = PagoBalanceOrmMapper.toOrm(pago);
         const saved = await this.ormRepo.save(entity);
-        return this.toDomain(saved);
-    }
-    toDomain(entity) {
-        return PagoBalance.crear({
-            id: entity.id,
-            viajeId: entity.viajeId,
-            conductorId: entity.conductorId,
-            montoBruto: Number(entity.montoBruto),
-            feeProcesamiento: Number(entity.feeProcesamiento),
-            montoNeto: Number(entity.montoNeto),
-            metodo: entity.metodo,
-            fecha: entity.fecha,
-        });
-    }
-    toOrm(pago) {
-        return {
-            id: pago.id,
-            viajeId: pago.viajeId,
-            conductorId: pago.conductorId,
-            montoBruto: pago.montoBruto,
-            feeProcesamiento: pago.feeProcesamiento,
-            montoNeto: pago.montoNeto,
-            metodo: pago.metodo,
-        };
+        return PagoBalanceOrmMapper.toDomain(saved);
     }
 };
 PagoBalanceRepositoryImpl = __decorate([

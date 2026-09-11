@@ -13,6 +13,4 @@ export declare class ConductorRepositoryImpl implements IConductorRepository {
     listar(filtros?: {
         estadoAprobacion?: EstadosConductor;
     }): Promise<Conductor[]>;
-    private toDomain;
-    private toOrm;
 }

@@ -11,6 +11,8 @@ export declare class Conductor {
     private _vehiculoModelo;
     private _vehiculoColor;
     private _vehiculoPlaca;
+    private _licenciaUrl;
+    private _seguroUrl;
     private _estadoAprobacion;
     private _estadoDisponibilidad;
     private _ultimaUbicacionLat;
@@ -27,10 +29,25 @@ export declare class Conductor {
     get vehiculoModelo(): string;
     get vehiculoColor(): string;
     get vehiculoPlaca(): string;
+    get licenciaUrl(): string | null;
+    get seguroUrl(): string | null;
     get estadoAprobacion(): EstadosConductor;
     get estadoDisponibilidad(): EstadosDisponibilidadConductor;
     get ultimaUbicacionLat(): number | null;
     get ultimaUbicacionLng(): number | null;
     aprobar(): void;
+    actualizarDocumentos(rutas: {
+        fotoPerfil?: string;
+        licencia?: string;
+        seguro?: string;
+    }): void;
+    actualizarPerfil(datos: {
+        nombreCompleto?: string;
+        telefono?: string;
+        vehiculoMarca?: string;
+        vehiculoModelo?: string;
+        vehiculoColor?: string;
+        vehiculoPlaca?: string;
+    }): void;
     private validar;
 }

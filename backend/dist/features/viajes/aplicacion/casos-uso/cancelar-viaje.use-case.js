@@ -13,7 +13,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let CancelarViajeUseCase = class CancelarViajeUseCase {
     viajeRepository;
     viajesGateway;
@@ -24,13 +26,13 @@ let CancelarViajeUseCase = class CancelarViajeUseCase {
     async ejecutar(viajeId, actorId, rol, motivo) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
         if (!viaje) {
-            throw new NotFoundException('Viaje no encontrado');
+            throw new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         if (rol === Roles.PASAJERO && viaje.pasajeroId !== actorId) {
-            throw new Error('No puedes cancelar un viaje que no solicitaste.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.CANCELACION_NO_SOLICITADO);
         }
         if (rol === Roles.CONDUCTOR && viaje.conductorId !== actorId) {
-            throw new Error('No puedes cancelar un viaje que no tienes asignado.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.CANCELACION_NO_ASIGNADO);
         }
         viaje.cancelar(rol, motivo);
         const guardado = await this.viajeRepository.guardar(viaje);

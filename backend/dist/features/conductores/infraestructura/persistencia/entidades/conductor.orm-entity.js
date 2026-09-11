@@ -8,6 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
 let ConductorOrmEntity = class ConductorOrmEntity {
     id;
     nombreCompleto;
@@ -19,6 +20,8 @@ let ConductorOrmEntity = class ConductorOrmEntity {
     vehiculoModelo;
     vehiculoColor;
     vehiculoPlaca;
+    licenciaUrl;
+    seguroUrl;
     estadoAprobacion;
     estadoDisponibilidad;
     ultimaUbicacionLat;
@@ -65,11 +68,19 @@ __decorate([
     __metadata("design:type", String)
 ], ConductorOrmEntity.prototype, "vehiculoPlaca", void 0);
 __decorate([
-    Column({ type: 'varchar', default: 'Pendiente' }),
+    Column({ name: 'licencia_url', type: 'varchar', nullable: true }),
+    __metadata("design:type", String)
+], ConductorOrmEntity.prototype, "licenciaUrl", void 0);
+__decorate([
+    Column({ name: 'seguro_url', type: 'varchar', nullable: true }),
+    __metadata("design:type", String)
+], ConductorOrmEntity.prototype, "seguroUrl", void 0);
+__decorate([
+    Column({ type: 'varchar', default: EstadosConductor.PENDIENTE }),
     __metadata("design:type", String)
 ], ConductorOrmEntity.prototype, "estadoAprobacion", void 0);
 __decorate([
-    Column({ type: 'varchar', default: 'Desconectado' }),
+    Column({ type: 'varchar', default: EstadosDisponibilidadConductor.DESCONECTADO }),
     __metadata("design:type", String)
 ], ConductorOrmEntity.prototype, "estadoDisponibilidad", void 0);
 __decorate([

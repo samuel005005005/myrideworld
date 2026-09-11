@@ -1,4 +1,6 @@
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { ConfiguracionProps } from './configuracion.props.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 
 export class Configuracion {
   private readonly _id: string;
@@ -28,13 +30,13 @@ export class Configuracion {
   get actualizadoEn(): Date { return this._actualizadoEn; }
 
   actualizarValor(nuevoValor: string): void {
-    if (!nuevoValor) throw new Error('El valor no puede estar vacío.');
+    if (!nuevoValor) throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.VALOR_VACIO);
     this._valor = nuevoValor;
     this._actualizadoEn = new Date();
   }
 
   private validar(): void {
-    if (!this._clave) throw new Error('La clave es obligatoria.');
-    if (!this._valor) throw new Error('El valor es obligatorio.');
+    if (!this._clave) throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_OBLIGATORIA);
+    if (!this._valor) throw new DomainException(MENSAJES.EXCEPCIONES.CONFIGURACION.VALOR_OBLIGATORIO);
   }
 }

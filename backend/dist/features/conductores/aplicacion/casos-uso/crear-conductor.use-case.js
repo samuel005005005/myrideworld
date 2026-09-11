@@ -13,6 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Inject, Injectable } from '@nestjs/common';
 import { CONDUCTOR_REPOSITORY } from '../../dominio/repositorios/conductor.repository.js';
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import * as bcrypt from 'bcrypt';
 let CrearConductorUseCase = class CrearConductorUseCase {
     conductorRepository;
@@ -20,9 +22,9 @@ let CrearConductorUseCase = class CrearConductorUseCase {
         this.conductorRepository = conductorRepository;
     }
     async ejecutar(dto) {
-        const existeEmail = await this.conductorRepository.obtenerPorEmail(dto.email);
-        if (existeEmail) {
-            throw new Error('El email ya está registrado.');
+        const conductorExistente = await this.conductorRepository.obtenerPorEmail(dto.email);
+        if (conductorExistente) {
+            throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO);
         }
         const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);
         const conductor = Conductor.crear({

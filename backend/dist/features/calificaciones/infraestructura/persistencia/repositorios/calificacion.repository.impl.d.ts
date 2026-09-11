@@ -7,6 +7,4 @@ export declare class CalificacionRepositoryImpl implements ICalificacionReposito
     constructor(ormRepo: Repository<CalificacionOrmEntity>);
     guardar(calificacion: Calificacion): Promise<Calificacion>;
     existeCalificacion(viajeId: string): Promise<boolean>;
-    private toDomain;
-    private toOrm;
 }

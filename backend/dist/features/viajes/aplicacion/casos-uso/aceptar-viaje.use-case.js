@@ -13,6 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let AceptarViajeUseCase = class AceptarViajeUseCase {
     viajeRepository;
     viajesGateway;
@@ -23,7 +25,7 @@ let AceptarViajeUseCase = class AceptarViajeUseCase {
     async ejecutar(viajeId, dto) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
         if (!viaje) {
-            throw new Error('Viaje no encontrado.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         viaje.asignarConductor(dto.conductorId);
         const guardado = await this.viajeRepository.guardar(viaje);

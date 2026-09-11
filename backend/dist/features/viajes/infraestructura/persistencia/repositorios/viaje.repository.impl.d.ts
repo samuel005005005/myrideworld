@@ -13,6 +13,5 @@ export declare class ViajeRepositoryImpl implements IViajeRepository {
         pasajeroId?: string;
         conductorId?: string;
     }): Promise<Viaje[]>;
-    private toDomain;
-    private toOrm;
+    obtenerViajesVencidos(minutos: number): Promise<Viaje[]>;
 }

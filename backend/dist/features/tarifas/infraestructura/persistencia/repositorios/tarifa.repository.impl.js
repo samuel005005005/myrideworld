@@ -13,8 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Tarifa } from '../../../dominio/entidades/tarifa.entity.js';
 import { TarifaOrmEntity } from '../entidades/tarifa.orm-entity.js';
+import { TarifaOrmMapper } from '../mappers/tarifa.orm-mapper.js';
 import { EstadosTarifa } from '../../../../../compartidos/constantes/estados-tarifa.enum.js';
 let TarifaRepositoryImpl = class TarifaRepositoryImpl {
     ormRepo;
@@ -23,37 +23,19 @@ let TarifaRepositoryImpl = class TarifaRepositoryImpl {
     }
     async obtenerPorId(id) {
         const entity = await this.ormRepo.findOne({ where: { id } });
-        return entity ? this.toDomain(entity) : null;
+        return entity ? TarifaOrmMapper.toDomain(entity) : null;
     }
     async obtenerTarifaActiva(origen, destino) {
         const entity = await this.ormRepo.findOne({
             where: { origen, destino, estado: EstadosTarifa.ACTIVO },
             order: { id: 'DESC' },
         });
-        return entity ? this.toDomain(entity) : null;
+        return entity ? TarifaOrmMapper.toDomain(entity) : null;
     }
     async guardar(tarifa) {
-        const entity = this.toOrm(tarifa);
+        const entity = TarifaOrmMapper.toOrm(tarifa);
         const saved = await this.ormRepo.save(entity);
-        return this.toDomain(saved);
-    }
-    toDomain(entity) {
-        return Tarifa.crear({
-            id: entity.id,
-            origen: entity.origen,
-            destino: entity.destino,
-            precio: Number(entity.precio),
-            estado: entity.estado,
-        });
-    }
-    toOrm(tarifa) {
-        return {
-            id: tarifa.id,
-            origen: tarifa.origen,
-            destino: tarifa.destino,
-            precio: tarifa.precio,
-            estado: tarifa.estado,
-        };
+        return TarifaOrmMapper.toDomain(saved);
     }
 };
 TarifaRepositoryImpl = __decorate([

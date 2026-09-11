@@ -1,4 +1,6 @@
 import { PagoBalanceProps } from './pago-balance.props.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 
 export class PagoBalance {
   private readonly _id: string;
@@ -37,8 +39,8 @@ export class PagoBalance {
   get fecha(): Date { return this._fecha; }
 
   private validar(): void {
-    if (!this._viajeId) throw new Error('El ID del viaje es obligatorio.');
-    if (!this._conductorId) throw new Error('El ID del conductor es obligatorio.');
-    if (this._montoNeto < 0) throw new Error('El monto neto no puede ser negativo.');
+    if (!this._viajeId) throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.VIAJE_ID_OBLIGATORIO);
+    if (!this._conductorId) throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.CONDUCTOR_ID_OBLIGATORIO);
+    if (this._montoNeto < 0) throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.MONTO_NETO_NEGATIVO);
   }
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export declare const crearConductorSchema: z.ZodObject<{
     nombreCompleto: z.ZodString;
-    email: z.ZodString;
+    email: z.ZodEmail;
     telefono: z.ZodString;
     vehiculoMarca: z.ZodString;
     vehiculoModelo: z.ZodString;

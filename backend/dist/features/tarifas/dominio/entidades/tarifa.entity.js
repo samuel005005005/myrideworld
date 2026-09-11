@@ -1,4 +1,6 @@
 import { EstadosTarifa } from '../../../../compartidos/constantes/estados-tarifa.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 export class Tarifa {
     _id;
     _origen;
@@ -23,9 +25,9 @@ export class Tarifa {
     get estado() { return this._estado; }
     validar() {
         if (this._precio <= 0)
-            throw new Error('El precio debe ser mayor a cero.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.PRECIO_MAYOR_CERO);
         if (!this._origen || !this._destino)
-            throw new Error('Origen y destino son obligatorios.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.ORIGEN_DESTINO_OBLIGATORIOS);
     }
 }
 //# sourceMappingURL=tarifa.entity.js.map

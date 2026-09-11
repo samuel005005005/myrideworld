@@ -1,23 +1,43 @@
 import { z } from 'zod';
+import { ApiProperty } from '@nestjs/swagger';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+
+const V = MENSAJES.VALIDACION;
+const S = MENSAJES.SWAGGER;
 
 export const crearConductorSchema = z.object({
-  nombreCompleto: z.string().min(1, 'El nombre es obligatorio').max(100),
-  email: z.string().email('El email no es válido'),
-  telefono: z.string().min(8, 'El teléfono debe tener al menos 8 caracteres'),
-  vehiculoMarca: z.string().min(1, 'La marca es obligatoria'),
-  vehiculoModelo: z.string().min(1, 'El modelo es obligatorio'),
-  vehiculoColor: z.string().min(1, 'El color es obligatorio'),
-  vehiculoPlaca: z.string().min(1, 'La placa es obligatoria'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  nombreCompleto: z.string().min(1, V.COMUNES.NOMBRE_OBLIGATORIO).max(100),
+  email: z.email({ error: V.COMUNES.EMAIL_INVALIDO }),
+  telefono: z.string().min(8, V.COMUNES.TELEFONO_MIN),
+  vehiculoMarca: z.string().min(1, V.CONDUCTORES.MARCA_OBLIGATORIA),
+  vehiculoModelo: z.string().min(1, V.CONDUCTORES.MODELO_OBLIGATORIO),
+  vehiculoColor: z.string().min(1, V.CONDUCTORES.COLOR_OBLIGATORIO),
+  vehiculoPlaca: z.string().min(1, V.CONDUCTORES.PLACA_OBLIGATORIA),
+  password: z.string().min(6, V.COMUNES.PASSWORD_MIN),
 });
 
 export class CrearConductorDto {
+  @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_NOMBRE, description: S.CONDUCTORES.DESC_NOMBRE })
   nombreCompleto: string;
+
+  @ApiProperty({ example: S.COMUNES.EJEMPLO_EMAIL, description: S.COMUNES.DESC_EMAIL })
   email: string;
+
+  @ApiProperty({ example: S.COMUNES.EJEMPLO_TELEFONO, description: S.COMUNES.DESC_TELEFONO })
   telefono: string;
+
+  @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_MARCA })
   vehiculoMarca: string;
+
+  @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_MODELO })
   vehiculoModelo: string;
+
+  @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_COLOR })
   vehiculoColor: string;
+
+  @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_PLACA })
   vehiculoPlaca: string;
-  password?: string; // Lo ponemos opcional en Typescript para no romper tests viejos, pero Zod lo forzará
+
+  @ApiProperty({ example: S.COMUNES.EJEMPLO_PASSWORD, description: S.COMUNES.DESC_PASSWORD, required: false })
+  password?: string;
 }

@@ -1,5 +1,7 @@
 import { PasajeroProps } from './pasajero.props.js';
 import { EstadosPasajero } from '../../../../compartidos/constantes/estados-pasajero.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 export class Pasajero {
   private readonly _id: string;
@@ -34,12 +36,18 @@ export class Pasajero {
   get passwordHash(): string { return this._passwordHash; }
   get fechaRegistro(): Date { return this._fechaRegistro; }
 
+  actualizarPerfil(datos: { nombreCompleto?: string; telefono?: string }): void {
+    if (datos.nombreCompleto) this._nombreCompleto = datos.nombreCompleto;
+    if (datos.telefono) this._telefono = datos.telefono;
+    this.validar();
+  }
+
   private validar(): void {
     if (!this._nombreCompleto?.trim()) {
-      throw new Error('El nombre es obligatorio.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.NOMBRE_OBLIGATORIO);
     }
     if (!this._email?.includes('@')) {
-      throw new Error('El email no es válido.');
+      throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.EMAIL_INVALIDO);
     }
   }
 }

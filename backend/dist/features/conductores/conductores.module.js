@@ -13,6 +13,9 @@ import { CrearConductorUseCase } from './aplicacion/casos-uso/crear-conductor.us
 import { ConductoresController } from './presentacion/controladores/conductores.controller.js';
 import { AprobarConductorUseCase } from './aplicacion/casos-uso/aprobar-conductor.use-case.js';
 import { ListarConductoresUseCase } from './aplicacion/casos-uso/listar-conductores.use-case.js';
+import { SubirDocumentosUseCase } from './aplicacion/casos-uso/subir-documentos.use-case.js';
+import { ObtenerConductorUseCase } from './aplicacion/casos-uso/obtener-conductor.use-case.js';
+import { ActualizarConductorUseCase } from './aplicacion/casos-uso/actualizar-conductor.use-case.js';
 let ConductoresModule = class ConductoresModule {
 };
 ConductoresModule = __decorate([
@@ -27,8 +30,11 @@ ConductoresModule = __decorate([
             CrearConductorUseCase,
             AprobarConductorUseCase,
             ListarConductoresUseCase,
+            SubirDocumentosUseCase,
+            ObtenerConductorUseCase,
+            ActualizarConductorUseCase,
         ],
-        exports: [CONDUCTOR_REPOSITORY, CrearConductorUseCase],
+        exports: [CONDUCTOR_REPOSITORY, CrearConductorUseCase, SubirDocumentosUseCase, ObtenerConductorUseCase, ActualizarConductorUseCase],
     })
 ], ConductoresModule);
 export { ConductoresModule };

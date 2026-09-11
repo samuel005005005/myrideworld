@@ -6,6 +6,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 var GlobalExceptionFilter_1;
 import { Catch, HttpException, HttpStatus, Logger, } from '@nestjs/common';
+import { DomainException } from '../excepciones/domain.exception.js';
 let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilter {
     logger = new Logger(GlobalExceptionFilter_1.name);
     catch(exception, host) {
@@ -19,9 +20,13 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
             const res = exception.getResponse();
             message = typeof res === 'string' ? res : res.message || res;
         }
-        else if (exception instanceof Error) {
+        else if (exception instanceof DomainException) {
             status = HttpStatus.BAD_REQUEST;
             message = exception.message;
+        }
+        else if (exception instanceof Error) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            message = 'Ha ocurrido un error interno';
         }
         this.logger.error(`[${request.method}] ${request.url} - Status: ${status} - Msg: ${JSON.stringify(message)}`, exception instanceof Error ? exception.stack : '');
         response.status(status).json({

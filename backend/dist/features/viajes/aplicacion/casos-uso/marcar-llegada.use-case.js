@@ -13,6 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let MarcarLlegadaUseCase = class MarcarLlegadaUseCase {
     viajeRepository;
     viajesGateway;
@@ -23,10 +25,10 @@ let MarcarLlegadaUseCase = class MarcarLlegadaUseCase {
     async ejecutar(viajeId, conductorId) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
         if (!viaje) {
-            throw new NotFoundException('Viaje no encontrado');
+            throw new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         if (viaje.conductorId !== conductorId) {
-            throw new Error('Solo el conductor asignado puede marcar la llegada.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.LLEGADA_SOLO_CONDUCTOR);
         }
         viaje.marcarLlegada();
         const guardado = await this.viajeRepository.guardar(viaje);

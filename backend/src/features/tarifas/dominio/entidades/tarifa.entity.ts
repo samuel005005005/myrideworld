@@ -1,5 +1,7 @@
 import { TarifaProps } from './tarifa.props.js';
 import { EstadosTarifa } from '../../../../compartidos/constantes/estados-tarifa.enum.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 export class Tarifa {
   private readonly _id: string;
@@ -29,7 +31,7 @@ export class Tarifa {
   get estado(): EstadosTarifa { return this._estado; }
 
   private validar(): void {
-    if (this._precio <= 0) throw new Error('El precio debe ser mayor a cero.');
-    if (!this._origen || !this._destino) throw new Error('Origen y destino son obligatorios.');
+    if (this._precio <= 0) throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.PRECIO_MAYOR_CERO);
+    if (!this._origen || !this._destino) throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.ORIGEN_DESTINO_OBLIGATORIOS);
   }
 }

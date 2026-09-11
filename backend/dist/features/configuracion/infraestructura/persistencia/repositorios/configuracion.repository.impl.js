@@ -15,6 +15,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Configuracion } from '../../../dominio/entidades/configuracion.entity.js';
 import { ConfiguracionOrmEntity } from '../entidades/configuracion.orm-entity.js';
+import { ConfiguracionOrmMapper } from '../mappers/configuracion.orm-mapper.js';
+import { MENSAJES } from '../../../../../compartidos/constantes/mensajes.const.js';
 let ConfiguracionRepositoryImpl = class ConfiguracionRepositoryImpl {
     ormRepo;
     constructor(ormRepo) {
@@ -28,33 +30,15 @@ let ConfiguracionRepositoryImpl = class ConfiguracionRepositoryImpl {
         const nuevaConfig = Configuracion.crear({
             clave,
             valor: defaultValue,
-            descripcion: `Valor por defecto auto-generado para ${clave}`,
+            descripcion: MENSAJES.INFRAESTRUCTURA.CONFIGURACION.VALOR_POR_DEFECTO(clave),
         });
         await this.guardar(nuevaConfig);
         return defaultValue;
     }
     async guardar(configuracion) {
-        const entity = this.toOrm(configuracion);
+        const entity = ConfiguracionOrmMapper.toOrm(configuracion);
         const saved = await this.ormRepo.save(entity);
-        return this.toDomain(saved);
-    }
-    toDomain(entity) {
-        return Configuracion.crear({
-            id: entity.id,
-            clave: entity.clave,
-            valor: entity.valor,
-            descripcion: entity.descripcion,
-            actualizadoEn: entity.actualizadoEn,
-        });
-    }
-    toOrm(domain) {
-        return {
-            id: domain.id,
-            clave: domain.clave,
-            valor: domain.valor,
-            descripcion: domain.descripcion,
-            actualizadoEn: domain.actualizadoEn,
-        };
+        return ConfiguracionOrmMapper.toDomain(saved);
     }
 };
 ConfiguracionRepositoryImpl = __decorate([

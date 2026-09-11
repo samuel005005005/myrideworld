@@ -1,27 +1,31 @@
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+
+const V = MENSAJES.VALIDACION.VIAJES;
+const S = MENSAJES.SWAGGER.VIAJES;
 
 export const solicitarViajeSchema = z.object({
-  pasajeroId: z.string().uuid(),
-  origenLat: z.number().min(-90).max(90),
-  origenLng: z.number().min(-180).max(180),
-  destinoLat: z.number().min(-90).max(90),
-  destinoLng: z.number().min(-180).max(180),
+  pasajeroId: z.string().uuid(V.PASAJERO_ID_UUID),
+  origenLat: z.number().min(-90, V.LATITUD_INVALIDA).max(90, V.LATITUD_INVALIDA),
+  origenLng: z.number().min(-180, V.LONGITUD_INVALIDA).max(180, V.LONGITUD_INVALIDA),
+  destinoLat: z.number().min(-90, V.LATITUD_INVALIDA).max(90, V.LATITUD_INVALIDA),
+  destinoLng: z.number().min(-180, V.LONGITUD_INVALIDA).max(180, V.LONGITUD_INVALIDA),
 });
 
 export class SolicitarViajeDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID, description: S.DESC_PASAJERO_ID })
   pasajeroId: string;
 
-  @ApiProperty({ example: -34.6037, description: 'Latitud de origen' })
+  @ApiProperty({ example: S.EJEMPLO_LATITUD_ORIGEN, description: S.DESC_LATITUD_ORIGEN })
   origenLat: number;
 
-  @ApiProperty({ example: -58.3816, description: 'Longitud de origen' })
+  @ApiProperty({ example: S.EJEMPLO_LONGITUD_ORIGEN, description: S.DESC_LONGITUD_ORIGEN })
   origenLng: number;
 
-  @ApiProperty({ example: -34.5837, description: 'Latitud de destino' })
+  @ApiProperty({ example: S.EJEMPLO_LATITUD_DESTINO, description: S.DESC_LATITUD_DESTINO })
   destinoLat: number;
 
-  @ApiProperty({ example: -58.4016, description: 'Longitud de destino' })
+  @ApiProperty({ example: S.EJEMPLO_LONGITUD_DESTINO, description: S.DESC_LONGITUD_DESTINO })
   destinoLng: number;
 }

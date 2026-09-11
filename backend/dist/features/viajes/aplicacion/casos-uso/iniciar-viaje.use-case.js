@@ -12,15 +12,17 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let IniciarViajeUseCase = class IniciarViajeUseCase {
     viajeRepository;
     constructor(viajeRepository) {
         this.viajeRepository = viajeRepository;
     }
-    async ejecutar(viajeId) {
-        const viaje = await this.viajeRepository.obtenerPorId(viajeId);
+    async ejecutar(id) {
+        const viaje = await this.viajeRepository.obtenerPorId(id);
         if (!viaje) {
-            throw new Error('Viaje no encontrado.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         viaje.iniciarViaje();
         return await this.viajeRepository.guardar(viaje);

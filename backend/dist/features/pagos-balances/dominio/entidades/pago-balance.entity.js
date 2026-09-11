@@ -1,3 +1,5 @@
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 export class PagoBalance {
     _id;
     _viajeId;
@@ -31,11 +33,11 @@ export class PagoBalance {
     get fecha() { return this._fecha; }
     validar() {
         if (!this._viajeId)
-            throw new Error('El ID del viaje es obligatorio.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.VIAJE_ID_OBLIGATORIO);
         if (!this._conductorId)
-            throw new Error('El ID del conductor es obligatorio.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.CONDUCTOR_ID_OBLIGATORIO);
         if (this._montoNeto < 0)
-            throw new Error('El monto neto no puede ser negativo.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.PAGOS_BALANCES.MONTO_NETO_NEGATIVO);
     }
 }
 //# sourceMappingURL=pago-balance.entity.js.map

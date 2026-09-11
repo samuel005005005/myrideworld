@@ -1,3 +1,5 @@
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 export class Calificacion {
     _id;
     _viajeId;
@@ -28,7 +30,7 @@ export class Calificacion {
     get fecha() { return this._fecha; }
     validar() {
         if (this._puntuacion < 1 || this._puntuacion > 5) {
-            throw new Error('La puntuación debe estar entre 1 y 5.');
+            throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.RANGO_PUNTUACION);
         }
     }
 }

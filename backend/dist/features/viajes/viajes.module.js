@@ -13,12 +13,17 @@ import { SolicitarViajeUseCase } from './aplicacion/casos-uso/solicitar-viaje.us
 import { AceptarViajeUseCase } from './aplicacion/casos-uso/aceptar-viaje.use-case.js';
 import { MarcarLlegadaUseCase } from './aplicacion/casos-uso/marcar-llegada.use-case.js';
 import { IniciarViajeUseCase } from './aplicacion/casos-uso/iniciar-viaje.use-case.js';
+import { BitacoraModule } from '../bitacora/bitacora.module.js';
 import { CompletarViajeUseCase } from './aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from './aplicacion/casos-uso/cancelar-viaje.use-case.js';
+import { ListarViajesUseCase } from './aplicacion/casos-uso/listar-viajes.use-case.js';
+import { RechazarViajeUseCase } from './aplicacion/casos-uso/rechazar-viaje.use-case.js';
 import { ViajesController } from './presentacion/controladores/viajes.controller.js';
 import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';
 import { ViajesGateway } from './presentacion/gateways/viajes.gateway.js';
+import { ConductoresModule } from '../conductores/conductores.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 let ViajesModule = class ViajesModule {
 };
 ViajesModule = __decorate([
@@ -27,6 +32,9 @@ ViajesModule = __decorate([
             TypeOrmModule.forFeature([ViajeOrmEntity]),
             TarifasModule,
             PagosBalancesModule,
+            ConductoresModule,
+            BitacoraModule,
+            AuthModule,
         ],
         controllers: [ViajesController],
         providers: [
@@ -40,6 +48,8 @@ ViajesModule = __decorate([
             IniciarViajeUseCase,
             CompletarViajeUseCase,
             CancelarViajeUseCase,
+            ListarViajesUseCase,
+            RechazarViajeUseCase,
             ViajesGateway,
         ],
         exports: [

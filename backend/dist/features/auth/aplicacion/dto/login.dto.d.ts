@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 export declare const loginSchema: z.ZodObject<{
-    email: z.ZodString;
+    email: z.ZodEmail;
     password: z.ZodString;
     rol: z.ZodEnum<{
         PASAJERO: Roles.PASAJERO;

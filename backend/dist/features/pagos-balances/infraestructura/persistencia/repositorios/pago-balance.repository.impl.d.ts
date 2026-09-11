@@ -9,6 +9,4 @@ export declare class PagoBalanceRepositoryImpl implements IPagoBalanceRepository
     obtenerPorViaje(viajeId: string): Promise<PagoBalance | null>;
     obtenerPorConductor(conductorId: string): Promise<PagoBalance[]>;
     guardar(pago: PagoBalance): Promise<PagoBalance>;
-    private toDomain;
-    private toOrm;
 }

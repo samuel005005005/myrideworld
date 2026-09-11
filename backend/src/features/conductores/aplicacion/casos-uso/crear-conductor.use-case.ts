@@ -3,6 +3,8 @@ import type { IConductorRepository } from '../../dominio/repositorios/conductor.
 import { CONDUCTOR_REPOSITORY } from '../../dominio/repositorios/conductor.repository.js';
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
 import { CrearConductorDto } from '../dto/crear-conductor.dto.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -13,9 +15,9 @@ export class CrearConductorUseCase {
   ) {}
 
   async ejecutar(dto: CrearConductorDto): Promise<Conductor> {
-    const existeEmail = await this.conductorRepository.obtenerPorEmail(dto.email);
-    if (existeEmail) {
-      throw new Error('El email ya está registrado.');
+    const conductorExistente = await this.conductorRepository.obtenerPorEmail(dto.email);
+    if (conductorExistente) {
+      throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO);
     }
 
     const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);

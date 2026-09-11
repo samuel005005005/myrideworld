@@ -17,5 +17,6 @@ export declare class ViajeOrmEntity {
     motivoCancelacion: string;
     fechaSolicitud: Date;
     fechaInicio: Date;
-    fechaFin: Date;
+    fechaFin: Date | null;
+    conductoresRechazados: string[];
 }
