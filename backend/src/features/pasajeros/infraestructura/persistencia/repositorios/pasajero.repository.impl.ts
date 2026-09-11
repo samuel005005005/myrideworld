@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IPasajeroRepository } from '../../../dominio/repositorios/pasajero.repository.js';
 import { Pasajero } from '../../../dominio/entidades/pasajero.entity.js';
 import { PasajeroOrmEntity } from '../entidades/pasajero.orm-entity.js';
+import { EstadosPasajero } from '../../../../../compartidos/constantes/estados-pasajero.enum.js';
 
 @Injectable()
 export class PasajeroRepositoryImpl implements IPasajeroRepository {
@@ -36,7 +37,7 @@ export class PasajeroRepositoryImpl implements IPasajeroRepository {
       telefono: entity.telefono,
       passwordHash: entity.passwordHash,
       fechaRegistro: entity.fechaRegistro,
-      estado: entity.estado,
+      estado: entity.estado as EstadosPasajero,
     });
   }
 

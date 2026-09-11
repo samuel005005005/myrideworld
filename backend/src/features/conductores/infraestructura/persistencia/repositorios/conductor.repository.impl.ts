@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IConductorRepository } from '../../../dominio/repositorios/conductor.repository.js';
 import { Conductor } from '../../../dominio/entidades/conductor.entity.js';
 import { ConductorOrmEntity } from '../entidades/conductor.orm-entity.js';
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
 
 @Injectable()
 export class ConductorRepositoryImpl implements IConductorRepository {
@@ -47,9 +48,9 @@ export class ConductorRepositoryImpl implements IConductorRepository {
       vehiculoModelo: entity.vehiculoModelo,
       vehiculoColor: entity.vehiculoColor,
       vehiculoPlaca: entity.vehiculoPlaca,
-      estadoAprobacion: entity.estadoAprobacion,
-      estadoDisponibilidad: entity.estadoDisponibilidad,
-      ultimaUbicacionLat: entity.ultimaUbicacionLat ?? undefined,
+      estadoAprobacion: entity.estadoAprobacion as EstadosConductor,
+      estadoDisponibilidad: entity.estadoDisponibilidad as EstadosDisponibilidadConductor,
+      ultimaUbicacionLat: entity.ultimaUbicacionLat ? Number(entity.ultimaUbicacionLat) : undefined,
       ultimaUbicacionLng: entity.ultimaUbicacionLng ?? undefined,
     });
   }

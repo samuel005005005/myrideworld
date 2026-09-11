@@ -1,4 +1,5 @@
 import { TarifaProps } from './tarifa.props.js';
+import { EstadosTarifa } from '../../../../compartidos/constantes/estados-tarifa.enum.js';
 export declare class Tarifa {
     private readonly _id;
     private _origen;
@@ -11,6 +12,6 @@ export declare class Tarifa {
     get origen(): string;
     get destino(): string;
     get precio(): number;
-    get estado(): string;
+    get estado(): EstadosTarifa;
     private validar;
 }

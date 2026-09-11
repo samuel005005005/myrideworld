@@ -8,8 +8,8 @@ export declare class ConductoresController {
         nombreCompleto: string;
         email: string;
         telefono: string;
-        estadoAprobacion: string;
-        estadoDisponibilidad: string;
+        estadoAprobacion: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
         vehiculo: {
             marca: string;
             modelo: string;

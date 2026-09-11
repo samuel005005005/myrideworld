@@ -1,3 +1,4 @@
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
 export interface ConductorProps {
     id?: string;
     nombreCompleto: string;
@@ -9,8 +10,8 @@ export interface ConductorProps {
     vehiculoModelo: string;
     vehiculoColor: string;
     vehiculoPlaca: string;
-    estadoAprobacion?: string;
-    estadoDisponibilidad?: string;
-    ultimaUbicacionLat?: number;
+    estadoAprobacion?: EstadosConductor;
+    estadoDisponibilidad?: EstadosDisponibilidadConductor;
+    ultimaUbicacionLat?: number | null;
     ultimaUbicacionLng?: number;
 }

@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { EstadosPasajero } from '../../../../../compartidos/constantes/estados-pasajero.enum.js';
 
 @Entity('pasajeros')
 export class PasajeroOrmEntity {
@@ -20,6 +21,6 @@ export class PasajeroOrmEntity {
   @CreateDateColumn()
   fechaRegistro: Date;
 
-  @Column({ type: 'varchar', default: 'Activo' })
+  @Column({ type: 'varchar', default: EstadosPasajero.ACTIVO })
   estado: string;
 }

@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
+import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';

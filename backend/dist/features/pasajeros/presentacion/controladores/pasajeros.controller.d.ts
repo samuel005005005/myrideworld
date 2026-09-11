@@ -8,7 +8,7 @@ export declare class PasajerosController {
         nombreCompleto: string;
         email: string;
         telefono: string;
-        estado: string;
+        estado: import("../../../../compartidos/constantes/estados-pasajero.enum.js").EstadosPasajero;
         fechaRegistro: Date;
     }>;
 }

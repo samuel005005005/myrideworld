@@ -1,3 +1,6 @@
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+
 export interface ViajeProps {
   id?: string;
   pasajeroId: string;
@@ -6,10 +9,10 @@ export interface ViajeProps {
   origenLng: number;
   destinoLat: number;
   destinoLng: number;
-  estado?: string;
+  estado?: EstadosViaje;
   tarifaEstimada: number;
   metodoPago?: string | null;
-  canceladoPor?: string | null;
+  canceladoPor?: Roles | null;
   motivoCancelacion?: string | null;
   fechaSolicitud?: Date;
   fechaInicio?: Date;

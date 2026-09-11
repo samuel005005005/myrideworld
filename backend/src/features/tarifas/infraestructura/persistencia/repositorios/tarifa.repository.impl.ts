@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ITarifaRepository } from '../../../dominio/repositorios/tarifa.repository.js';
 import { Tarifa } from '../../../dominio/entidades/tarifa.entity.js';
 import { TarifaOrmEntity } from '../entidades/tarifa.orm-entity.js';
+import { EstadosTarifa } from '../../../../../compartidos/constantes/estados-tarifa.enum.js';
 
 @Injectable()
 export class TarifaRepositoryImpl implements ITarifaRepository {
@@ -19,8 +20,8 @@ export class TarifaRepositoryImpl implements ITarifaRepository {
 
   async obtenerTarifaActiva(origen: string, destino: string): Promise<Tarifa | null> {
     const entity = await this.ormRepo.findOne({
-      where: { origen, destino, estado: 'Activo' },
-      order: { id: 'DESC' } // Obtenemos la última
+      where: { origen, destino, estado: EstadosTarifa.ACTIVO },
+      order: { id: 'DESC' }, // Obtenemos la última
     });
     return entity ? this.toDomain(entity) : null;
   }
@@ -37,7 +38,7 @@ export class TarifaRepositoryImpl implements ITarifaRepository {
       origen: entity.origen,
       destino: entity.destino,
       precio: Number(entity.precio),
-      estado: entity.estado,
+      estado: entity.estado as EstadosTarifa,
     });
   }
 

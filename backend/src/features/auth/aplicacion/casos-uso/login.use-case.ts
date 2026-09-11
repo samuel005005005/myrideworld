@@ -4,6 +4,7 @@ import { LoginDto } from '../dto/login.dto.js';
 import type { IPasajeroRepository } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import * as bcrypt from 'bcrypt';
 
@@ -18,7 +19,7 @@ export class LoginUseCase {
   async ejecutar(dto: LoginDto): Promise<{ token: string }> {
     let id: string;
 
-    if (dto.rol === 'PASAJERO') {
+    if (dto.rol === Roles.PASAJERO) {
       const pasajero = await this.pasajeroRepository.obtenerPorEmail(dto.email);
       if (!pasajero) throw new UnauthorizedException('Credenciales inválidas');
       

@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IViajeRepository } from '../../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../../dominio/entidades/viaje.entity.js';
 import { ViajeOrmEntity } from '../entidades/viaje.orm-entity.js';
+import { EstadosViaje } from '../../../../../compartidos/constantes/estados-viaje.enum.js';
+import { Roles } from '../../../../../compartidos/constantes/roles.enum.js';
 
 @Injectable()
 export class ViajeRepositoryImpl implements IViajeRepository {
@@ -40,12 +42,12 @@ export class ViajeRepositoryImpl implements IViajeRepository {
       conductorId: entity.conductorId ?? undefined,
       origenLat: entity.origenLat,
       origenLng: entity.origenLng,
-      destinoLat: entity.destinoLat,
-      destinoLng: entity.destinoLng,
-      estado: entity.estado,
+      destinoLat: Number(entity.destinoLat),
+      destinoLng: Number(entity.destinoLng),
+      estado: entity.estado as EstadosViaje,
       tarifaEstimada: Number(entity.tarifaEstimada),
       metodoPago: entity.metodoPago ?? undefined,
-      canceladoPor: entity.canceladoPor ?? undefined,
+      canceladoPor: entity.canceladoPor as Roles ?? undefined,
       motivoCancelacion: entity.motivoCancelacion ?? undefined,
       fechaSolicitud: entity.fechaSolicitud,
       fechaInicio: entity.fechaInicio ?? undefined,

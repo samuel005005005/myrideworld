@@ -53,7 +53,7 @@ let ConductorRepositoryImpl = class ConductorRepositoryImpl {
             vehiculoPlaca: entity.vehiculoPlaca,
             estadoAprobacion: entity.estadoAprobacion,
             estadoDisponibilidad: entity.estadoDisponibilidad,
-            ultimaUbicacionLat: entity.ultimaUbicacionLat ?? undefined,
+            ultimaUbicacionLat: entity.ultimaUbicacionLat ? Number(entity.ultimaUbicacionLat) : undefined,
             ultimaUbicacionLng: entity.ultimaUbicacionLng ?? undefined,
         });
     }

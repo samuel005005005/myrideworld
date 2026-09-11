@@ -1,4 +1,6 @@
 import { ViajeProps } from './viaje.props.js';
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 export declare class Viaje {
     private readonly _id;
     private _pasajeroId;
@@ -24,10 +26,10 @@ export declare class Viaje {
     get origenLng(): number;
     get destinoLat(): number;
     get destinoLng(): number;
-    get estado(): string;
+    get estado(): EstadosViaje;
     get tarifaEstimada(): number;
     get metodoPago(): string | null;
-    get canceladoPor(): string | null;
+    get canceladoPor(): Roles | null;
     get motivoCancelacion(): string | null;
     get fechaSolicitud(): Date;
     get fechaInicio(): Date | null;
@@ -36,6 +38,6 @@ export declare class Viaje {
     marcarLlegada(): void;
     iniciarViaje(): void;
     completarViaje(): void;
-    cancelar(actor: 'PASAJERO' | 'CONDUCTOR', motivo?: string): void;
+    cancelar(actor: Roles, motivo?: string): void;
     private validar;
 }

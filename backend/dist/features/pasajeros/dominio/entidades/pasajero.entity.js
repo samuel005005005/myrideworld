@@ -1,3 +1,4 @@
+import { EstadosPasajero } from '../../../../compartidos/constantes/estados-pasajero.enum.js';
 export class Pasajero {
     _id;
     _nombreCompleto;
@@ -13,7 +14,7 @@ export class Pasajero {
         this._telefono = props.telefono;
         this._passwordHash = props.passwordHash;
         this._fechaRegistro = props.fechaRegistro ?? new Date();
-        this._estado = props.estado ?? 'Activo';
+        this._estado = props.estado ?? EstadosPasajero.ACTIVO;
         this.validar();
     }
     static crear(props) {

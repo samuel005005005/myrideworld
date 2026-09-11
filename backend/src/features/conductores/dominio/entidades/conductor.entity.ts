@@ -1,4 +1,5 @@
 import { ConductorProps } from './conductor.props.js';
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
 
 export class Conductor {
   private readonly _id: string;
@@ -11,8 +12,8 @@ export class Conductor {
   private _vehiculoModelo: string;
   private _vehiculoColor: string;
   private _vehiculoPlaca: string;
-  private _estadoAprobacion: string;
-  private _estadoDisponibilidad: string;
+  private _estadoAprobacion: EstadosConductor;
+  private _estadoDisponibilidad: EstadosDisponibilidadConductor;
   private _ultimaUbicacionLat: number | null;
   private _ultimaUbicacionLng: number | null;
 
@@ -27,8 +28,8 @@ export class Conductor {
     this._vehiculoModelo = props.vehiculoModelo;
     this._vehiculoColor = props.vehiculoColor;
     this._vehiculoPlaca = props.vehiculoPlaca;
-    this._estadoAprobacion = props.estadoAprobacion ?? 'Pendiente';
-    this._estadoDisponibilidad = props.estadoDisponibilidad ?? 'Desconectado';
+    this._estadoAprobacion = props.estadoAprobacion ?? EstadosConductor.PENDIENTE;
+    this._estadoDisponibilidad = props.estadoDisponibilidad ?? EstadosDisponibilidadConductor.DESCONECTADO;
     this._ultimaUbicacionLat = props.ultimaUbicacionLat ?? null;
     this._ultimaUbicacionLng = props.ultimaUbicacionLng ?? null;
 
@@ -49,13 +50,13 @@ export class Conductor {
   get vehiculoModelo(): string { return this._vehiculoModelo; }
   get vehiculoColor(): string { return this._vehiculoColor; }
   get vehiculoPlaca(): string { return this._vehiculoPlaca; }
-  get estadoAprobacion(): string { return this._estadoAprobacion; }
-  get estadoDisponibilidad(): string { return this._estadoDisponibilidad; }
+  get estadoAprobacion(): EstadosConductor { return this._estadoAprobacion; }
+  get estadoDisponibilidad(): EstadosDisponibilidadConductor { return this._estadoDisponibilidad; }
   get ultimaUbicacionLat(): number | null { return this._ultimaUbicacionLat; }
   get ultimaUbicacionLng(): number | null { return this._ultimaUbicacionLng; }
 
   aprobar(): void {
-    this._estadoAprobacion = 'Aprobado';
+    this._estadoAprobacion = EstadosConductor.APROBADO;
   }
 
   private validar(): void {

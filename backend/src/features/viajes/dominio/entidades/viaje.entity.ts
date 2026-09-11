@@ -1,4 +1,6 @@
 import { ViajeProps } from './viaje.props.js';
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 
 export class Viaje {
   private readonly _id: string;
@@ -8,10 +10,10 @@ export class Viaje {
   private _origenLng: number;
   private _destinoLat: number;
   private _destinoLng: number;
-  private _estado: string;
+  private _estado: EstadosViaje;
   private _tarifaEstimada: number;
   private _metodoPago: string | null;
-  private _canceladoPor: string | null;
+  private _canceladoPor: Roles | null;
   private _motivoCancelacion: string | null;
   private readonly _fechaSolicitud: Date;
   private _fechaInicio: Date | null;
@@ -25,7 +27,7 @@ export class Viaje {
     this._origenLng = props.origenLng;
     this._destinoLat = props.destinoLat;
     this._destinoLng = props.destinoLng;
-    this._estado = props.estado ?? 'Solicitado';
+    this._estado = props.estado ?? EstadosViaje.SOLICITADO;
     this._tarifaEstimada = props.tarifaEstimada;
     this._metodoPago = props.metodoPago ?? null;
     this._canceladoPor = props.canceladoPor ?? null;
@@ -48,52 +50,51 @@ export class Viaje {
   get origenLng(): number { return this._origenLng; }
   get destinoLat(): number { return this._destinoLat; }
   get destinoLng(): number { return this._destinoLng; }
-  get estado(): string { return this._estado; }
+  get estado(): EstadosViaje { return this._estado; }
   get tarifaEstimada(): number { return this._tarifaEstimada; }
   get metodoPago(): string | null { return this._metodoPago; }
-  get canceladoPor(): string | null { return this._canceladoPor; }
+  get canceladoPor(): Roles | null { return this._canceladoPor; }
   get motivoCancelacion(): string | null { return this._motivoCancelacion; }
   get fechaSolicitud(): Date { return this._fechaSolicitud; }
   get fechaInicio(): Date | null { return this._fechaInicio; }
   get fechaFin(): Date | null { return this._fechaFin; }
 
   asignarConductor(conductorId: string): void {
-    if (this._estado !== 'Solicitado' && this._estado !== 'Buscando') {
-      throw new Error('El viaje no puede ser asignado en su estado actual.');
+    if (this._estado !== EstadosViaje.SOLICITADO && this._estado !== EstadosViaje.BUSCANDO) {
+      throw new Error('El viaje no está disponible para asignación.');
     }
     this._conductorId = conductorId;
-    this._estado = 'Asignado';
+    this._estado = EstadosViaje.ASIGNADO;
   }
 
   marcarLlegada(): void {
-    if (this._estado !== 'Asignado' && this._estado !== 'EnCamino') {
-      throw new Error('El viaje debe estar asignado para poder marcar la llegada del conductor.');
+    if (this._estado !== EstadosViaje.ASIGNADO && this._estado !== EstadosViaje.EN_CAMINO) {
+      throw new Error('El viaje debe estar asignado o en camino para marcar llegada.');
     }
-    this._estado = 'Llego';
+    this._estado = EstadosViaje.LLEGO;
   }
 
   iniciarViaje(): void {
-    if (this._estado !== 'EnCamino' && this._estado !== 'Llego' && this._estado !== 'Asignado') {
-      throw new Error('El viaje no puede ser iniciado.');
+    if (this._estado !== EstadosViaje.EN_CAMINO && this._estado !== EstadosViaje.LLEGO && this._estado !== EstadosViaje.ASIGNADO) {
+      throw new Error('El conductor debe estar asignado, en camino o haber llegado para iniciar el viaje.');
     }
-    this._estado = 'EnCurso';
+    this._estado = EstadosViaje.EN_CURSO;
     this._fechaInicio = new Date();
   }
 
   completarViaje(): void {
-  completarViaje(): void {
-    if (this._estado !== 'EnCurso') {
+    if (this._estado !== EstadosViaje.EN_CURSO) {
       throw new Error('El viaje debe estar en curso para ser completado.');
     }
-    this._estado = 'Completado';
+    this._estado = EstadosViaje.COMPLETADO;
     this._fechaFin = new Date();
   }
 
-  cancelar(actor: 'PASAJERO' | 'CONDUCTOR', motivo?: string): void {
-    if (this._estado === 'Completado' || this._estado === 'Cancelado') {
+  cancelar(actor: Roles, motivo?: string): void {
+    if (this._estado === EstadosViaje.COMPLETADO || this._estado === EstadosViaje.CANCELADO) {
       throw new Error('El viaje no puede ser cancelado en su estado actual.');
     }
-    this._estado = 'Cancelado';
+    this._estado = EstadosViaje.CANCELADO;
     this._canceladoPor = actor;
     this._motivoCancelacion = motivo ?? null;
     this._fechaFin = new Date();

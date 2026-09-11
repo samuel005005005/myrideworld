@@ -1,3 +1,4 @@
+import { EstadosTarifa } from '../../../../compartidos/constantes/estados-tarifa.enum.js';
 export class Tarifa {
     _id;
     _origen;
@@ -9,7 +10,7 @@ export class Tarifa {
         this._origen = props.origen;
         this._destino = props.destino;
         this._precio = props.precio;
-        this._estado = props.estado ?? 'Activo';
+        this._estado = props.estado ?? EstadosTarifa.ACTIVO;
         this.validar();
     }
     static crear(props) {

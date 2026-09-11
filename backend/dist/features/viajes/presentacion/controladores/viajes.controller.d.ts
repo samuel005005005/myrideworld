@@ -6,6 +6,7 @@ import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.us
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
+import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
 export declare class ViajesController {
     private readonly solicitarViaje;
     private readonly aceptarViaje;
@@ -19,4 +20,5 @@ export declare class ViajesController {
     llegada(id: string, req: any): Promise<import("../../dominio/entidades/viaje.entity.js").Viaje>;
     iniciar(id: string): Promise<import("../../dominio/entidades/viaje.entity.js").Viaje>;
     completar(id: string): Promise<import("../../dominio/entidades/viaje.entity.js").Viaje>;
+    cancelar(id: string, dto: CancelarViajeDto, req: any): Promise<import("../../dominio/entidades/viaje.entity.js").Viaje>;
 }

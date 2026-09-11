@@ -13,6 +13,7 @@ import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaj
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
 import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
+import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
 
 @ApiTags('Viajes')
 @ApiBearerAuth()
@@ -29,7 +30,7 @@ export class ViajesController {
 
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('PASAJERO')
+  @Roles(RolesEnum.PASAJERO)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Solicitar un nuevo viaje (Solo Pasajeros)' })
   async solicitar(
@@ -43,7 +44,7 @@ export class ViajesController {
 
   @Post(':id/aceptar')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('CONDUCTOR')
+  @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aceptar un viaje disponible (Solo Conductores)' })
   async aceptar(
@@ -58,7 +59,7 @@ export class ViajesController {
 
   @Post(':id/llegada')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('CONDUCTOR')
+  @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Notificar que el conductor ha llegado al punto de recogida' })
   async llegada(
@@ -71,7 +72,7 @@ export class ViajesController {
 
   @Post(':id/iniciar')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('CONDUCTOR')
+  @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar un viaje (Solo Conductores)' })
   async iniciar(
@@ -82,12 +83,27 @@ export class ViajesController {
 
   @Post(':id/completar')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('CONDUCTOR')
+  @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Completar el viaje y generar cobro (Solo Conductores)' })
   async completar(
     @Param('id') id: string,
   ) {
     return await this.completarViaje.ejecutar(id);
+  }
+
+  @Post(':id/cancelar')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancelar un viaje' })
+  async cancelar(
+    @Param('id') id: string,
+    @Body() dto: CancelarViajeDto,
+    @Req() req: any,
+  ) {
+    const actorId = req.user.sub;
+    const rol = req.user.rol;
+    return await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
   }
 }

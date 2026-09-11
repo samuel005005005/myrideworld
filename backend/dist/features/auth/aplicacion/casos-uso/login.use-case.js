@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import * as bcrypt from 'bcrypt';
 let LoginUseCase = class LoginUseCase {
@@ -26,7 +27,7 @@ let LoginUseCase = class LoginUseCase {
     }
     async ejecutar(dto) {
         let id;
-        if (dto.rol === 'PASAJERO') {
+        if (dto.rol === Roles.PASAJERO) {
             const pasajero = await this.pasajeroRepository.obtenerPorEmail(dto.email);
             if (!pasajero)
                 throw new UnauthorizedException('Credenciales inválidas');

@@ -1,3 +1,4 @@
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
 export class Conductor {
     _id;
     _nombreCompleto;
@@ -24,8 +25,8 @@ export class Conductor {
         this._vehiculoModelo = props.vehiculoModelo;
         this._vehiculoColor = props.vehiculoColor;
         this._vehiculoPlaca = props.vehiculoPlaca;
-        this._estadoAprobacion = props.estadoAprobacion ?? 'Pendiente';
-        this._estadoDisponibilidad = props.estadoDisponibilidad ?? 'Desconectado';
+        this._estadoAprobacion = props.estadoAprobacion ?? EstadosConductor.PENDIENTE;
+        this._estadoDisponibilidad = props.estadoDisponibilidad ?? EstadosDisponibilidadConductor.DESCONECTADO;
         this._ultimaUbicacionLat = props.ultimaUbicacionLat ?? null;
         this._ultimaUbicacionLng = props.ultimaUbicacionLng ?? null;
         this.validar();
@@ -48,7 +49,7 @@ export class Conductor {
     get ultimaUbicacionLat() { return this._ultimaUbicacionLat; }
     get ultimaUbicacionLng() { return this._ultimaUbicacionLng; }
     aprobar() {
-        this._estadoAprobacion = 'Aprobado';
+        this._estadoAprobacion = EstadosConductor.APROBADO;
     }
     validar() {
         if (!this._nombreCompleto?.trim())

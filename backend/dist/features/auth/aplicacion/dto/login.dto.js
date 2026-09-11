@@ -9,10 +9,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 export const loginSchema = z.object({
     email: z.string().email('El email no es válido'),
     password: z.string().min(1, 'La contraseña es obligatoria'),
-    rol: z.enum(['PASAJERO', 'CONDUCTOR']),
+    rol: z.enum([Roles.PASAJERO, Roles.CONDUCTOR]),
 });
 export class LoginDto {
     email;
@@ -28,7 +29,7 @@ __decorate([
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
 __decorate([
-    ApiProperty({ enum: ['PASAJERO', 'CONDUCTOR'], example: 'PASAJERO' }),
+    ApiProperty({ enum: Roles, example: Roles.PASAJERO }),
     __metadata("design:type", String)
 ], LoginDto.prototype, "rol", void 0);
 //# sourceMappingURL=login.dto.js.map

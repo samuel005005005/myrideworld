@@ -8,6 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { EstadosTarifa } from '../../../../../compartidos/constantes/estados-tarifa.enum.js';
 let TarifaOrmEntity = class TarifaOrmEntity {
     id;
     origen;
@@ -32,7 +33,7 @@ __decorate([
     __metadata("design:type", Number)
 ], TarifaOrmEntity.prototype, "precio", void 0);
 __decorate([
-    Column({ type: 'varchar', default: 'Activo' }),
+    Column({ type: 'varchar', default: EstadosTarifa.ACTIVO }),
     __metadata("design:type", String)
 ], TarifaOrmEntity.prototype, "estado", void 0);
 TarifaOrmEntity = __decorate([

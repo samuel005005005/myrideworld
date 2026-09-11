@@ -1,3 +1,5 @@
+import { EstadosPasajero } from '../../../../compartidos/constantes/estados-pasajero.enum.js';
+
 export interface PasajeroProps {
   id?: string;
   nombreCompleto: string;
@@ -5,5 +7,5 @@ export interface PasajeroProps {
   telefono: string;
   passwordHash: string;
   fechaRegistro?: Date;
-  estado?: string;
+  estado?: EstadosPasajero;
 }

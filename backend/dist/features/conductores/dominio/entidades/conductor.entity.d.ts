@@ -1,4 +1,5 @@
 import { ConductorProps } from './conductor.props.js';
+import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
 export declare class Conductor {
     private readonly _id;
     private _nombreCompleto;
@@ -26,8 +27,8 @@ export declare class Conductor {
     get vehiculoModelo(): string;
     get vehiculoColor(): string;
     get vehiculoPlaca(): string;
-    get estadoAprobacion(): string;
-    get estadoDisponibilidad(): string;
+    get estadoAprobacion(): EstadosConductor;
+    get estadoDisponibilidad(): EstadosDisponibilidadConductor;
     get ultimaUbicacionLat(): number | null;
     get ultimaUbicacionLng(): number | null;
     aprobar(): void;

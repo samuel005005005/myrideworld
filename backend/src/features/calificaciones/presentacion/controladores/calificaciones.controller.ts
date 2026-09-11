@@ -1,11 +1,12 @@
 import { Controller, Post, Body, Req, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { AuthGuard } from '../../../auth/presentacion/middlewares/auth.guard.js';
-import { RolesGuard } from '../../../auth/presentacion/middlewares/roles.guard.js';
-import { Roles } from '../../../auth/presentacion/middlewares/roles.decorator.js';
+import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
+import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
+import { Roles } from '../../../../compartidos/decoradores/roles.decorator.js';
 import { CalificarConductorUseCase } from '../../aplicacion/casos-uso/calificar-conductor.use-case.js';
 import { CalificarConductorDto, calificarConductorSchema } from '../../aplicacion/dto/calificar-conductor.dto.js';
-import { ZodValidationPipe } from '../../../../compartidos/pipes/zod-validation.pipe.js';
+import { ZodValidationPipe } from '../../../../compartidos/utilidades/pipes/zod-validation.pipe.js';
+import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
 
 @ApiTags('Calificaciones')
 @ApiBearerAuth()
@@ -17,7 +18,7 @@ export class CalificacionesController {
 
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('PASAJERO')
+  @Roles(RolesEnum.PASAJERO)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Calificar a un conductor tras un viaje completado' })
   async calificar(

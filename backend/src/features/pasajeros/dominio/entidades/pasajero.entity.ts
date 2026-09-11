@@ -1,4 +1,5 @@
 import { PasajeroProps } from './pasajero.props.js';
+import { EstadosPasajero } from '../../../../compartidos/constantes/estados-pasajero.enum.js';
 
 export class Pasajero {
   private readonly _id: string;
@@ -7,7 +8,7 @@ export class Pasajero {
   private _telefono: string;
   private _passwordHash: string;
   private readonly _fechaRegistro: Date;
-  private _estado: string;
+  private _estado: EstadosPasajero;
 
   private constructor(props: PasajeroProps) {
     this._id = props.id ?? crypto.randomUUID();
@@ -16,7 +17,7 @@ export class Pasajero {
     this._telefono = props.telefono;
     this._passwordHash = props.passwordHash;
     this._fechaRegistro = props.fechaRegistro ?? new Date();
-    this._estado = props.estado ?? 'Activo';
+    this._estado = props.estado ?? EstadosPasajero.ACTIVO;
 
     this.validar();
   }
@@ -28,7 +29,7 @@ export class Pasajero {
   get id(): string { return this._id; }
   get nombreCompleto(): string { return this._nombreCompleto; }
   get email(): string { return this._email; }
-  get estado(): string { return this._estado; }
+  get estado(): EstadosPasajero { return this._estado; }
   get telefono(): string { return this._telefono; }
   get passwordHash(): string { return this._passwordHash; }
   get fechaRegistro(): Date { return this._fechaRegistro; }

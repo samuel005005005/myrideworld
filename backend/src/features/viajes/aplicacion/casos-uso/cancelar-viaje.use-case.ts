@@ -1,8 +1,9 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
+import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 
 @Injectable()
 export class CancelarViajeUseCase {
@@ -12,16 +13,16 @@ export class CancelarViajeUseCase {
     private readonly viajesGateway: ViajesGateway,
   ) {}
 
-  async ejecutar(viajeId: string, actorId: string, rol: 'PASAJERO' | 'CONDUCTOR', motivo?: string): Promise<Viaje> {
+  async ejecutar(viajeId: string, actorId: string, rol: Roles, motivo?: string): Promise<Viaje> {
     const viaje = await this.viajeRepository.obtenerPorId(viajeId);
     if (!viaje) {
       throw new NotFoundException('Viaje no encontrado');
     }
 
-    if (rol === 'PASAJERO' && viaje.pasajeroId !== actorId) {
+    if (rol === Roles.PASAJERO && viaje.pasajeroId !== actorId) {
       throw new Error('No puedes cancelar un viaje que no solicitaste.');
     }
-    if (rol === 'CONDUCTOR' && viaje.conductorId !== actorId) {
+    if (rol === Roles.CONDUCTOR && viaje.conductorId !== actorId) {
       throw new Error('No puedes cancelar un viaje que no tienes asignado.');
     }
 

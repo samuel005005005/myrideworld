@@ -1,4 +1,5 @@
 import { PasajeroProps } from './pasajero.props.js';
+import { EstadosPasajero } from '../../../../compartidos/constantes/estados-pasajero.enum.js';
 export declare class Pasajero {
     private readonly _id;
     private _nombreCompleto;
@@ -12,7 +13,7 @@ export declare class Pasajero {
     get id(): string;
     get nombreCompleto(): string;
     get email(): string;
-    get estado(): string;
+    get estado(): EstadosPasajero;
     get telefono(): string;
     get passwordHash(): string;
     get fechaRegistro(): Date;

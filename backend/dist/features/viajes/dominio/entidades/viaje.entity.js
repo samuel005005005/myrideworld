@@ -1,3 +1,4 @@
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
 export class Viaje {
     _id;
     _pasajeroId;
@@ -22,7 +23,7 @@ export class Viaje {
         this._origenLng = props.origenLng;
         this._destinoLat = props.destinoLat;
         this._destinoLng = props.destinoLng;
-        this._estado = props.estado ?? 'Solicitado';
+        this._estado = props.estado ?? EstadosViaje.SOLICITADO;
         this._tarifaEstimada = props.tarifaEstimada;
         this._metodoPago = props.metodoPago ?? null;
         this._canceladoPor = props.canceladoPor ?? null;
@@ -51,41 +52,37 @@ export class Viaje {
     get fechaInicio() { return this._fechaInicio; }
     get fechaFin() { return this._fechaFin; }
     asignarConductor(conductorId) {
-        if (this._estado !== 'Solicitado' && this._estado !== 'Buscando') {
-            throw new Error('El viaje no puede ser asignado en su estado actual.');
+        if (this._estado !== EstadosViaje.SOLICITADO && this._estado !== EstadosViaje.BUSCANDO) {
+            throw new Error('El viaje no está disponible para asignación.');
         }
         this._conductorId = conductorId;
-        this._estado = 'Asignado';
+        this._estado = EstadosViaje.ASIGNADO;
     }
     marcarLlegada() {
-        if (this._estado !== 'Asignado' && this._estado !== 'EnCamino') {
-            throw new Error('El viaje debe estar asignado para poder marcar la llegada del conductor.');
+        if (this._estado !== EstadosViaje.ASIGNADO && this._estado !== EstadosViaje.EN_CAMINO) {
+            throw new Error('El viaje debe estar asignado o en camino para marcar llegada.');
         }
-        this._estado = 'Llego';
+        this._estado = EstadosViaje.LLEGO;
     }
     iniciarViaje() {
-        if (this._estado !== 'EnCamino' && this._estado !== 'Llego' && this._estado !== 'Asignado') {
-            throw new Error('El viaje no puede ser iniciado.');
+        if (this._estado !== EstadosViaje.EN_CAMINO && this._estado !== EstadosViaje.LLEGO && this._estado !== EstadosViaje.ASIGNADO) {
+            throw new Error('El conductor debe estar asignado, en camino o haber llegado para iniciar el viaje.');
         }
-        this._estado = 'EnCurso';
+        this._estado = EstadosViaje.EN_CURSO;
         this._fechaInicio = new Date();
     }
     completarViaje() {
-        completarViaje();
-        void {
-            : ._estado !== 'EnCurso'
-        };
-        {
+        if (this._estado !== EstadosViaje.EN_CURSO) {
             throw new Error('El viaje debe estar en curso para ser completado.');
         }
-        this._estado = 'Completado';
+        this._estado = EstadosViaje.COMPLETADO;
         this._fechaFin = new Date();
     }
     cancelar(actor, motivo) {
-        if (this._estado === 'Completado' || this._estado === 'Cancelado') {
+        if (this._estado === EstadosViaje.COMPLETADO || this._estado === EstadosViaje.CANCELADO) {
             throw new Error('El viaje no puede ser cancelado en su estado actual.');
         }
-        this._estado = 'Cancelado';
+        this._estado = EstadosViaje.CANCELADO;
         this._canceladoPor = actor;
         this._motivoCancelacion = motivo ?? null;
         this._fechaFin = new Date();

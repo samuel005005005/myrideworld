@@ -23,6 +23,8 @@ import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.us
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
+import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
+import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
 let ViajesController = class ViajesController {
     solicitarViaje;
     aceptarViaje;
@@ -55,11 +57,16 @@ let ViajesController = class ViajesController {
     async completar(id) {
         return await this.completarViaje.ejecutar(id);
     }
+    async cancelar(id, dto, req) {
+        const actorId = req.user.sub;
+        const rol = req.user.rol;
+        return await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+    }
 };
 __decorate([
     Post(),
     UseGuards(AuthGuard, RolesGuard),
-    Roles('PASAJERO'),
+    Roles(RolesEnum.PASAJERO),
     HttpCode(HttpStatus.CREATED),
     ApiOperation({ summary: 'Solicitar un nuevo viaje (Solo Pasajeros)' }),
     __param(0, Body()),
@@ -71,7 +78,7 @@ __decorate([
 __decorate([
     Post(':id/aceptar'),
     UseGuards(AuthGuard, RolesGuard),
-    Roles('CONDUCTOR'),
+    Roles(RolesEnum.CONDUCTOR),
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary: 'Aceptar un viaje disponible (Solo Conductores)' }),
     __param(0, Param('id')),
@@ -84,7 +91,7 @@ __decorate([
 __decorate([
     Post(':id/llegada'),
     UseGuards(AuthGuard, RolesGuard),
-    Roles('CONDUCTOR'),
+    Roles(RolesEnum.CONDUCTOR),
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary: 'Notificar que el conductor ha llegado al punto de recogida' }),
     __param(0, Param('id')),
@@ -96,7 +103,7 @@ __decorate([
 __decorate([
     Post(':id/iniciar'),
     UseGuards(AuthGuard, RolesGuard),
-    Roles('CONDUCTOR'),
+    Roles(RolesEnum.CONDUCTOR),
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary: 'Iniciar un viaje (Solo Conductores)' }),
     __param(0, Param('id')),
@@ -107,7 +114,7 @@ __decorate([
 __decorate([
     Post(':id/completar'),
     UseGuards(AuthGuard, RolesGuard),
-    Roles('CONDUCTOR'),
+    Roles(RolesEnum.CONDUCTOR),
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary: 'Completar el viaje y generar cobro (Solo Conductores)' }),
     __param(0, Param('id')),
@@ -115,6 +122,19 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], ViajesController.prototype, "completar", null);
+__decorate([
+    Post(':id/cancelar'),
+    UseGuards(AuthGuard, RolesGuard),
+    Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR),
+    HttpCode(HttpStatus.OK),
+    ApiOperation({ summary: 'Cancelar un viaje' }),
+    __param(0, Param('id')),
+    __param(1, Body()),
+    __param(2, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, CancelarViajeDto, Object]),
+    __metadata("design:returntype", Promise)
+], ViajesController.prototype, "cancelar", null);
 ViajesController = __decorate([
     ApiTags('Viajes'),
     ApiBearerAuth(),

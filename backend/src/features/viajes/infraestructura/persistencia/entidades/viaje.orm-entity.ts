@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { PasajeroOrmEntity } from '../../../../pasajeros/infraestructura/persistencia/entidades/pasajero.orm-entity.js';
 import { ConductorOrmEntity } from '../../../../conductores/infraestructura/persistencia/entidades/conductor.orm-entity.js';
+import { EstadosViaje } from '../../../../../compartidos/constantes/estados-viaje.enum.js';
 
 @Entity('viajes')
 export class ViajeOrmEntity {
@@ -33,7 +34,7 @@ export class ViajeOrmEntity {
   @Column({ type: 'float' })
   destinoLng: number;
 
-  @Column({ type: 'varchar', default: 'Solicitado' })
+  @Column({ type: 'varchar', default: EstadosViaje.SOLICITADO })
   estado: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })

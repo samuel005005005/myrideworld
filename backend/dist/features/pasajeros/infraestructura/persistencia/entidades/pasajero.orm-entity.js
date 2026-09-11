@@ -8,6 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { EstadosPasajero } from '../../../../../compartidos/constantes/estados-pasajero.enum.js';
 let PasajeroOrmEntity = class PasajeroOrmEntity {
     id;
     nombreCompleto;
@@ -42,7 +43,7 @@ __decorate([
     __metadata("design:type", Date)
 ], PasajeroOrmEntity.prototype, "fechaRegistro", void 0);
 __decorate([
-    Column({ type: 'varchar', default: 'Activo' }),
+    Column({ type: 'varchar', default: EstadosPasajero.ACTIVO }),
     __metadata("design:type", String)
 ], PasajeroOrmEntity.prototype, "estado", void 0);
 PasajeroOrmEntity = __decorate([

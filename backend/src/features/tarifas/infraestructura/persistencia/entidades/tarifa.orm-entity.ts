@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { EstadosTarifa } from '../../../../../compartidos/constantes/estados-tarifa.enum.js';
 
 @Entity('tarifas')
 export class TarifaOrmEntity {
@@ -14,6 +15,6 @@ export class TarifaOrmEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   precio: number;
 
-  @Column({ type: 'varchar', default: 'Activo' })
+  @Column({ type: 'varchar', default: EstadosTarifa.ACTIVO })
   estado: string;
 }

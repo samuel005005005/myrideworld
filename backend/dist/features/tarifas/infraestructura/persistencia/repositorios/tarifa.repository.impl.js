@@ -15,6 +15,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Tarifa } from '../../../dominio/entidades/tarifa.entity.js';
 import { TarifaOrmEntity } from '../entidades/tarifa.orm-entity.js';
+import { EstadosTarifa } from '../../../../../compartidos/constantes/estados-tarifa.enum.js';
 let TarifaRepositoryImpl = class TarifaRepositoryImpl {
     ormRepo;
     constructor(ormRepo) {
@@ -26,8 +27,8 @@ let TarifaRepositoryImpl = class TarifaRepositoryImpl {
     }
     async obtenerTarifaActiva(origen, destino) {
         const entity = await this.ormRepo.findOne({
-            where: { origen, destino, estado: 'Activo' },
-            order: { id: 'DESC' }
+            where: { origen, destino, estado: EstadosTarifa.ACTIVO },
+            order: { id: 'DESC' },
         });
         return entity ? this.toDomain(entity) : null;
     }

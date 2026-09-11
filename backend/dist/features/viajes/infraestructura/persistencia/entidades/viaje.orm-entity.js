@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { PasajeroOrmEntity } from '../../../../pasajeros/infraestructura/persistencia/entidades/pasajero.orm-entity.js';
 import { ConductorOrmEntity } from '../../../../conductores/infraestructura/persistencia/entidades/conductor.orm-entity.js';
+import { EstadosViaje } from '../../../../../compartidos/constantes/estados-viaje.enum.js';
 let ViajeOrmEntity = class ViajeOrmEntity {
     id;
     pasajeroId;
@@ -68,7 +69,7 @@ __decorate([
     __metadata("design:type", Number)
 ], ViajeOrmEntity.prototype, "destinoLng", void 0);
 __decorate([
-    Column({ type: 'varchar', default: 'Solicitado' }),
+    Column({ type: 'varchar', default: EstadosViaje.SOLICITADO }),
     __metadata("design:type", String)
 ], ViajeOrmEntity.prototype, "estado", void 0);
 __decorate([

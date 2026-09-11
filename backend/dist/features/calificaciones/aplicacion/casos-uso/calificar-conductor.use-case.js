@@ -14,6 +14,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CALIFICACION_REPOSITORY } from '../../dominio/repositorios/calificacion.repository.js';
 import { Calificacion } from '../../dominio/entidades/calificacion.entity.js';
 import { VIAJE_REPOSITORY } from '../../../viajes/dominio/repositorios/viaje.repository.js';
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
 let CalificarConductorUseCase = class CalificarConductorUseCase {
     calificacionRepository;
     viajeRepository;
@@ -29,7 +30,7 @@ let CalificarConductorUseCase = class CalificarConductorUseCase {
         if (viaje.pasajeroId !== pasajeroId) {
             throw new Error('Solo el pasajero del viaje puede calificar al conductor.');
         }
-        if (viaje.estado !== 'Completado') {
+        if (viaje.estado !== EstadosViaje.COMPLETADO) {
             throw new Error('Solo se pueden calificar viajes completados.');
         }
         const yaCalificado = await this.calificacionRepository.existeCalificacion(viaje.id);
