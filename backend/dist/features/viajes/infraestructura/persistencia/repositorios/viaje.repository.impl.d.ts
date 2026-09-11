@@ -9,6 +9,10 @@ export declare class ViajeRepositoryImpl implements IViajeRepository {
     obtenerPorPasajero(pasajeroId: string): Promise<Viaje[]>;
     obtenerPorConductor(conductorId: string): Promise<Viaje[]>;
     guardar(viaje: Viaje): Promise<Viaje>;
+    listar(filtros?: {
+        pasajeroId?: string;
+        conductorId?: string;
+    }): Promise<Viaje[]>;
     private toDomain;
     private toOrm;
 }

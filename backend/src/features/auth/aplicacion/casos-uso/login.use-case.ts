@@ -8,10 +8,13 @@ import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import * as bcrypt from 'bcrypt';
 
+import { ConfigService } from '@nestjs/config';
+
 @Injectable()
 export class LoginUseCase {
   constructor(
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     @Inject(PASAJERO_REPOSITORY) private readonly pasajeroRepository: IPasajeroRepository,
     @Inject(CONDUCTOR_REPOSITORY) private readonly conductorRepository: IConductorRepository,
   ) {}
@@ -27,7 +30,7 @@ export class LoginUseCase {
       if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
       
       id = pasajero.id;
-    } else {
+    } else if (dto.rol === Roles.CONDUCTOR) {
       const conductor = await this.conductorRepository.obtenerPorEmail(dto.email);
       if (!conductor) throw new UnauthorizedException('Credenciales inválidas');
       
@@ -35,6 +38,16 @@ export class LoginUseCase {
       if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
       
       id = conductor.id;
+    } else if (dto.rol === Roles.ADMIN) {
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || 'admin@myride.com';
+      const adminPassword = this.configService.get<string>('ADMIN_PASSWORD') || 'admin123';
+      
+      if (dto.email !== adminEmail || dto.password !== adminPassword) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+      id = 'admin-1';
+    } else {
+      throw new UnauthorizedException('Rol no válido');
     }
 
     const payload = { sub: id, rol: dto.rol };

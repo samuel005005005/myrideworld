@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
@@ -11,6 +11,8 @@ import { MarcarLlegadaUseCase } from '../../aplicacion/casos-uso/marcar-llegada.
 import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.use-case.js';
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
+import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
+import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
 import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
@@ -26,7 +28,26 @@ export class ViajesController {
     private readonly iniciarViaje: IniciarViajeUseCase,
     private readonly completarViaje: CompletarViajeUseCase,
     private readonly cancelarViaje: CancelarViajeUseCase,
+    private readonly listarViajes: ListarViajesUseCase,
   ) {}
+
+  @Get()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @ApiOperation({ summary: 'Listar todos los viajes (Solo Admin)' })
+  async listarTodos(@Req() req: any) {
+    const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol as RolesEnum);
+    return viajes.map(v => ViajeMapper.toResponse(v));
+  }
+
+  @Get('mis-viajes')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR)
+  @ApiOperation({ summary: 'Historial de viajes del usuario actual' })
+  async misViajes(@Req() req: any) {
+    const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol as RolesEnum);
+    return viajes.map(v => ViajeMapper.toResponse(v));
+  }
 
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
@@ -39,7 +60,8 @@ export class ViajesController {
   ) {
     // Para mayor seguridad podríamos forzar que el pasajeroId sea el del token
     // dto.pasajeroId = req.user.sub;
-    return await this.solicitarViaje.ejecutar(dto);
+    const viaje = await this.solicitarViaje.ejecutar(dto);
+    return ViajeMapper.toResponse(viaje);
   }
 
   @Post(':id/aceptar')
@@ -54,7 +76,8 @@ export class ViajesController {
   ) {
     // Garantizamos que el conductor que acepta es el autenticado
     dto.conductorId = req.user.sub;
-    return await this.aceptarViaje.ejecutar(id, dto);
+    const viaje = await this.aceptarViaje.ejecutar(id, dto);
+    return ViajeMapper.toResponse(viaje);
   }
 
   @Post(':id/llegada')
@@ -67,7 +90,8 @@ export class ViajesController {
     @Req() req: any,
   ) {
     const conductorId = req.user.sub;
-    return await this.marcarLlegada.ejecutar(id, conductorId);
+    const viaje = await this.marcarLlegada.ejecutar(id, conductorId);
+    return ViajeMapper.toResponse(viaje);
   }
 
   @Post(':id/iniciar')
@@ -78,7 +102,8 @@ export class ViajesController {
   async iniciar(
     @Param('id') id: string,
   ) {
-    return await this.iniciarViaje.ejecutar(id);
+    const viaje = await this.iniciarViaje.ejecutar(id);
+    return ViajeMapper.toResponse(viaje);
   }
 
   @Post(':id/completar')
@@ -89,7 +114,8 @@ export class ViajesController {
   async completar(
     @Param('id') id: string,
   ) {
-    return await this.completarViaje.ejecutar(id);
+    const viaje = await this.completarViaje.ejecutar(id);
+    return ViajeMapper.toResponse(viaje);
   }
 
   @Post(':id/cancelar')
@@ -104,6 +130,7 @@ export class ViajesController {
   ) {
     const actorId = req.user.sub;
     const rol = req.user.rol;
-    return await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+    const viaje = await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+    return ViajeMapper.toResponse(viaje);
   }
 }

@@ -10,6 +10,7 @@ import { MarcarLlegadaUseCase } from './aplicacion/casos-uso/marcar-llegada.use-
 import { IniciarViajeUseCase } from './aplicacion/casos-uso/iniciar-viaje.use-case.js';
 import { CompletarViajeUseCase } from './aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from './aplicacion/casos-uso/cancelar-viaje.use-case.js';
+import { ListarViajesUseCase } from './aplicacion/casos-uso/listar-viajes.use-case.js';
 import { ViajesController } from './presentacion/controladores/viajes.controller.js';
 import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';

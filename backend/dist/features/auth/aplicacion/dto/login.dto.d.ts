@@ -6,6 +6,7 @@ export declare const loginSchema: z.ZodObject<{
     rol: z.ZodEnum<{
         PASAJERO: Roles.PASAJERO;
         CONDUCTOR: Roles.CONDUCTOR;
+        ADMIN: Roles.ADMIN;
     }>;
 }, z.core.$strip>;
 export declare class LoginDto {

@@ -39,6 +39,11 @@ let ConductorRepositoryImpl = class ConductorRepositoryImpl {
         const saved = await this.ormRepo.save(entity);
         return this.toDomain(saved);
     }
+    async listar(filtros) {
+        const whereClause = filtros?.estadoAprobacion ? { estadoAprobacion: filtros.estadoAprobacion } : {};
+        const entities = await this.ormRepo.find({ where: whereClause, order: { id: 'DESC' } });
+        return entities.map(e => this.toDomain(e));
+    }
     toDomain(entity) {
         return Conductor.crear({
             id: entity.id,

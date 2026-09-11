@@ -16,12 +16,15 @@ import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pas
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 let LoginUseCase = class LoginUseCase {
     jwtService;
+    configService;
     pasajeroRepository;
     conductorRepository;
-    constructor(jwtService, pasajeroRepository, conductorRepository) {
+    constructor(jwtService, configService, pasajeroRepository, conductorRepository) {
         this.jwtService = jwtService;
+        this.configService = configService;
         this.pasajeroRepository = pasajeroRepository;
         this.conductorRepository = conductorRepository;
     }
@@ -36,7 +39,7 @@ let LoginUseCase = class LoginUseCase {
                 throw new UnauthorizedException('Credenciales inválidas');
             id = pasajero.id;
         }
-        else {
+        else if (dto.rol === Roles.CONDUCTOR) {
             const conductor = await this.conductorRepository.obtenerPorEmail(dto.email);
             if (!conductor)
                 throw new UnauthorizedException('Credenciales inválidas');
@@ -45,6 +48,17 @@ let LoginUseCase = class LoginUseCase {
                 throw new UnauthorizedException('Credenciales inválidas');
             id = conductor.id;
         }
+        else if (dto.rol === Roles.ADMIN) {
+            const adminEmail = this.configService.get('ADMIN_EMAIL') || 'admin@myride.com';
+            const adminPassword = this.configService.get('ADMIN_PASSWORD') || 'admin123';
+            if (dto.email !== adminEmail || dto.password !== adminPassword) {
+                throw new UnauthorizedException('Credenciales inválidas');
+            }
+            id = 'admin-1';
+        }
+        else {
+            throw new UnauthorizedException('Rol no válido');
+        }
         const payload = { sub: id, rol: dto.rol };
         const token = await this.jwtService.signAsync(payload);
         return { token };
@@ -52,9 +66,10 @@ let LoginUseCase = class LoginUseCase {
 };
 LoginUseCase = __decorate([
     Injectable(),
-    __param(1, Inject(PASAJERO_REPOSITORY)),
-    __param(2, Inject(CONDUCTOR_REPOSITORY)),
-    __metadata("design:paramtypes", [JwtService, Object, Object])
+    __param(2, Inject(PASAJERO_REPOSITORY)),
+    __param(3, Inject(CONDUCTOR_REPOSITORY)),
+    __metadata("design:paramtypes", [JwtService,
+        ConfigService, Object, Object])
 ], LoginUseCase);
 export { LoginUseCase };
 //# sourceMappingURL=login.use-case.js.map

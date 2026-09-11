@@ -35,6 +35,15 @@ export class ViajeRepositoryImpl implements IViajeRepository {
     return this.toDomain(saved);
   }
 
+  async listar(filtros?: { pasajeroId?: string; conductorId?: string }): Promise<Viaje[]> {
+    const whereClause: any = {};
+    if (filtros?.pasajeroId) whereClause.pasajeroId = filtros.pasajeroId;
+    if (filtros?.conductorId) whereClause.conductorId = filtros.conductorId;
+
+    const entities = await this.ormRepo.find({ where: whereClause, order: { fechaSolicitud: 'DESC' } });
+    return entities.map(e => this.toDomain(e));
+  }
+
   private toDomain(entity: ViajeOrmEntity): Viaje {
     return Viaje.solicitar({
       id: entity.id,

@@ -6,6 +6,8 @@ import { CONDUCTOR_REPOSITORY } from './dominio/repositorios/conductor.repositor
 
 import { CrearConductorUseCase } from './aplicacion/casos-uso/crear-conductor.use-case.js';
 import { ConductoresController } from './presentacion/controladores/conductores.controller.js';
+import { AprobarConductorUseCase } from './aplicacion/casos-uso/aprobar-conductor.use-case.js';
+import { ListarConductoresUseCase } from './aplicacion/casos-uso/listar-conductores.use-case.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ConductorOrmEntity])],
@@ -16,6 +18,8 @@ import { ConductoresController } from './presentacion/controladores/conductores.
       useClass: ConductorRepositoryImpl,
     },
     CrearConductorUseCase,
+    AprobarConductorUseCase,
+    ListarConductoresUseCase,
   ],
   exports: [CONDUCTOR_REPOSITORY, CrearConductorUseCase],
 })

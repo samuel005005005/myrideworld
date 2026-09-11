@@ -37,6 +37,15 @@ let ViajeRepositoryImpl = class ViajeRepositoryImpl {
         const saved = await this.ormRepo.save(entity);
         return this.toDomain(saved);
     }
+    async listar(filtros) {
+        const whereClause = {};
+        if (filtros?.pasajeroId)
+            whereClause.pasajeroId = filtros.pasajeroId;
+        if (filtros?.conductorId)
+            whereClause.conductorId = filtros.conductorId;
+        const entities = await this.ormRepo.find({ where: whereClause, order: { fechaSolicitud: 'DESC' } });
+        return entities.map(e => this.toDomain(e));
+    }
     toDomain(entity) {
         return Viaje.solicitar({
             id: entity.id,

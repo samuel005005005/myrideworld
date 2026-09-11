@@ -49,7 +49,11 @@ export class Conductor {
     get ultimaUbicacionLat() { return this._ultimaUbicacionLat; }
     get ultimaUbicacionLng() { return this._ultimaUbicacionLng; }
     aprobar() {
+        if (this._estadoAprobacion !== EstadosConductor.PENDIENTE) {
+            throw new Error('Solo se pueden aprobar conductores en estado pendiente.');
+        }
         this._estadoAprobacion = EstadosConductor.APROBADO;
+        this._estadoDisponibilidad = EstadosDisponibilidadConductor.CONECTADO;
     }
     validar() {
         if (!this._nombreCompleto?.trim())

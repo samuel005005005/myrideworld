@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Post, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
@@ -22,6 +22,7 @@ import { MarcarLlegadaUseCase } from '../../aplicacion/casos-uso/marcar-llegada.
 import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.use-case.js';
 import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaje.use-case.js';
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
+import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
 import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
 import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
@@ -32,13 +33,23 @@ let ViajesController = class ViajesController {
     iniciarViaje;
     completarViaje;
     cancelarViaje;
-    constructor(solicitarViaje, aceptarViaje, marcarLlegada, iniciarViaje, completarViaje, cancelarViaje) {
+    listarViajes;
+    constructor(solicitarViaje, aceptarViaje, marcarLlegada, iniciarViaje, completarViaje, cancelarViaje, listarViajes) {
         this.solicitarViaje = solicitarViaje;
         this.aceptarViaje = aceptarViaje;
         this.marcarLlegada = marcarLlegada;
         this.iniciarViaje = iniciarViaje;
         this.completarViaje = completarViaje;
         this.cancelarViaje = cancelarViaje;
+        this.listarViajes = listarViajes;
+    }
+    async listarTodos(req) {
+        const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol);
+        return viajes.map(v => this.mapearViaje(v));
+    }
+    async misViajes(req) {
+        const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol);
+        return viajes.map(v => this.mapearViaje(v));
     }
     async solicitar(dto, req) {
         return await this.solicitarViaje.ejecutar(dto);
@@ -62,7 +73,43 @@ let ViajesController = class ViajesController {
         const rol = req.user.rol;
         return await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
     }
+    mapearViaje(v) {
+        return {
+            id: v.id,
+            pasajeroId: v.pasajeroId,
+            conductorId: v.conductorId,
+            origenLat: v.origenLat,
+            origenLng: v.origenLng,
+            destinoLat: v.destinoLat,
+            destinoLng: v.destinoLng,
+            estado: v.estado,
+            tarifaEstimada: v.tarifaEstimada,
+            fechaSolicitud: v.fechaSolicitud,
+            fechaInicio: v.fechaInicio,
+            fechaFin: v.fechaFin,
+        };
+    }
 };
+__decorate([
+    Get(),
+    UseGuards(AuthGuard, RolesGuard),
+    Roles(RolesEnum.ADMIN),
+    ApiOperation({ summary: 'Listar todos los viajes (Solo Admin)' }),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ViajesController.prototype, "listarTodos", null);
+__decorate([
+    Get('mis-viajes'),
+    UseGuards(AuthGuard, RolesGuard),
+    Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR),
+    ApiOperation({ summary: 'Historial de viajes del usuario actual' }),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ViajesController.prototype, "misViajes", null);
 __decorate([
     Post(),
     UseGuards(AuthGuard, RolesGuard),
@@ -144,7 +191,8 @@ ViajesController = __decorate([
         MarcarLlegadaUseCase,
         IniciarViajeUseCase,
         CompletarViajeUseCase,
-        CancelarViajeUseCase])
+        CancelarViajeUseCase,
+        ListarViajesUseCase])
 ], ViajesController);
 export { ViajesController };
 //# sourceMappingURL=viajes.controller.js.map

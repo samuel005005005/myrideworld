@@ -5,7 +5,7 @@ import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 export const loginSchema = z.object({
   email: z.string().email('El email no es válido'),
   password: z.string().min(1, 'La contraseña es obligatoria'),
-  rol: z.enum([Roles.PASAJERO, Roles.CONDUCTOR]),
+  rol: z.enum([Roles.PASAJERO, Roles.CONDUCTOR, Roles.ADMIN]),
 });
 
 export class LoginDto {

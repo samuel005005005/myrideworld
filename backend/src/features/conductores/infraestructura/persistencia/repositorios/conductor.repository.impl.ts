@@ -36,6 +36,12 @@ export class ConductorRepositoryImpl implements IConductorRepository {
     return this.toDomain(saved);
   }
 
+  async listar(filtros?: { estadoAprobacion?: EstadosConductor }): Promise<Conductor[]> {
+    const whereClause = filtros?.estadoAprobacion ? { estadoAprobacion: filtros.estadoAprobacion } : {};
+    const entities = await this.ormRepo.find({ where: whereClause, order: { id: 'DESC' } });
+    return entities.map(e => this.toDomain(e));
+  }
+
   private toDomain(entity: ConductorOrmEntity): Conductor {
     return Conductor.crear({
       id: entity.id,
