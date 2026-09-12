@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:mobile_pasajero/core/services/socket_service.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../controllers/viaje_activo_controller.dart';
+import '../controllers/viaje_activo_state.dart';
 
 class ViajeActivePage extends ConsumerStatefulWidget {
   final String? viajeId;
@@ -16,82 +16,51 @@ class ViajeActivePage extends ConsumerStatefulWidget {
 }
 
 class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
-  LatLng _driverLocation = const LatLng(18.5820, -68.3971);
   final MapController _mapController = MapController();
-  
-  String _tripStatus = 'Esperando confirmación...';
-  String? _etaInfo;
-  double? _tarifaFinal;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initSocket();
-    });
-  }
-
-  void _initSocket() {
-    final socketService = ref.read(socketServiceProvider);
-    socketService.connect();
-
-    if (widget.viajeId != null) {
-      socketService.unirseAViaje(widget.viajeId!);
-    }
-
-    socketService.onUbicacionActualizada = (data) {
-      final lat = data['lat'] as num?;
-      final lng = data['lng'] as num?;
-
-      if (lat != null && lng != null) {
-        setState(() {
-          _driverLocation = LatLng(lat.toDouble(), lng.toDouble());
-        });
-        _mapController.move(_driverLocation, 16.0);
-      }
-    };
-
-    // Escuchar el ciclo de vida del viaje
-    socketService.on('viajeAceptado', (data) {
-      setState(() {
-        _tripStatus = 'Conductor en camino';
-      });
-    });
-
-    socketService.on('conductorLlego', (data) {
-      setState(() {
-        _tripStatus = '¡El conductor ha llegado!';
-      });
-    });
-
-    socketService.on('viajeIniciado', (data) {
-      setState(() {
-        _tripStatus = 'En viaje hacia tu destino';
-      });
-    });
-
-    socketService.on('viajeCompletado', (data) {
-      final payload = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
-      _tarifaFinal = (payload['tarifaEstimada'] as num?)?.toDouble() ?? 0.0;
-      if (mounted) {
-        context.go('/recibo', extra: {
-          'tarifa': _tarifaFinal,
-          'distancia': 0.0,
-          'duracionMinutos': 0,
-        });
-      }
+      ref
+          .read(viajeActivoControllerProvider.notifier)
+          .iniciarSeguimiento(widget.viajeId);
     });
   }
 
   @override
   void dispose() {
-    // Only disconnect if leaving trip entirely, for MVP we disconnect on pop
-    ref.read(socketServiceProvider).disconnect();
+    ref.read(viajeActivoControllerProvider.notifier).detenerSeguimiento();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final estado = ref.watch(viajeActivoControllerProvider);
+
+    ref.listen<ViajeActivoState>(viajeActivoControllerProvider, (
+      anterior,
+      siguiente,
+    ) {
+      if (anterior?.ubicacionConductor != siguiente.ubicacionConductor) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _mapController.move(siguiente.ubicacionConductor, 16.0);
+          }
+        });
+      }
+
+      final reciboPendiente = siguiente.reciboPendiente;
+      if (reciboPendiente != null &&
+          anterior?.reciboPendiente != reciboPendiente &&
+          context.mounted) {
+        ref
+            .read(viajeActivoControllerProvider.notifier)
+            .consumirReciboPendiente();
+        context.go('/recibo', extra: reciboPendiente);
+      }
+    });
+
     const textDark = Color(0xFF1E293B);
     const textGrey = Color(0xFF64748B);
     const brandPrimary = Color(0xFFF59E0B);
@@ -106,7 +75,7 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter: _driverLocation,
+                initialCenter: estado.ubicacionConductor,
                 initialZoom: 16.0,
               ),
               children: [
@@ -117,7 +86,7 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _driverLocation,
+                      point: estado.ubicacionConductor,
                       width: 48,
                       height: 48,
                       child: Container(
@@ -209,141 +178,148 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                     bottom: MediaQuery.of(context).padding.bottom + 20,
                   ),
                   child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Drag Handle
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ETA and Status
-                  Text(
-                    _tripStatus,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (_tripStatus == 'Conductor en camino')
-                    const Text(
-                      'Llegando en ~ 5 min',
-                      style: TextStyle(fontSize: 14, color: textGrey),
-                    ),
-                  const SizedBox(height: 16),
-                  const Divider(color: borderGrey),
-                  const SizedBox(height: 16),
-
-                  // Driver Info
-                  Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Avatar
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.grey.shade200,
-                        backgroundImage: const NetworkImage(
-                          'https://randomuser.me/api/portraits/men/32.jpg', // Placeholder
+                      // Drag Handle
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // Details
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      const SizedBox(height: 16),
+
+                      // ETA and Status
+                      Text(
+                        estado.estadoViaje,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (estado.infoEta != null)
+                        Text(
+                          estado.infoEta!,
+                          style: const TextStyle(fontSize: 14, color: textGrey),
+                        ),
+                      const SizedBox(height: 16),
+                      const Divider(color: borderGrey),
+                      const SizedBox(height: 16),
+
+                      // Driver Info
+                      Row(
+                        children: [
+                          // Avatar
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.grey.shade200,
+                            backgroundImage: const NetworkImage(
+                              'https://randomuser.me/api/portraits/men/32.jpg', // Placeholder
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Carlos M.',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: textDark,
-                                  ),
+                                const Row(
+                                  children: [
+                                    Text(
+                                      AppStrings.trackingDriverNamePlaceholder,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: textDark,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons.star,
+                                      color: brandPrimary,
+                                      size: 16,
+                                    ),
+                                    Text(
+                                      AppStrings.trackingDriverRatingPlaceholder,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: textGrey,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(width: 8),
-                                Icon(Icons.star, color: brandPrimary, size: 16),
-                                Text(
-                                  '4.9',
+                                const SizedBox(height: 4),
+                                const Text(
+                                  AppStrings.trackingDriverVehiclePlaceholder,
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
                                     color: textGrey,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Toyota Corolla • Blanco',
-                              style: TextStyle(fontSize: 13, color: textGrey),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // License Plate
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: const Text(
-                          'A849201',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.0,
                           ),
-                        ),
+                          // License Plate
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Text(
+                              AppStrings.trackingDriverPlatePlaceholder,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Actions Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildActionBtn(
+                            icon: Icons.call,
+                            label: AppStrings.trackingCallAction,
+                            onTap: () {},
+                          ),
+                          _buildActionBtn(
+                            icon: Icons.message,
+                            label: AppStrings.trackingMessageAction,
+                            onTap: () {},
+                          ),
+                          _buildActionBtn(
+                            icon: Icons.share,
+                            label: AppStrings.trackingShareAction,
+                            onTap: () {},
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        AppStrings.trackingWaitingCompletion,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: textGrey),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Actions Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionBtn(
-                        icon: Icons.call,
-                        label: 'Llamar',
-                        onTap: () {},
-                      ),
-                      _buildActionBtn(
-                        icon: Icons.message,
-                        label: 'Mensaje',
-                        onTap: () {},
-                      ),
-                      _buildActionBtn(
-                        icon: Icons.share,
-                        label: 'Compartir',
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Text(
-                    'Esperando que el conductor finalice el viaje…',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: textGrey),
-                  ),
-                ],
-              ),
                 ),
               );
             },

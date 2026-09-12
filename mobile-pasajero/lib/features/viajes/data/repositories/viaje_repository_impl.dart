@@ -10,9 +10,7 @@ import '../datasources/viaje_remote_datasource.dart';
 class ViajeRepositoryImpl implements ViajeRepository {
   final ViajeRemoteDataSource remoteDataSource;
 
-  ViajeRepositoryImpl({
-    required this.remoteDataSource,
-  });
+  ViajeRepositoryImpl({required this.remoteDataSource});
 
   @override
   Future<Either<Failure, Viaje>> solicitarViaje({
@@ -30,7 +28,7 @@ class ViajeRepositoryImpl implements ViajeRepository {
         destinoLng: destinoLng,
         idempotencyKey: idempotencyKey,
       );
-      
+
       return Right(viajeModel);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.mensaje));

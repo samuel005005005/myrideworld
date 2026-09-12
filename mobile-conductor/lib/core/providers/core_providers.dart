@@ -14,7 +14,8 @@ final apiBaseUrlProvider = Provider<String>((ref) {
 
 final socketBaseUrlProvider = Provider<String>((ref) {
   final apiBaseUrl = ref.watch(apiBaseUrlProvider);
-  return dotenv.env['SOCKET_URL'] ?? apiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+  return dotenv.env['SOCKET_URL'] ??
+      apiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
 });
 
 final dioProvider = Provider<Dio>((ref) {

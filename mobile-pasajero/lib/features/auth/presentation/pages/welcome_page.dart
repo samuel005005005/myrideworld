@@ -54,7 +54,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
-    
+
     // Minimalist colors matching login_page
     const brandPrimary = Color(0xFFF59E0B);
     const orangeLight = Color(0xFFFEF3C7);
@@ -107,7 +107,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Title
                 Text(
                   'Crear Cuenta',
@@ -128,7 +128,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                     letterSpacing: 1.5,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // Full Name
@@ -183,7 +183,10 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   decoration: InputDecoration(
                     hintText: AppStrings.loginPasswordPlaceholder,
                     hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: borderGrey),
@@ -210,7 +213,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // Terms
@@ -255,7 +258,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                           ),
                         ),
                 ),
-                
+
                 const SizedBox(height: 32),
               ],
             ),
@@ -292,7 +295,10 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: borderGrey),

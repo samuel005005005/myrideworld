@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/services/socket_service.dart';
+
+import '../../../../core/constants/app_strings.dart';
+import '../../domain/entities/viaje.dart';
+import '../controllers/home_conductor_controller.dart';
+import '../controllers/home_conductor_state.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -16,58 +19,17 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final MapController _mapController = MapController();
   final LatLng _initialLocation = const LatLng(18.582, -68.3971);
-
-  bool _isOnline = false;
-  Map<String, dynamic>? _viajePendiente;
-  bool _isAccepting = false;
+  String? _ultimoViajeMostradoId;
 
   @override
   void initState() {
     super.initState();
-    _autoLogin();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homeConductorControllerProvider.notifier).inicializar();
+    });
   }
 
-  Future<void> _autoLogin() async {
-    try {
-      final apiService = ref.read(apiServiceProvider);
-      await apiService.login('conductor@myride.com', '12345678', 'CONDUCTOR');
-      print('✅ Auto-login conductor exitoso!');
-
-      final socketService = ref.read(socketServiceProvider);
-      socketService.connect();
-
-      final conductorId = apiService.currentUserId;
-      if (conductorId != null) {
-        socketService.identificarConductor(conductorId);
-      }
-
-      socketService.on('connect', (_) {
-        print('✅ Conductor conectado al WebSocket.');
-        setState(() {
-          _isOnline = true;
-        });
-        if (conductorId != null) {
-          socketService.identificarConductor(conductorId);
-        }
-      });
-
-      socketService.on('nuevoViajeDisponible', (data) {
-        print('🚕 ¡Nuevo viaje solicitado recibido! $data');
-        final viaje = data is Map
-            ? Map<String, dynamic>.from(data)
-            : <String, dynamic>{};
-        setState(() {
-          _viajePendiente = viaje;
-          _isOnline = true;
-        });
-        _mostrarAlertaViaje(viaje);
-      });
-    } catch (e) {
-      print('❌ Auto-login failed: $e');
-    }
-  }
-
-  void _mostrarAlertaViaje(Map<String, dynamic> data) {
+  void _mostrarAlertaViaje(Viaje viaje) {
     showModalBottomSheet(
       context: context,
       isDismissible: false,
@@ -77,17 +39,18 @@ class _HomePageState extends ConsumerState<HomePage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final estado = ref.watch(homeConductorControllerProvider);
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      '¡NUEVO VIAJE!',
+                      AppStrings.homeNuevoViajeTitulo,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
@@ -97,14 +60,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Origen: Lat ${data['origenLat']}, Lng ${data['origenLng']}',
+                      AppStrings.formatoOrigen(
+                        viaje.origenLat,
+                        viaje.origenLng,
+                      ),
                     ),
                     Text(
-                      'Destino: Lat ${data['destinoLat']}, Lng ${data['destinoLng']}',
+                      AppStrings.formatoDestino(
+                        viaje.destinoLat,
+                        viaje.destinoLng,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Tarifa Estimada: US\$${data['tarifaEstimada']}',
+                      AppStrings.formatoTarifa(viaje.tarifaEstimada),
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -120,19 +89,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: _isAccepting
+                      onPressed: estado.aceptandoViaje
                           ? null
                           : () async {
-                              setModalState(() {
-                                _isAccepting = true;
-                              });
-                              await _aceptarViaje(data['id']);
-                              if (context.mounted) {
-                                Navigator.pop(ctx); // close bottomsheet
-                                context.go('/viaje-active', extra: data);
+                              final viajeAceptado = await ref
+                                  .read(
+                                    homeConductorControllerProvider.notifier,
+                                  )
+                                  .aceptarViaje(viaje);
+                              if (!context.mounted || viajeAceptado == null) {
+                                return;
                               }
+                              Navigator.of(ctx).pop();
+                              context.go('/viaje-active', extra: viajeAceptado);
                             },
-                      child: _isAccepting
+                      child: estado.aceptandoViaje
                           ? const SizedBox(
                               height: 24,
                               width: 24,
@@ -141,7 +112,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                             )
                           : const Text(
-                              'ACEPTAR VIAJE',
+                              AppStrings.homeAceptarViaje,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -159,24 +130,34 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Future<void> _aceptarViaje(String viajeId) async {
-    try {
-      final apiService = ref.read(apiServiceProvider);
-      final conductorId = apiService.currentUserId;
-      if (conductorId == null) return;
-
-      await apiService.dio.post(
-        '/viajes/$viajeId/aceptar',
-        data: {'conductorId': conductorId},
-      );
-      print('✅ Viaje aceptado en backend!');
-    } catch (e) {
-      print('❌ Error aceptando viaje: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final estado = ref.watch(homeConductorControllerProvider);
+    ref.listen<HomeConductorState>(homeConductorControllerProvider, (
+      anterior,
+      siguiente,
+    ) {
+      final viajePendiente = siguiente.viajePendiente;
+      if (viajePendiente != null &&
+          viajePendiente.id != _ultimoViajeMostradoId) {
+        _ultimoViajeMostradoId = viajePendiente.id;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _mostrarAlertaViaje(viajePendiente);
+          }
+        });
+      }
+
+      if (siguiente.errorMensaje != null &&
+          siguiente.errorMensaje != anterior?.errorMensaje &&
+          mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(siguiente.errorMensaje!)));
+        ref.read(homeConductorControllerProvider.notifier).limpiarError();
+      }
+    });
+
     return Scaffold(
       body: Stack(
         children: [
@@ -230,7 +211,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: _isOnline ? Colors.green : Colors.grey.shade800,
+                  color: estado.enLinea ? Colors.green : Colors.grey.shade800,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: const [
                     BoxShadow(color: Colors.black26, blurRadius: 10),
@@ -249,7 +230,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      _isOnline ? 'EN LÍNEA' : 'CONECTANDO...',
+                      estado.enLinea
+                          ? AppStrings.homeEstadoEnLinea
+                          : AppStrings.homeEstadoConectando,
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -261,6 +244,8 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
           ),
+          if (estado.inicializando)
+            const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

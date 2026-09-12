@@ -21,7 +21,7 @@ class AuthController extends AsyncNotifier<Usuario?> {
     required String rol,
   }) async {
     state = const AsyncLoading();
-    
+
     final loginUseCase = ref.read(loginUseCaseProvider);
     final result = await loginUseCase(
       LoginParams(email: email, password: password, rol: rol),

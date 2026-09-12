@@ -19,7 +19,11 @@ class PerfilPage extends StatelessWidget {
         centerTitle: true,
         title: const Text(
           'Mi Perfil',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: textDark),
@@ -42,7 +46,9 @@ class PerfilPage extends StatelessWidget {
                     child: const CircleAvatar(
                       radius: 50,
                       backgroundColor: bgGrey,
-                      backgroundImage: NetworkImage('https://randomuser.me/api/portraits/men/44.jpg'),
+                      backgroundImage: NetworkImage(
+                        'https://randomuser.me/api/portraits/men/44.jpg',
+                      ),
                     ),
                   ),
                   Positioned(
@@ -54,23 +60,33 @@ class PerfilPage extends StatelessWidget {
                         color: brandPrimary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Form Fields
-            _buildTextField(label: 'Nombre Completo', initialValue: 'Juan Pérez'),
+            _buildTextField(
+              label: 'Nombre Completo',
+              initialValue: 'Juan Pérez',
+            ),
             const SizedBox(height: 16),
             _buildTextField(label: 'Teléfono', initialValue: '+1 809 123 4567'),
             const SizedBox(height: 16),
-            _buildTextField(label: 'Correo Electrónico', initialValue: 'juan.perez@email.com'),
-            
+            _buildTextField(
+              label: 'Correo Electrónico',
+              initialValue: 'juan.perez@email.com',
+            ),
+
             const SizedBox(height: 48),
-            
+
             // Save Button
             SizedBox(
               width: double.infinity,
@@ -78,7 +94,9 @@ class PerfilPage extends StatelessWidget {
                 onPressed: () {
                   context.pop();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Perfil actualizado exitosamente.')),
+                    const SnackBar(
+                      content: Text('Perfil actualizado exitosamente.'),
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -102,18 +120,28 @@ class PerfilPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({required String label, required String initialValue}) {
+  Widget _buildTextField({
+    required String label,
+    required String initialValue,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 8),
         TextFormField(
           initialValue: initialValue,
-          style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1E293B),
+          ),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade100,
@@ -121,7 +149,10 @@ class PerfilPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
         ),
       ],

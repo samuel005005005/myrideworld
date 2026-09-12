@@ -1,27 +1,23 @@
 import 'dart:io' show Platform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'api_service.dart';
+
+import '../constants/env_keys.dart';
 
 final socketServiceProvider = Provider<SocketService>((ref) {
-  final apiService = ref.watch(apiServiceProvider);
-  return SocketService(apiService);
+  return SocketService();
 });
 
 class SocketService {
-  final ApiService _apiService;
   IO.Socket? _socket;
   String? _viajePendienteId;
 
-  Function(Map<String, dynamic>)? onUbicacionActualizada;
-
-  SocketService(this._apiService);
-
-  void connect() {
-    final token = _apiService.currentToken;
+  Future<void> conectar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
     if (token == null) {
-      print('Cannot connect socket: No JWT token found');
       return;
     }
 
@@ -31,8 +27,10 @@ class SocketService {
 
     _socket?.dispose();
     _socket = IO.io(
-      dotenv.env['SOCKET_URL'] ??
-          (Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://127.0.0.1:3000'),
+      dotenv.env[EnvKeys.socketUrl] ??
+          (Platform.isAndroid
+              ? 'http://10.0.2.2:3000'
+              : 'http://127.0.0.1:3000'),
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -45,19 +43,8 @@ class SocketService {
     );
 
     _socket?.onConnect((_) {
-      print('Socket connected');
       if (_viajePendienteId != null) {
         _emitirUnirseAViaje(_viajePendienteId!);
-      }
-    });
-
-    _socket?.onDisconnect((_) {
-      print('Socket disconnected');
-    });
-
-    _socket?.on('ubicacionActualizada', (data) {
-      if (onUbicacionActualizada != null && data is Map) {
-        onUbicacionActualizada!(Map<String, dynamic>.from(data));
       }
     });
 
@@ -72,20 +59,59 @@ class SocketService {
   }
 
   void _emitirUnirseAViaje(String viajeId) {
-    print('Uniéndose al viaje $viajeId');
-    _socket?.emit('unirseAViaje', {'viajeId': viajeId});
+    emitir('unirseAViaje', {'viajeId': viajeId});
   }
 
-  void on(String event, Function(dynamic) callback) {
-    _socket?.on(event, callback);
+  void escuchar(String evento, void Function(dynamic) callback) {
+    _socket?.off(evento);
+    _socket?.on(evento, callback);
   }
 
-  void emit(String event, dynamic data) {
-    _socket?.emit(event, data);
+  void emitir(String evento, dynamic data) {
+    _socket?.emit(evento, data);
   }
 
-  void disconnect() {
+  void escucharUbicacionActualizada(
+    void Function(Map<String, dynamic>) callback,
+  ) {
+    escuchar('ubicacionActualizada', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
+  void escucharViajeAceptado(void Function() callback) {
+    escuchar('viajeAceptado', (_) => callback());
+  }
+
+  void escucharConductorLlego(void Function() callback) {
+    escuchar('conductorLlego', (_) => callback());
+  }
+
+  void escucharViajeIniciado(void Function() callback) {
+    escuchar('viajeIniciado', (_) => callback());
+  }
+
+  void escucharViajeCompletado(void Function(Map<String, dynamic>) callback) {
+    escuchar('viajeCompletado', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
+  void limpiarSuscripciones() {
+    _socket?.off('ubicacionActualizada');
+    _socket?.off('viajeAceptado');
+    _socket?.off('conductorLlego');
+    _socket?.off('viajeIniciado');
+    _socket?.off('viajeCompletado');
+  }
+
+  void desconectar() {
     _viajePendienteId = null;
+    limpiarSuscripciones();
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;

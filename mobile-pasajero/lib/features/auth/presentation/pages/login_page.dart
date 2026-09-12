@@ -51,7 +51,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
-    
+
     // Explicit Colors matching the Stitch mockup
     const orangeColor = Color(0xFFF59E0B);
     const orangeLight = Color(0xFFFEF3C7);
@@ -85,7 +85,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(flex: 2),
-                
+
                 // Top Icon
                 Center(
                   child: Container(
@@ -103,7 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Title & Subtitle
                 Text(
                   AppStrings.loginTitle,
@@ -124,7 +124,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     letterSpacing: 1.5,
                   ),
                 ),
-                
+
                 const Spacer(flex: 1),
 
                 // Email Field
@@ -144,7 +144,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: InputDecoration(
                     hintText: 'name@example.com',
                     hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: borderGrey),
@@ -157,7 +160,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     fillColor: Colors.white,
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
 
                 // Password Field
@@ -198,7 +201,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: InputDecoration(
                     hintText: AppStrings.loginPasswordPlaceholder,
                     hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: borderGrey),
@@ -225,7 +231,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // Login Button
@@ -257,7 +263,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                 ),
-                
+
                 const Spacer(flex: 3),
 
                 // Register Link

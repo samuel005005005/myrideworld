@@ -1,3 +1,4 @@
+import type { ObjetoJson } from '../../../../../compartidos/tipos/objeto-json.js';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import type { EjecucionProcesoOrmEntity } from './ejecucion-proceso.orm-entity.js';
 
@@ -23,10 +24,10 @@ export class DetalleEjecucionOrmEntity {
   fechaRegistro: Date;
 
   @Column({ name: 'json_generado', type: 'jsonb', nullable: true })
-  jsonGenerado: Record<string, any> | null;
+  jsonGenerado: ObjetoJson | null;
 
   @Column({ name: 'json_respuesta', type: 'jsonb', nullable: true })
-  jsonRespuesta: Record<string, any> | null;
+  jsonRespuesta: ObjetoJson | null;
 
   @Column('text', { nullable: true })
   traceback: string | null;

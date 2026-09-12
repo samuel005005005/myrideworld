@@ -1,6 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:equatable/equatable.dart';
-
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/usuario.dart';
@@ -17,7 +15,7 @@ class LoginUseCase implements UseCase<Usuario, LoginParams> {
   }
 }
 
-class LoginParams extends Equatable {
+class LoginParams {
   final String email;
   final String password;
   final String rol;
@@ -27,7 +25,4 @@ class LoginParams extends Equatable {
     required this.password,
     required this.rol,
   });
-
-  @override
-  List<Object?> get props => [email, password, rol];
 }

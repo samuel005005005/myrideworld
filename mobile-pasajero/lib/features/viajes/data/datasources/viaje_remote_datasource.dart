@@ -40,11 +40,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
 
       final response = await dio.post(
         ApiEndpoints.solicitarViaje,
-        options: Options(
-          headers: {
-            'Idempotency-Key': idempotencyKey,
-          },
-        ),
+        options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         data: {
           'pasajeroId': pasajeroId,
           'origenLat': origenLat,
@@ -57,8 +53,11 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       return ViajeMapper.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response != null && e.response?.data != null) {
-        final message = e.response?.data['message'] ?? AppStrings.errorTripRequest;
-        throw ServerException(message is List ? message.first : message.toString());
+        final message =
+            e.response?.data['message'] ?? AppStrings.errorTripRequest;
+        throw ServerException(
+          message is List ? message.first : message.toString(),
+        );
       }
       throw ServerException(AppStrings.errorServerConnection);
     } catch (e) {

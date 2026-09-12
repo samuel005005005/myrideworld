@@ -14,13 +14,14 @@ class ViajeSearchLocationPage extends StatefulWidget {
   });
 
   @override
-  State<ViajeSearchLocationPage> createState() => _ViajeSearchLocationPageState();
+  State<ViajeSearchLocationPage> createState() =>
+      _ViajeSearchLocationPageState();
 }
 
 class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
   late TextEditingController _pickupController;
   late TextEditingController _dropoffController;
-  
+
   final List<String> _dummyResults = [
     'Aeropuerto Internacional de Punta Cana (PUJ)',
     'Hard Rock Hotel & Casino Punta Cana',
@@ -66,7 +67,7 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                 ),
               ],
             ),
-            
+
             // Search Inputs
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -100,7 +101,7 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                     ],
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Inputs
                   Expanded(
                     child: Column(
@@ -124,15 +125,16 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
             const Divider(color: dividerColor, height: 1),
-            
+
             // Results List
             Expanded(
               child: ListView.separated(
                 itemCount: _dummyResults.length,
-                separatorBuilder: (context, index) => const Divider(color: dividerColor, indent: 56, height: 1),
+                separatorBuilder: (context, index) =>
+                    const Divider(color: dividerColor, indent: 56, height: 1),
                 itemBuilder: (context, index) {
                   final result = _dummyResults[index];
                   return ListTile(
@@ -142,15 +144,25 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                         color: Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.location_on, color: textDark, size: 20),
+                      child: const Icon(
+                        Icons.location_on,
+                        color: textDark,
+                        size: 20,
+                      ),
                     ),
                     title: Text(
                       result,
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: textDark),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: textDark,
+                      ),
                     ),
                     subtitle: Text(
                       'Punta Cana, República Dominicana',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
                     ),
                     onTap: () {
                       // Return the selected location
@@ -177,7 +189,11 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
       child: TextField(
         controller: controller,
         autofocus: autofocus,
-        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.black87),
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+          color: Colors.black87,
+        ),
         decoration: InputDecoration(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(6),
@@ -185,7 +201,10 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
           ),
           filled: true,
           fillColor: bgGrey,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
           isDense: true,
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.black54),

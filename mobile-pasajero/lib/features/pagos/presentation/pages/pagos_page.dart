@@ -18,7 +18,11 @@ class PagosPage extends StatelessWidget {
         centerTitle: true,
         title: const Text(
           'Métodos de Pago',
-          style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            color: textDark,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: textDark),
@@ -32,10 +36,14 @@ class PagosPage extends StatelessWidget {
           children: [
             const Text(
               'Tus métodos de pago',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textDark,
+              ),
             ),
             const SizedBox(height: 16),
-            
+
             // Cash Option (Default)
             Container(
               padding: const EdgeInsets.all(16),
@@ -52,15 +60,28 @@ class PagosPage extends StatelessWidget {
                       color: Colors.green.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.attach_money, color: Colors.green.shade700),
+                    child: Icon(
+                      Icons.attach_money,
+                      color: Colors.green.shade700,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Efectivo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark)),
-                        Text('Pago al finalizar el viaje', style: TextStyle(color: textGrey, fontSize: 13)),
+                        Text(
+                          'Efectivo',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: textDark,
+                          ),
+                        ),
+                        Text(
+                          'Pago al finalizar el viaje',
+                          style: TextStyle(color: textGrey, fontSize: 13),
+                        ),
                       ],
                     ),
                   ),
@@ -68,9 +89,9 @@ class PagosPage extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Card Mock
             Container(
               padding: const EdgeInsets.all(16),
@@ -94,30 +115,48 @@ class PagosPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('•••• 4242', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark)),
-                        Text('Expira 12/28', style: TextStyle(color: textGrey, fontSize: 13)),
+                        Text(
+                          '•••• 4242',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: textDark,
+                          ),
+                        ),
+                        Text(
+                          'Expira 12/28',
+                          style: TextStyle(color: textGrey, fontSize: 13),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Add Card Button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Integración de pasarela de pagos próximamente.')),
+                    const SnackBar(
+                      content: Text(
+                        'Integración de pasarela de pagos próximamente.',
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.add, color: textDark),
                 label: const Text(
                   'Añadir Tarjeta',
-                  style: TextStyle(color: textDark, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    color: textDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

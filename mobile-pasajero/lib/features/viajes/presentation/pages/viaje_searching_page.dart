@@ -50,12 +50,10 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
               ],
             ),
           ),
-          
+
           // Map Overlay to darken slightly
           Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.2),
-            ),
+            child: Container(color: Colors.black.withOpacity(0.2)),
           ),
 
           // 3. Bottom Card
@@ -75,7 +73,7 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
                     color: Colors.black12,
                     blurRadius: 20,
                     offset: Offset(0, -5),
-                  )
+                  ),
                 ],
               ),
               padding: EdgeInsets.only(
@@ -97,7 +95,7 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Title
                   const Text(
                     AppStrings.radarSearchingTitle,
@@ -108,17 +106,14 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Subtitle
                   const Text(
                     AppStrings.radarNotifying,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: textGrey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: textGrey),
                   ),
-                  
+
                   const SizedBox(height: 32),
 
                   // Cancel Button

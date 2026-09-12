@@ -1,3 +1,4 @@
+import type { ObjetoJson } from '../../../../../compartidos/tipos/objeto-json.js';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('bitacora_eventos')
@@ -15,13 +16,13 @@ export class BitacoraOrmEntity {
   detalle: string;
 
   @Column({ name: 'criterio_consulta', type: 'jsonb', nullable: true })
-  criterioConsulta: Record<string, any> | null;
+  criterioConsulta: ObjetoJson | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  request: Record<string, any> | null;
+  request: ObjetoJson | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  response: Record<string, any> | null;
+  response: ObjetoJson | null;
 
   @Column({ length: 100 })
   usuario: string;

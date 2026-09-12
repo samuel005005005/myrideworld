@@ -18,7 +18,7 @@ class SocketService {
 
   SocketService(this._socketUrl);
 
-  void conectar({required String token}) {
+  Future<void> conectar({required String token}) async {
     if (token.isEmpty) {
       debugPrint(AppStrings.socketSinToken);
       return;
@@ -75,11 +75,11 @@ class SocketService {
   }
 
   void _emitirIdentificarConductor(String conductorId) {
-    _socket?.emit('identificarConductor', {'conductorId': conductorId});
+    emitir('identificarConductor', {'conductorId': conductorId});
   }
 
   void _emitirUnirseAViaje(String viajeId) {
-    _socket?.emit('unirseAViaje', {'viajeId': viajeId});
+    emitir('unirseAViaje', {'viajeId': viajeId});
   }
 
   void escuchar(String evento, void Function(dynamic) callback) {
@@ -100,7 +100,7 @@ class SocketService {
     required double latitud,
     required double longitud,
   }) {
-    _socket?.emit('actualizarUbicacion', {
+    emitir('actualizarUbicacion', {
       'viajeId': viajeId,
       'lat': latitud,
       'lng': longitud,

@@ -23,7 +23,7 @@ class UsuarioMapper {
         'email': usuario.email,
         'telefono': usuario.telefono,
         'rol': usuario.rol,
-      }
+      },
     };
   }
 }

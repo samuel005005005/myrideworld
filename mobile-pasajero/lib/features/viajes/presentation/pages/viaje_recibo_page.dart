@@ -27,7 +27,7 @@ class ViajeReciboPage extends StatelessWidget {
               const Icon(Icons.check_circle, color: Colors.green, size: 80),
               const SizedBox(height: 24),
               const Text(
-                '¡Llegaste a tu destino!',
+                AppStrings.receiptArrivedTitle,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -37,7 +37,7 @@ class ViajeReciboPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Esperamos que hayas tenido un excelente viaje.',
+                AppStrings.receiptThanksMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: textGrey),
               ),
@@ -52,7 +52,7 @@ class ViajeReciboPage extends StatelessWidget {
                 child: Column(
                   children: [
                     const Text(
-                      'Total Pagado',
+                      AppStrings.receiptTotalPaid,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -62,7 +62,7 @@ class ViajeReciboPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'US\$${tarifa.toStringAsFixed(2)}',
+                      AppStrings.receiptTotalTarifa(tarifa),
                       style: const TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.w900,
@@ -80,12 +80,12 @@ class ViajeReciboPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Distancia',
+                              AppStrings.receiptDistance,
                               style: TextStyle(fontSize: 12, color: textGrey),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${distancia.toStringAsFixed(1)} km',
+                              AppStrings.receiptDistanciaValor(distancia),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -98,12 +98,12 @@ class ViajeReciboPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             const Text(
-                              'Duración',
+                              AppStrings.receiptDuration,
                               style: TextStyle(fontSize: 12, color: textGrey),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '$duracionMinutos min',
+                              AppStrings.receiptDuracionValor(duracionMinutos),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -131,7 +131,7 @@ class ViajeReciboPage extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'VOLVER AL INICIO',
+                  AppStrings.receiptBackHome,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

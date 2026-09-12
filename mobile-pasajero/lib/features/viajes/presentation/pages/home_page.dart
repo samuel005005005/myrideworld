@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:dio/dio.dart';
 
-import '../../../../core/services/api_service.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../controllers/home_controller.dart';
 
-final selectedVehicleProvider = StateProvider<String>((ref) => 'sedan');
-final selectedPaymentProvider = StateProvider<String>((ref) => 'cash');
-final isRequestingProvider = StateProvider<bool>((ref) => false);
+const _vehiculoSedan = 'sedan';
+const _vehiculoMinivan = 'minivan';
+const _vehiculoSuv = 'suv';
+const _pagoEfectivo = 'cash';
+const _pagoTarjeta = 'card';
+
+final selectedVehicleProvider = StateProvider<String>((ref) => _vehiculoSedan);
+final selectedPaymentProvider = StateProvider<String>((ref) => _pagoEfectivo);
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -21,82 +25,32 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   final MapController _mapController = MapController();
-
-  String _pickupLocation = 'Aeropuerto Punta Cana';
-  String _dropoffLocation = 'Hard Rock Hotel';
-
-  List<LatLng> _routePoints = [];
-  double _routeDistanceKm = 0.0;
-  int _routeDurationMin = 0;
-
-  final Map<String, LatLng> _locationCoords = {
-    'Aeropuerto Punta Cana': const LatLng(18.5674, -68.3634),
-    'Hard Rock Hotel': const LatLng(18.7302, -68.5284),
-    'Aeropuerto Internacional de Punta Cana (PUJ)': const LatLng(
-      18.5674,
-      -68.3634,
-    ),
-    'Hard Rock Hotel & Casino Punta Cana': const LatLng(18.7302, -68.5284),
-    'Coco Bongo Punta Cana': const LatLng(18.6300, -68.4200),
-    'Bávaro Beach Resort': const LatLng(18.6811, -68.4287),
-    'Cap Cana Marina': const LatLng(18.4984, -68.3846),
-    'Uvero Alto Plaza': const LatLng(18.8143, -68.6186),
-    'BlueMall Puntacana': const LatLng(18.5583, -68.3756),
-    'Downtown Punta Cana': const LatLng(18.6182, -68.3976),
-  };
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchRoute();
-      _loginAutomatico();
+      ref.read(homeControllerProvider.notifier).inicializar();
     });
   }
 
-  Future<void> _loginAutomatico() async {
-    try {
-      final apiService = ref.read(apiServiceProvider);
-      // Background silent login with the seeded test user
-      await apiService.login('pasajero@myride.com', '12345678', 'PASAJERO');
-      print('Auto-login successful!');
-    } catch (e) {
-      print('Auto-login failed: $e');
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final estado = ref.watch(homeControllerProvider);
+    final selectedVehicle = ref.watch(selectedVehicleProvider);
+    final selectedPayment = ref.watch(selectedPaymentProvider);
+    final isRequesting = estado.status == HomeStateStatus.loading;
 
-  Future<void> _fetchRoute() async {
-    final start = _locationCoords[_pickupLocation];
-    final end = _locationCoords[_dropoffLocation];
+    ref.listen<HomeState>(homeControllerProvider, (anterior, siguiente) {
+      if (siguiente.routePoints.isNotEmpty &&
+          anterior?.routePoints != siguiente.routePoints) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
 
-    if (start == null || end == null) return;
-
-    try {
-      final dio = Dio();
-      final url =
-          'https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson';
-      final response = await dio.get(url);
-
-      if (response.data != null &&
-          response.data['routes'] != null &&
-          response.data['routes'].isNotEmpty) {
-        final geometry =
-            response.data['routes'][0]['geometry']['coordinates'] as List;
-        final distanceMeters = response.data['routes'][0]['distance'] as num;
-        final durationSeconds = response.data['routes'][0]['duration'] as num;
-
-        setState(() {
-          _routePoints = geometry
-              .map((coord) => LatLng(coord[1], coord[0]))
-              .toList();
-          _routeDistanceKm = distanceMeters / 1000.0;
-          _routeDurationMin = (durationSeconds / 60.0).ceil();
-        });
-
-        if (_routePoints.isNotEmpty) {
-          final bounds = LatLngBounds.fromPoints(_routePoints);
+          final bounds = LatLngBounds.fromPoints(siguiente.routePoints);
           _mapController.fitCamera(
             CameraFit.bounds(
               bounds: bounds,
@@ -108,72 +62,63 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
           );
-        }
+        });
       }
-    } catch (e) {
-      debugPrint('Error fetching route: $e');
-    }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final selectedVehicle = ref.watch(selectedVehicleProvider);
-    final selectedPayment = ref.watch(selectedPaymentProvider);
-    final isRequesting = ref.watch(isRequestingProvider);
+      final errorMessage = siguiente.errorMessage;
+      if (errorMessage != null && errorMessage != anterior?.errorMessage && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      }
 
-    const brandPrimary = Color(0xFFF59E0B); // Taxi Veron Orange / Yellow
-    const brandLight = Color(0xFFFEF3C7);
+      final viaje = siguiente.activeTrip;
+      if (viaje != null &&
+          viaje.id != anterior?.activeTrip?.id &&
+          siguiente.status == HomeStateStatus.tripRequested &&
+          mounted) {
+        context.go('/viaje-active', extra: viaje);
+      }
+    });
+
+    const brandPrimary = Color(0xFFF59E0B);
     const textDark = Color(0xFF1E293B);
-    const textGrey = Color(0xFF545454);
     const bgGrey = Color(0xFFEEEEEE);
     const dividerColor = Color(0xFFE2E2E2);
 
-    String formatETA(int extraMinutes) {
-      if (extraMinutes == 0) return '--:--';
-      final now = DateTime.now().add(Duration(minutes: extraMinutes));
-      final hour = now.hour > 12
-          ? now.hour - 12
-          : (now.hour == 0 ? 12 : now.hour);
-      final minute = now.minute.toString().padLeft(2, '0');
-      final ampm = now.hour >= 12 ? 'PM' : 'AM';
-      return '$hour:$minute $ampm';
-    }
+    final routeDistanceKm = estado.routeDistanceKm;
+    final routeDurationMin = estado.routeDurationMin;
+    final routePoints = estado.routePoints;
+    final etaSedan = _formatEta(routeDurationMin);
+    final etaMinivan = _formatEta(routeDurationMin + 2);
+    final etaSuv = _formatEta(routeDurationMin + 5);
 
-    final etaSedan = formatETA(_routeDurationMin);
-    final etaMinivan = formatETA(_routeDurationMin + 2);
-    final etaSuv = formatETA(_routeDurationMin + 5);
-
-    double sedanPrice = _routeDistanceKm > 0
-        ? 10.0 + (_routeDistanceKm * 1.5)
-        : 35.0;
-    double minivanPrice = _routeDistanceKm > 0
-        ? 15.0 + (_routeDistanceKm * 2.5)
-        : 55.0;
-    double suvPrice = _routeDistanceKm > 0
-        ? 25.0 + (_routeDistanceKm * 3.0)
-        : 65.0;
-
-    // Fixed Fare Calculation
-    double basePrice = sedanPrice;
-    if (selectedVehicle == 'minivan') basePrice = minivanPrice;
-    if (selectedVehicle == 'suv') basePrice = suvPrice;
-
-    // Apply 7.5% fee if card
-    double finalPrice = selectedPayment == 'card'
+    final sedanPrice = _calcularTarifaBase(_vehiculoSedan, routeDistanceKm);
+    final minivanPrice = _calcularTarifaBase(_vehiculoMinivan, routeDistanceKm);
+    final suvPrice = _calcularTarifaBase(_vehiculoSuv, routeDistanceKm);
+    final basePrice = switch (selectedVehicle) {
+      _vehiculoMinivan => minivanPrice,
+      _vehiculoSuv => suvPrice,
+      _ => sedanPrice,
+    };
+    final finalPrice = selectedPayment == _pagoTarjeta
         ? basePrice * 1.075
         : basePrice;
+
+    final ubicacionActual =
+        estado.currentLocation ?? const LatLng(18.5820, -68.3971);
+    final ubicacionDestino = estado.destinationLocation;
 
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildDrawer(context),
       body: Stack(
         children: [
-          // 1. Full Screen Map (Uber/Clean Style)
           Positioned.fill(
             child: FlutterMap(
               mapController: _mapController,
-              options: const MapOptions(
-                initialCenter: LatLng(18.5820, -68.3971), // Punta Cana
+              options: MapOptions(
+                initialCenter: ubicacionActual,
                 initialZoom: 12.0,
               ),
               children: [
@@ -181,42 +126,59 @@ class _HomePageState extends ConsumerState<HomePage> {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.myride',
                 ),
-                if (_routePoints.isNotEmpty)
+                if (routePoints.isNotEmpty)
                   PolylineLayer(
                     polylines: [
                       Polyline(
-                        points: _routePoints,
+                        points: routePoints,
                         strokeWidth: 4.0,
                         color: brandPrimary,
                       ),
                     ],
                   ),
-                if (_routePoints.isNotEmpty)
-                  MarkerLayer(
-                    markers: [
+                MarkerLayer(
+                  markers: [
+                    if (routePoints.isNotEmpty)
                       Marker(
-                        point: _routePoints.first,
+                        point: routePoints.first,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.green,
+                          size: 36,
+                        ),
+                      )
+                    else if (estado.currentLocation != null)
+                      Marker(
+                        point: estado.currentLocation!,
                         child: const Icon(
                           Icons.location_on,
                           color: Colors.green,
                           size: 36,
                         ),
                       ),
+                    if (routePoints.isNotEmpty)
                       Marker(
-                        point: _routePoints.last,
+                        point: routePoints.last,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.red,
+                          size: 36,
+                        ),
+                      )
+                    else if (ubicacionDestino != null)
+                      Marker(
+                        point: ubicacionDestino,
                         child: const Icon(
                           Icons.location_on,
                           color: Colors.red,
                           size: 36,
                         ),
                       ),
-                    ],
-                  ),
+                  ],
+                ),
               ],
             ),
           ),
-
-          // Floating Menu Button (Top Left)
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
@@ -225,14 +187,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               radius: 24,
               child: IconButton(
                 icon: const Icon(Icons.menu, color: textDark),
-                onPressed: () {
-                  _scaffoldKey.currentState?.openDrawer();
-                },
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
             ),
           ),
-
-          // 3. Bottom Sheet Card
           Positioned(
             bottom: 0,
             left: 0,
@@ -255,7 +213,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag handle
                   Center(
                     child: Container(
                       margin: const EdgeInsets.only(top: 8, bottom: 8),
@@ -267,15 +224,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-
-                  // Official Badge (Requirement)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.verified_user, color: brandPrimary, size: 14),
+                      const Icon(
+                        Icons.verified_user,
+                        color: brandPrimary,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
-                      Text(
-                        'Tarifas Oficiales Reguladas (MITUR)',
+                      const Text(
+                        AppStrings.homeOfficialRatesMitur,
                         style: TextStyle(
                           fontSize: 12,
                           color: brandPrimary,
@@ -285,8 +244,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Route Inputs (Uber Style)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
@@ -329,37 +286,39 @@ class _HomePageState extends ConsumerState<HomePage> {
                             child: Column(
                               children: [
                                 _buildLocationTrigger(
-                                  value: _pickupLocation,
+                                  value: estado.pickupLabel,
                                   onTap: () async {
                                     final result = await context.push<String>(
                                       '/search-location',
                                       extra: {
-                                        'pickup': _pickupLocation,
-                                        'dropoff': _dropoffLocation,
+                                        'pickup': estado.pickupLabel,
+                                        'dropoff': estado.dropoffLabel,
                                         'focusDropoff': false,
                                       },
                                     );
                                     if (result != null) {
-                                      setState(() => _pickupLocation = result);
-                                      _fetchRoute();
+                                      await ref
+                                          .read(homeControllerProvider.notifier)
+                                          .seleccionarOrigen(result);
                                     }
                                   },
                                 ),
                                 const SizedBox(height: 8),
                                 _buildLocationTrigger(
-                                  value: _dropoffLocation,
+                                  value: estado.dropoffLabel,
                                   onTap: () async {
                                     final result = await context.push<String>(
                                       '/search-location',
                                       extra: {
-                                        'pickup': _pickupLocation,
-                                        'dropoff': _dropoffLocation,
+                                        'pickup': estado.pickupLabel,
+                                        'dropoff': estado.dropoffLabel,
                                         'focusDropoff': true,
                                       },
                                     );
                                     if (result != null) {
-                                      setState(() => _dropoffLocation = result);
-                                      _fetchRoute();
+                                      await ref
+                                          .read(homeControllerProvider.notifier)
+                                          .seleccionarDestino(result);
                                     }
                                   },
                                 ),
@@ -370,9 +329,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-                  if (_routeDistanceKm > 0)
+                  if (routeDistanceKm > 0)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -383,7 +342,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '${_routeDistanceKm.toStringAsFixed(1)} km • $_routeDurationMin min de viaje',
+                            AppStrings.homeResumenRuta(
+                              routeDistanceKm,
+                              routeDurationMin,
+                            ),
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.black54,
@@ -395,92 +357,90 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: dividerColor),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: dividerColor),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_routeDistanceKm.toStringAsFixed(1)} km',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: dividerColor),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppStrings.homeResumenDistancia(routeDistanceKm),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textDark,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'ETA: $_routeDurationMin min',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
+                        Text(
+                          AppStrings.homeResumenEta(routeDurationMin),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textDark,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-
-                  // Vehicle List
                   SizedBox(
                     height: 200,
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
                         _buildUberVehicleTile(
-                          id: 'sedan',
-                          name: 'Sedán',
+                          id: _vehiculoSedan,
+                          name: AppStrings.homeVehicleSedan,
                           eta: etaSedan,
-                          capacity: '4',
+                          capacity: 4,
                           basePrice: sedanPrice,
                           icon: Icons.directions_car,
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () =>
-                              ref.read(selectedVehicleProvider.notifier).state =
-                                  'sedan',
+                          onTap: () => ref
+                              .read(selectedVehicleProvider.notifier)
+                              .state = _vehiculoSedan,
                         ),
                         _buildUberVehicleTile(
-                          id: 'minivan',
-                          name: 'Van Familiar',
+                          id: _vehiculoMinivan,
+                          name: AppStrings.homeVehicleMinivan,
                           eta: etaMinivan,
-                          capacity: '6',
+                          capacity: 6,
                           basePrice: minivanPrice,
                           icon: Icons.airport_shuttle,
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () =>
-                              ref.read(selectedVehicleProvider.notifier).state =
-                                  'minivan',
+                          onTap: () => ref
+                              .read(selectedVehicleProvider.notifier)
+                              .state = _vehiculoMinivan,
                         ),
                         _buildUberVehicleTile(
-                          id: 'suv',
-                          name: 'SUV Premium',
+                          id: _vehiculoSuv,
+                          name: AppStrings.homeVehicleSuv,
                           eta: etaSuv,
-                          capacity: '6',
+                          capacity: 6,
                           basePrice: suvPrice,
                           icon: Icons.time_to_leave,
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () =>
-                              ref.read(selectedVehicleProvider.notifier).state =
-                                  'suv',
+                          onTap: () => ref
+                              .read(selectedVehicleProvider.notifier)
+                              .state = _vehiculoSuv,
                         ),
                       ],
                     ),
                   ),
-
                   const Divider(height: 1, color: dividerColor),
-
-                  // Payment & Request Row
                   Padding(
                     padding: EdgeInsets.only(
                       left: 16,
@@ -490,12 +450,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     child: Row(
                       children: [
-                        // Payment Selector
                         InkWell(
-                          onTap: () {
-                            ref.read(selectedPaymentProvider.notifier).state =
-                                selectedPayment == 'cash' ? 'card' : 'cash';
-                          },
+                          onTap: () => ref
+                              .read(selectedPaymentProvider.notifier)
+                              .state = selectedPayment == _pagoEfectivo
+                              ? _pagoTarjeta
+                              : _pagoEfectivo,
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -509,7 +469,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             child: Row(
                               children: [
                                 Icon(
-                                  selectedPayment == 'cash'
+                                  selectedPayment == _pagoEfectivo
                                       ? Icons.money
                                       : Icons.credit_card,
                                   size: 20,
@@ -517,9 +477,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  selectedPayment == 'cash'
-                                      ? 'Efectivo'
-                                      : 'Tarjeta',
+                                  selectedPayment == _pagoEfectivo
+                                      ? AppStrings.homePaymentCashShort
+                                      : AppStrings.homePaymentCardShort,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black87,
@@ -532,105 +492,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Request Button
                         Expanded(
                           child: ElevatedButton(
                             onPressed: isRequesting
                                 ? null
                                 : () async {
-                                    ref
-                                            .read(isRequestingProvider.notifier)
-                                            .state =
-                                        true;
-                                    try {
-                                      final apiService = ref.read(
-                                        apiServiceProvider,
-                                      );
-                                      final pasajeroId =
-                                          apiService.currentUserId;
-
-                                      if (pasajeroId == null) {
-                                        ref
-                                                .read(
-                                                  isRequestingProvider.notifier,
-                                                )
-                                                .state =
-                                            false;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Error: No se pudo autenticar al pasajero.',
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-
-                                      final start =
-                                          _locationCoords[_pickupLocation]!;
-                                      final end =
-                                          _locationCoords[_dropoffLocation]!;
-
-                                      final viajeId = await apiService
-                                          .solicitarViaje(
-                                            pasajeroId: pasajeroId,
-                                            origenLat: start.latitude,
-                                            origenLng: start.longitude,
-                                            destinoLat: end.latitude,
-                                            destinoLng: end.longitude,
-                                          );
-
-                                      print(
-                                        '==================================================',
-                                      );
-                                      print(
-                                        '🚗 ¡VIAJE SOLICITADO EXITOSAMENTE!',
-                                      );
-                                      print(
-                                        'Copia este ID y úsalo en el simulador:',
-                                      );
-                                      print(viajeId);
-                                      print(
-                                        'Comando: node simulator.js $viajeId',
-                                      );
-                                      print(
-                                        '==================================================',
-                                      );
-
-                                      if (context.mounted) {
-                                        ref
-                                                .read(
-                                                  isRequestingProvider.notifier,
-                                                )
-                                                .state =
-                                            false;
-                                        // Navigate to active trip screen, passing the viajeId
-                                        context.go(
-                                          '/viaje-active',
-                                          extra: {'viajeId': viajeId},
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ref
-                                                .read(
-                                                  isRequestingProvider.notifier,
-                                                )
-                                                .state =
-                                            false;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Error al pedir el viaje: $e',
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
+                                    await ref
+                                        .read(homeControllerProvider.notifier)
+                                        .requestTrip();
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: brandPrimary,
@@ -651,7 +520,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   )
                                 : Text(
-                                    'Pedir ${selectedVehicle.toUpperCase()} • US\$${finalPrice.toStringAsFixed(2)}',
+                                    AppStrings.homeSolicitarVehiculo(
+                                      _etiquetaVehiculoParaBoton(selectedVehicle),
+                                      finalPrice,
+                                    ),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -669,6 +541,42 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
     );
+  }
+
+  String _formatEta(int extraMinutes) {
+    if (extraMinutes <= 0) {
+      return AppStrings.homeEtaNoDisponible;
+    }
+
+    final now = DateTime.now().add(Duration(minutes: extraMinutes));
+    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final minute = now.minute.toString().padLeft(2, '0');
+    final ampm = now.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $ampm';
+  }
+
+  double _calcularTarifaBase(String vehiculo, double distanciaKm) {
+    if (distanciaKm <= 0) {
+      return switch (vehiculo) {
+        _vehiculoMinivan => 55,
+        _vehiculoSuv => 65,
+        _ => 35,
+      };
+    }
+
+    return switch (vehiculo) {
+      _vehiculoMinivan => 15 + (distanciaKm * 2.5),
+      _vehiculoSuv => 25 + (distanciaKm * 3.0),
+      _ => 10 + (distanciaKm * 1.5),
+    };
+  }
+
+  String _etiquetaVehiculoParaBoton(String vehiculo) {
+    return switch (vehiculo) {
+      _vehiculoMinivan => AppStrings.homeVehicleMinivanLabel,
+      _vehiculoSuv => AppStrings.homeVehicleSuvLabel,
+      _ => AppStrings.homeVehicleSedanLabel,
+    };
   }
 
   Widget _buildLocationTrigger({
@@ -705,7 +613,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     required String id,
     required String name,
     required String eta,
-    required String capacity,
+    required int capacity,
     required double basePrice,
     required IconData icon,
     required String selectedId,
@@ -715,11 +623,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }) {
     final selected = selectedId == id;
     final borderColor = selected ? brandPrimary : Colors.transparent;
-    final bgColor = selected
-        ? brandPrimary.withOpacity(0.08)
-        : Colors.transparent;
-
-    double finalPrice = paymentMethod == 'card' ? basePrice * 1.075 : basePrice;
+    final bgColor = selected ? brandPrimary.withOpacity(0.08) : Colors.transparent;
+    final finalPrice = paymentMethod == _pagoTarjeta ? basePrice * 1.075 : basePrice;
 
     return InkWell(
       onTap: onTap,
@@ -750,9 +655,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(Icons.person, size: 14, color: Colors.black54),
+                      const Icon(Icons.person, size: 14, color: Colors.black54),
                       Text(
-                        capacity,
+                        capacity.toString(),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black54,
@@ -772,16 +677,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'US\$${finalPrice.toStringAsFixed(2)}',
+                  AppStrings.homePrecioVehiculo(finalPrice),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black87,
                   ),
                 ),
-                if (paymentMethod == 'card')
+                if (paymentMethod == _pagoTarjeta)
                   const Text(
-                    '+7.5% fee incl.',
+                    AppStrings.homeCardFeeIncluded,
                     style: TextStyle(fontSize: 10, color: Colors.black54),
                   ),
               ],
@@ -807,7 +712,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: SafeArea(
         child: Column(
           children: [
-            // Elegant Header
             InkWell(
               onTap: () {
                 context.pop();
@@ -848,7 +752,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Juan Pérez',
+                            AppStrings.homeDrawerPassengerName,
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
@@ -876,7 +780,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '5.0 Pasajero',
+                                  AppStrings.homeDrawerPassengerCategory,
                                   style: TextStyle(
                                     color: brandPrimary.withOpacity(0.9),
                                     fontWeight: FontWeight.bold,
@@ -893,13 +797,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Menu Items
             _buildDrawerItem(
               icon: Icons.history,
-              title: 'Mis Viajes',
+              title: AppStrings.homeDrawerTrips,
               onTap: () {
                 context.pop();
                 context.push('/history');
@@ -907,7 +808,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             _buildDrawerItem(
               icon: Icons.credit_card,
-              title: 'Métodos de Pago',
+              title: AppStrings.homeDrawerPaymentMethods,
               onTap: () {
                 context.pop();
                 context.push('/pagos');
@@ -915,21 +816,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             _buildDrawerItem(
               icon: Icons.local_offer_outlined,
-              title: 'Promociones',
+              title: AppStrings.homeDrawerPromotions,
               onTap: () => context.pop(),
             ),
             _buildDrawerItem(
               icon: Icons.support_agent,
-              title: 'Ayuda y Soporte',
+              title: AppStrings.homeDrawerSupport,
               onTap: () {
                 context.pop();
                 context.push('/ayuda');
               },
             ),
-
             const Spacer(),
-
-            // Footer
             Padding(
               padding: const EdgeInsets.all(32),
               child: TextButton.icon(
@@ -941,7 +839,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 icon: const Icon(Icons.logout, size: 22),
                 label: const Text(
-                  'Cerrar Sesión',
+                  AppStrings.homeDrawerLogout,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),

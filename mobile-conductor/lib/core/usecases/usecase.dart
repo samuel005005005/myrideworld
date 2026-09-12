@@ -1,7 +1,6 @@
-import 'package:dartz/dartz.dart';
-
 import '../error/failures.dart';
+import '../tipos/resultado.dart';
 
 abstract class UseCase<Type, Params> {
-  Future<Either<Failure, Type>> call(Params params);
+  Future<Resultado<Type>> call(Params params);
 }

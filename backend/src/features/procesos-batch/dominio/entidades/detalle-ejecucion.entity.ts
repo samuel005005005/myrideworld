@@ -1,3 +1,4 @@
+import type { ObjetoJson } from '../../../../compartidos/tipos/objeto-json.js';
 import { DetalleEjecucionProcesoProps } from './detalle-ejecucion.props.js';
 import { EstadosEjecucion } from '../../../../compartidos/constantes/estados-ejecucion.enum.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
@@ -11,8 +12,8 @@ export class DetalleEjecucionProceso {
   private readonly _entidadId: string | null;
   private _estado: EstadosEjecucion;
   private readonly _fechaRegistro: Date;
-  private readonly _jsonGenerado: Record<string, any> | null;
-  private _jsonRespuesta: Record<string, any> | null;
+  private readonly _jsonGenerado: ObjetoJson | null;
+  private _jsonRespuesta: ObjetoJson | null;
   private _traceback: string | null;
   private readonly _valorClave: string;
 
@@ -43,8 +44,8 @@ export class DetalleEjecucionProceso {
   get entidadId(): string | null { return this._entidadId; }
   get estado(): EstadosEjecucion { return this._estado; }
   get fechaRegistro(): Date { return this._fechaRegistro; }
-  get jsonGenerado(): Record<string, any> | null { return this._jsonGenerado; }
-  get jsonRespuesta(): Record<string, any> | null { return this._jsonRespuesta; }
+  get jsonGenerado(): ObjetoJson | null { return this._jsonGenerado; }
+  get jsonRespuesta(): ObjetoJson | null { return this._jsonRespuesta; }
   get traceback(): string | null { return this._traceback; }
   get valorClave(): string { return this._valorClave; }
 
@@ -52,7 +53,7 @@ export class DetalleEjecucionProceso {
     this._estado = EstadosEjecucion.EN_PROCESO;
   }
 
-  marcarExitoso(respuesta?: Record<string, any>): void {
+  marcarExitoso(respuesta?: ObjetoJson): void {
     this._estado = EstadosEjecucion.EXITOSO;
     if (respuesta) this._jsonRespuesta = respuesta;
   }

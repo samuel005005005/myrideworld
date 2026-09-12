@@ -1,3 +1,4 @@
+import type { ObjetoJson } from '../../../../compartidos/tipos/objeto-json.js';
 import { BitacoraProps } from './bitacora.props.js';
 import { TiposBitacora } from '../../../../compartidos/constantes/tipos-bitacora.enum.js';
 import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-sistema.enum.js';
@@ -11,9 +12,9 @@ export class Bitacora {
   private readonly _tipoEvento: TiposBitacora;
   private readonly _servicioSistema: ServiciosSistema;
   private readonly _detalle: string;
-  private readonly _criterioConsulta: Record<string, any> | null;
-  private readonly _request: Record<string, any> | null;
-  private readonly _response: Record<string, any> | null;
+  private readonly _criterioConsulta: ObjetoJson | null;
+  private readonly _request: ObjetoJson | null;
+  private readonly _response: ObjetoJson | null;
   private readonly _usuario: string;
   private readonly _fecha: Date;
   private readonly _ip: string | null;
@@ -47,9 +48,9 @@ export class Bitacora {
   get tipoEvento(): TiposBitacora { return this._tipoEvento; }
   get servicioSistema(): ServiciosSistema { return this._servicioSistema; }
   get detalle(): string { return this._detalle; }
-  get criterioConsulta(): Record<string, any> | null { return this._criterioConsulta; }
-  get request(): Record<string, any> | null { return this._request; }
-  get response(): Record<string, any> | null { return this._response; }
+  get criterioConsulta(): ObjetoJson | null { return this._criterioConsulta; }
+  get request(): ObjetoJson | null { return this._request; }
+  get response(): ObjetoJson | null { return this._response; }
   get usuario(): string { return this._usuario; }
   get fecha(): Date { return this._fecha; }
   get ip(): string | null { return this._ip; }

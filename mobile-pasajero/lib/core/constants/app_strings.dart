@@ -39,6 +39,7 @@ class AppStrings {
       'Credenciales inválidas o error en login';
   static const String errorTripRequest = 'Error al solicitar viaje';
   static const String errorUnexpected = 'Error inesperado: ';
+  static const String errorObtenerRuta = 'No se pudo obtener la ruta del viaje';
 
   // Registro / Bienvenida Turística
   static const String welcomeTitle = '¡Bienvenido al Paraíso!';
@@ -159,6 +160,23 @@ class AppStrings {
   static const String homeSafetyDesc =
       'Conductor carnetizado por MITUR y Asociación de Taxistas de Punta Cana.';
   static const String homeConfirmBtn = 'Confirmar Solicitud de Taxi';
+  static const String homeOfficialRatesMitur =
+      'Tarifas Oficiales Reguladas (MITUR)';
+  static const String homeRouteEtaLabel = 'ETA';
+  static const String homeEtaNoDisponible = '--:--';
+  static const String homeVehicleSedanLabel = 'Sedan';
+  static const String homeVehicleMinivanLabel = 'Van Familiar';
+  static const String homeVehicleSuvLabel = 'SUV Premium';
+  static const String homePaymentCashShort = 'Efectivo';
+  static const String homePaymentCardShort = 'Tarjeta';
+  static const String homeCardFeeIncluded = '+7.5% comision incl.';
+  static const String homeDrawerPassengerName = 'Juan Perez';
+  static const String homeDrawerPassengerCategory = '5.0 Pasajero';
+  static const String homeDrawerTrips = 'Mis Viajes';
+  static const String homeDrawerPaymentMethods = 'Metodos de Pago';
+  static const String homeDrawerPromotions = 'Promociones';
+  static const String homeDrawerSupport = 'Ayuda y Soporte';
+  static const String homeDrawerLogout = 'Cerrar Sesion';
 
   // Tracking en Vivo y Conductor
   static const String trackingTitle = 'Viaje En Curso';
@@ -177,6 +195,53 @@ class AppStrings {
   static const String trackingTouristSafety = 'Seguridad del Turista';
   static const String trackingShareTrip = 'Compartir Viaje';
   static const String trackingSOS = 'SOS 24/7';
+  static const String trackingEsperandoConfirmacion =
+      'Esperando confirmacion...';
+  static const String trackingConductorEnCamino = 'Conductor en camino';
+  static const String trackingConductorHaLlegado = 'El conductor ha llegado';
+  static const String trackingViajeEnCursoDestino = 'En viaje hacia tu destino';
+  static const String trackingLlegandoEnCincoMinutos = 'Llegando en ~ 5 min';
+  static const String trackingDriverNamePlaceholder = 'Carlos M.';
+  static const String trackingDriverRatingPlaceholder = '4.9';
+  static const String trackingDriverVehiclePlaceholder =
+      'Toyota Corolla - Blanco';
+  static const String trackingDriverPlatePlaceholder = 'A849201';
+  static const String trackingCallAction = 'Llamar';
+  static const String trackingMessageAction = 'Mensaje';
+  static const String trackingShareAction = 'Compartir';
+  static const String trackingWaitingCompletion =
+      'Esperando que el conductor finalice el viaje...';
+  static const String receiptArrivedTitle = 'Llegaste a tu destino';
+  static const String receiptThanksMessage =
+      'Esperamos que hayas tenido un excelente viaje.';
+  static const String receiptTotalPaid = 'Total Pagado';
+  static const String receiptDistance = 'Distancia';
+  static const String receiptDuration = 'Duracion';
+  static const String receiptBackHome = 'VOLVER AL INICIO';
   static const String ratingTitle = 'Calificación del Viaje';
   static const String ratingSubtitle = 'Gracias por elegir nuestro servicio';
+
+  static String homeResumenRuta(double distanciaKm, int duracionMinutos) =>
+      '${distanciaKm.toStringAsFixed(1)} km • $duracionMinutos min de viaje';
+
+  static String homeResumenDistancia(double distanciaKm) =>
+      '${distanciaKm.toStringAsFixed(1)} km';
+
+  static String homeResumenEta(int duracionMinutos) =>
+      '$homeRouteEtaLabel: $duracionMinutos min';
+
+  static String homeSolicitarVehiculo(String vehiculo, double total) =>
+      'Pedir $vehiculo • US\$${total.toStringAsFixed(2)}';
+
+  static String homePrecioVehiculo(double total) =>
+      'US\$${total.toStringAsFixed(2)}';
+
+  static String receiptTotalTarifa(double tarifa) =>
+      'US\$${tarifa.toStringAsFixed(2)}';
+
+  static String receiptDistanciaValor(double distancia) =>
+      '${distancia.toStringAsFixed(1)} km';
+
+  static String receiptDuracionValor(int duracionMinutos) =>
+      '$duracionMinutos min';
 }

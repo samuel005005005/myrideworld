@@ -10,7 +10,8 @@ class AppStrings {
   static const String homeNuevoViajeTitulo = 'NUEVO VIAJE DISPONIBLE';
   static const String homeAceptarViaje = 'ACEPTAR VIAJE';
   static const String homeAceptandoViaje = 'Aceptando viaje...';
-  static const String homeMapaSinConexion = 'Esperando conexion con el servidor';
+  static const String homeMapaSinConexion =
+      'Esperando conexion con el servidor';
 
   static const String viajeEstadoEnCamino = 'En camino al pasajero';
   static const String viajeEstadoEsperando = 'Esperando pasajero';
@@ -36,11 +37,9 @@ class AppStrings {
   static const String errorViajeInvalido =
       'No fue posible interpretar el viaje recibido';
   static const String errorAceptarViaje = 'No fue posible aceptar el viaje';
-  static const String errorMarcarLlegada =
-      'No fue posible marcar la llegada';
+  static const String errorMarcarLlegada = 'No fue posible marcar la llegada';
   static const String errorIniciarViaje = 'No fue posible iniciar el viaje';
-  static const String errorCompletarViaje =
-      'No fue posible completar el viaje';
+  static const String errorCompletarViaje = 'No fue posible completar el viaje';
 
   static const String socketSinToken = 'No hay token para conectar el socket';
   static const String socketConectado = 'Socket conectado';

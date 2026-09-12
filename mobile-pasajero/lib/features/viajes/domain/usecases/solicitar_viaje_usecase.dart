@@ -1,6 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:equatable/equatable.dart';
-
 import '../../../../core/error/failures.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/viaje.dart';
@@ -23,7 +21,7 @@ class SolicitarViajeUseCase implements UseCase<Viaje, SolicitarViajeParams> {
   }
 }
 
-class SolicitarViajeParams extends Equatable {
+class SolicitarViajeParams {
   final double origenLat;
   final double origenLng;
   final double destinoLat;
@@ -37,13 +35,4 @@ class SolicitarViajeParams extends Equatable {
     required this.destinoLng,
     required this.idempotencyKey,
   });
-
-  @override
-  List<Object?> get props => [
-        origenLat,
-        origenLng,
-        destinoLat,
-        destinoLng,
-        idempotencyKey,
-      ];
 }

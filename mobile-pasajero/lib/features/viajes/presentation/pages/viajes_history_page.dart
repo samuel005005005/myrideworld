@@ -61,11 +61,12 @@ class ViajesHistoryPage extends ConsumerWidget {
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: dummyTrips.length,
-        separatorBuilder: (context, index) => const Divider(color: borderGrey, height: 24),
+        separatorBuilder: (context, index) =>
+            const Divider(color: borderGrey, height: 24),
         itemBuilder: (context, index) {
           final trip = dummyTrips[index];
           final isCompleted = trip['status'] == 'Completado';
-          
+
           return InkWell(
             onTap: () {},
             borderRadius: BorderRadius.circular(12),
@@ -108,7 +109,11 @@ class ViajesHistoryPage extends ConsumerWidget {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.directions_car, size: 20, color: textDark),
+                        child: const Icon(
+                          Icons.directions_car,
+                          size: 20,
+                          color: textDark,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -140,9 +145,14 @@ class ViajesHistoryPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: isCompleted ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      color: isCompleted
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -150,7 +160,9 @@ class ViajesHistoryPage extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: isCompleted ? Colors.green.shade700 : Colors.red.shade700,
+                        color: isCompleted
+                            ? Colors.green.shade700
+                            : Colors.red.shade700,
                       ),
                     ),
                   ),

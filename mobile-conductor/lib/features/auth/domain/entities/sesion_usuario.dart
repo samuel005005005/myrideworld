@@ -1,6 +1,4 @@
-import 'package:equatable/equatable.dart';
-
-class SesionUsuario extends Equatable {
+class SesionUsuario {
   final String token;
   final String userId;
   final String rol;
@@ -10,7 +8,4 @@ class SesionUsuario extends Equatable {
     required this.userId,
     required this.rol,
   });
-
-  @override
-  List<Object?> get props => [token, userId, rol];
 }
