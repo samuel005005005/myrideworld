@@ -1,16 +1,16 @@
-import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
-import { RechazarViajeUseCase } from './rechazar-viaje.use-case.js';
-import { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
-import { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
-import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
-import { Viaje } from '../../dominio/entidades/viaje.entity.js';
-import { Conductor } from '../../../conductores/dominio/entidades/conductor.entity.js';
-import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
+import { RechazarViajeUseCase } from '../../../../../../src/features/viajes/aplicacion/casos-uso/rechazar-viaje.use-case.js';
+import { IViajeRepository } from '../../../../../../src/features/viajes/dominio/repositorios/viaje.repository.js';
+import { IConductorRepository } from '../../../../../../src/features/conductores/dominio/repositorios/conductor.repository.js';
+import type { INotificadorViaje } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
+import { Conductor } from '../../../../../../src/features/conductores/dominio/entidades/conductor.entity.js';
+import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
+import { Roles } from '../../../../../../src/compartidos/constantes/roles.enum.js';
 import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
-import * as geoUtil from '../../../../compartidos/utilidades/geo.util.js';
+import * as geoUtil from '../../../../../../src/compartidos/utilidades/geo.util.js';
 
-vi.mock('../../../../compartidos/utilidades/geo.util.js', () => ({
+vi.mock('../../../../../../src/compartidos/utilidades/geo.util.js', () => ({
   calcularDistanciaKm: vi.fn(),
 }));
 

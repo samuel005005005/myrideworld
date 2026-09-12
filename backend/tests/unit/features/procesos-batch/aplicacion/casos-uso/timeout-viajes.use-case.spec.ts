@@ -1,16 +1,16 @@
-import { TimeoutViajesUseCase } from './timeout-viajes.use-case.js';
-import { IViajeRepository } from '../../../viajes/dominio/repositorios/viaje.repository.js';
-import { IEjecucionProcesoRepository } from '../../dominio/repositorios/ejecucion-proceso.repository.js';
-import { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
-import type { INotificadorViaje } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
-import { NOTIFICADOR_VIAJE } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
-import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
-import { EjecucionProceso } from '../../dominio/entidades/ejecucion-proceso.entity.js';
-import { DetalleEjecucionProceso } from '../../dominio/entidades/detalle-ejecucion.entity.js';
-import { Viaje } from '../../../viajes/dominio/entidades/viaje.entity.js';
-import { TiposBitacora } from '../../../../compartidos/constantes/tipos-bitacora.enum.js';
-import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-sistema.enum.js';
-import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { TimeoutViajesUseCase } from '../../../../../../src/features/procesos-batch/aplicacion/casos-uso/timeout-viajes.use-case.js';
+import { IViajeRepository } from '../../../../../../src/features/viajes/dominio/repositorios/viaje.repository.js';
+import { IEjecucionProcesoRepository } from '../../../../../../src/features/procesos-batch/dominio/repositorios/ejecucion-proceso.repository.js';
+import { IConfiguracionRepository } from '../../../../../../src/features/configuracion/dominio/repositorios/configuracion.repository.js';
+import type { INotificadorViaje } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { RegistrarBitacoraUseCase } from '../../../../../../src/features/bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
+import { EjecucionProceso } from '../../../../../../src/features/procesos-batch/dominio/entidades/ejecucion-proceso.entity.js';
+import { DetalleEjecucionProceso } from '../../../../../../src/features/procesos-batch/dominio/entidades/detalle-ejecucion.entity.js';
+import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
+import { TiposBitacora } from '../../../../../../src/compartidos/constantes/tipos-bitacora.enum.js';
+import { ServiciosSistema } from '../../../../../../src/compartidos/constantes/servicios-sistema.enum.js';
+import { Roles } from '../../../../../../src/compartidos/constantes/roles.enum.js';
 import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
 
 describe('TimeoutViajesUseCase', () => {

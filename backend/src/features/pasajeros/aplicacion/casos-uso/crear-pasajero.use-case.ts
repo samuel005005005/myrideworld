@@ -5,13 +5,16 @@ import { Pasajero } from '../../dominio/entidades/pasajero.entity.js';
 import { CrearPasajeroDto } from '../dto/crear-pasajero.dto.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import * as bcrypt from 'bcrypt';
+import type { IHasheadorPassword } from '../../../../compartidos/seguridad/hasheador-password.port.js';
+import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
 
 @Injectable()
 export class CrearPasajeroUseCase {
   constructor(
     @Inject(PASAJERO_REPOSITORY)
     private readonly pasajeroRepository: IPasajeroRepository,
+    @Inject(HASHEADOR_PASSWORD)
+    private readonly hasheadorPassword: IHasheadorPassword,
   ) {}
 
   async ejecutar(dto: CrearPasajeroDto): Promise<Pasajero> {
@@ -20,7 +23,9 @@ export class CrearPasajeroUseCase {
       throw new DomainException(MENSAJES.EXCEPCIONES.PASAJEROS.EMAIL_REGISTRADO);
     }
 
-    const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);
+    const passwordHash = await this.hasheadorPassword.hashear(
+      dto.password ?? '123456',
+    );
 
     const pasajero = Pasajero.crear({
       nombreCompleto: dto.nombreCompleto,

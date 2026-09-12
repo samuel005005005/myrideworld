@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Viaje } from './viaje.entity.js';
-import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
-import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
-import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
+import { EstadosViaje } from '../../../../../../src/compartidos/constantes/estados-viaje.enum.js';
+import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
+import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
 
 describe('Viaje Entity', () => {
   let viaje: Viaje;

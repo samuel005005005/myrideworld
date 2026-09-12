@@ -1,5 +1,4 @@
-import 'package:dartz/dartz.dart';
-import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/usuario.dart';
 import '../repositories/auth_repository.dart';
@@ -10,7 +9,7 @@ class LoginUseCase implements UseCase<Usuario, LoginParams> {
   LoginUseCase(this.repository);
 
   @override
-  Future<Either<Failure, Usuario>> call(LoginParams params) async {
+  Future<Resultado<Usuario>> call(LoginParams params) async {
     return await repository.login(params.email, params.password, params.rol);
   }
 }

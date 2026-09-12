@@ -138,8 +138,9 @@ class HomeController extends Notifier<HomeState> {
   }
 
   Future<void> requestTrip() async {
-    if (state.currentLocation == null || state.destinationLocation == null)
+    if (state.currentLocation == null || state.destinationLocation == null) {
       return;
+    }
 
     state = state.copyWith(status: HomeStateStatus.loading);
 

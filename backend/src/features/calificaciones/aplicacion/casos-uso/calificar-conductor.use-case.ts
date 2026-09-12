@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import type { ICalificacionRepository } from '../../dominio/repositorios/calificacion.repository.js';
 import { CALIFICACION_REPOSITORY } from '../../dominio/repositorios/calificacion.repository.js';
 import { Calificacion } from '../../dominio/entidades/calificacion.entity.js';
@@ -21,7 +21,7 @@ export class CalificarConductorUseCase {
   async ejecutar(pasajeroId: string, dto: CalificarConductorDto): Promise<Calificacion> {
     const viaje = await this.viajeRepository.obtenerPorId(dto.viajeId);
     if (!viaje) {
-      throw new NotFoundException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO);
+      throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO, 404);
     }
 
     if (viaje.pasajeroId !== pasajeroId) {

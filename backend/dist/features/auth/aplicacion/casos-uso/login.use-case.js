@@ -10,68 +10,75 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Injectable, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
-import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
+import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
+import { GENERADOR_TOKEN } from '../puertos/generador-token.port.js';
 const E = MENSAJES.EXCEPCIONES.AUTH;
 let LoginUseCase = class LoginUseCase {
-    jwtService;
+    generadorToken;
     configService;
     pasajeroRepository;
     conductorRepository;
-    constructor(jwtService, configService, pasajeroRepository, conductorRepository) {
-        this.jwtService = jwtService;
+    hasheadorPassword;
+    constructor(generadorToken, configService, pasajeroRepository, conductorRepository, hasheadorPassword) {
+        this.generadorToken = generadorToken;
         this.configService = configService;
         this.pasajeroRepository = pasajeroRepository;
         this.conductorRepository = conductorRepository;
+        this.hasheadorPassword = hasheadorPassword;
     }
     async ejecutar(dto) {
         let id;
         if (dto.rol === Roles.PASAJERO) {
             const pasajero = await this.pasajeroRepository.obtenerPorEmail(dto.email);
-            if (!pasajero)
-                throw new UnauthorizedException(E.CREDENCIALES_INVALIDAS);
-            const isMatch = await bcrypt.compare(dto.password, pasajero.passwordHash);
-            if (!isMatch)
-                throw new UnauthorizedException(E.CREDENCIALES_INVALIDAS);
+            if (!pasajero) {
+                throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
+            }
+            const isMatch = await this.hasheadorPassword.comparar(dto.password, pasajero.passwordHash);
+            if (!isMatch) {
+                throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
+            }
             id = pasajero.id;
         }
         else if (dto.rol === Roles.CONDUCTOR) {
             const conductor = await this.conductorRepository.obtenerPorEmail(dto.email);
-            if (!conductor)
-                throw new UnauthorizedException(E.CREDENCIALES_INVALIDAS);
-            const isMatch = await bcrypt.compare(dto.password, conductor.passwordHash);
-            if (!isMatch)
-                throw new UnauthorizedException(E.CREDENCIALES_INVALIDAS);
+            if (!conductor) {
+                throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
+            }
+            const isMatch = await this.hasheadorPassword.comparar(dto.password, conductor.passwordHash);
+            if (!isMatch) {
+                throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
+            }
             id = conductor.id;
         }
         else if (dto.rol === Roles.ADMIN) {
             const adminEmail = this.configService.get('ADMIN_EMAIL') || 'admin@myride.com';
             const adminPassword = this.configService.get('ADMIN_PASSWORD') || 'admin123';
             if (dto.email !== adminEmail || dto.password !== adminPassword) {
-                throw new UnauthorizedException(E.CREDENCIALES_INVALIDAS);
+                throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
             }
             id = 'admin-1';
         }
         else {
-            throw new UnauthorizedException(E.ROL_INVALIDO);
+            throw new DomainException(E.ROL_INVALIDO, 401);
         }
-        const payload = { sub: id, rol: dto.rol };
-        const token = await this.jwtService.signAsync(payload);
+        const token = await this.generadorToken.firmar({ sub: id, rol: dto.rol });
         return { token };
     }
 };
 LoginUseCase = __decorate([
     Injectable(),
+    __param(0, Inject(GENERADOR_TOKEN)),
     __param(2, Inject(PASAJERO_REPOSITORY)),
     __param(3, Inject(CONDUCTOR_REPOSITORY)),
-    __metadata("design:paramtypes", [JwtService,
-        ConfigService, Object, Object])
+    __param(4, Inject(HASHEADOR_PASSWORD)),
+    __metadata("design:paramtypes", [Object, ConfigService, Object, Object, Object])
 ], LoginUseCase);
 export { LoginUseCase };
 //# sourceMappingURL=login.use-case.js.map

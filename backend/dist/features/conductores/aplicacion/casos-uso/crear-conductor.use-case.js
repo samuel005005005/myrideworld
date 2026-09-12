@@ -15,18 +15,20 @@ import { CONDUCTOR_REPOSITORY } from '../../dominio/repositorios/conductor.repos
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import * as bcrypt from 'bcrypt';
+import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
 let CrearConductorUseCase = class CrearConductorUseCase {
     conductorRepository;
-    constructor(conductorRepository) {
+    hasheadorPassword;
+    constructor(conductorRepository, hasheadorPassword) {
         this.conductorRepository = conductorRepository;
+        this.hasheadorPassword = hasheadorPassword;
     }
     async ejecutar(dto) {
         const conductorExistente = await this.conductorRepository.obtenerPorEmail(dto.email);
         if (conductorExistente) {
             throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO);
         }
-        const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);
+        const passwordHash = await this.hasheadorPassword.hashear(dto.password ?? '123456');
         const conductor = Conductor.crear({
             nombreCompleto: dto.nombreCompleto,
             email: dto.email,
@@ -43,7 +45,8 @@ let CrearConductorUseCase = class CrearConductorUseCase {
 CrearConductorUseCase = __decorate([
     Injectable(),
     __param(0, Inject(CONDUCTOR_REPOSITORY)),
-    __metadata("design:paramtypes", [Object])
+    __param(1, Inject(HASHEADOR_PASSWORD)),
+    __metadata("design:paramtypes", [Object, Object])
 ], CrearConductorUseCase);
 export { CrearConductorUseCase };
 //# sourceMappingURL=crear-conductor.use-case.js.map

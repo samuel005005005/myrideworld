@@ -5,11 +5,15 @@ import { AuthController } from './presentacion/controladores/auth.controller.js'
 import { LoginUseCase } from './aplicacion/casos-uso/login.use-case.js';
 import { PasajerosModule } from '../pasajeros/pasajeros.module.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
+import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
+import { GENERADOR_TOKEN } from './aplicacion/puertos/generador-token.port.js';
+import { JwtGeneradorToken } from './infraestructura/jwt-generador-token.adapter.js';
 
 @Module({
   imports: [
     PasajerosModule,
     ConductoresModule,
+    SeguridadModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -20,7 +24,13 @@ import { ConductoresModule } from '../conductores/conductores.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [LoginUseCase],
-  exports: [JwtModule], // Exportado para usar en guards de otros módulos
+  providers: [
+    LoginUseCase,
+    {
+      provide: GENERADOR_TOKEN,
+      useClass: JwtGeneradorToken,
+    },
+  ],
+  exports: [JwtModule],
 })
 export class AuthModule {}

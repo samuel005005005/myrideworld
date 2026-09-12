@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CALIFICACION_REPOSITORY } from '../../dominio/repositorios/calificacion.repository.js';
 import { Calificacion } from '../../dominio/entidades/calificacion.entity.js';
 import { VIAJE_REPOSITORY } from '../../../viajes/dominio/repositorios/viaje.repository.js';
@@ -27,7 +27,7 @@ let CalificarConductorUseCase = class CalificarConductorUseCase {
     async ejecutar(pasajeroId, dto) {
         const viaje = await this.viajeRepository.obtenerPorId(dto.viajeId);
         if (!viaje) {
-            throw new NotFoundException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO);
+            throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO, 404);
         }
         if (viaje.pasajeroId !== pasajeroId) {
             throw new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.SOLO_PASAJERO_CALIFICA);

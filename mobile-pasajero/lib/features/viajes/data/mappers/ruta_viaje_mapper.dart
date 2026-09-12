@@ -1,5 +1,4 @@
-import 'package:latlong2/latlong.dart';
-
+import '../../domain/entities/coordenada.dart';
 import '../models/ruta_viaje_model.dart';
 
 class RutaViajeMapper {
@@ -7,7 +6,7 @@ class RutaViajeMapper {
     final rutas = json['routes'] as List<dynamic>? ?? <dynamic>[];
     if (rutas.isEmpty) {
       return const RutaViajeModel(
-        puntos: <LatLng>[],
+        puntos: <Coordenada>[],
         distanciaKm: 0,
         duracionMinutos: 0,
       );
@@ -20,9 +19,9 @@ class RutaViajeMapper {
         geometry['coordinates'] as List<dynamic>? ?? <dynamic>[];
     final puntos = coordenadas
         .map(
-          (coord) => LatLng(
-            (coord[1] as num).toDouble(),
-            (coord[0] as num).toDouble(),
+          (coord) => Coordenada(
+            latitud: (coord[1] as num).toDouble(),
+            longitud: (coord[0] as num).toDouble(),
           ),
         )
         .toList();

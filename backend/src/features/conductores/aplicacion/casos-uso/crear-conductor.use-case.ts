@@ -5,13 +5,16 @@ import { Conductor } from '../../dominio/entidades/conductor.entity.js';
 import { CrearConductorDto } from '../dto/crear-conductor.dto.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import * as bcrypt from 'bcrypt';
+import type { IHasheadorPassword } from '../../../../compartidos/seguridad/hasheador-password.port.js';
+import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
 
 @Injectable()
 export class CrearConductorUseCase {
   constructor(
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
+    @Inject(HASHEADOR_PASSWORD)
+    private readonly hasheadorPassword: IHasheadorPassword,
   ) {}
 
   async ejecutar(dto: CrearConductorDto): Promise<Conductor> {
@@ -20,7 +23,9 @@ export class CrearConductorUseCase {
       throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO);
     }
 
-    const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);
+    const passwordHash = await this.hasheadorPassword.hashear(
+      dto.password ?? '123456',
+    );
 
     const conductor = Conductor.crear({
       nombreCompleto: dto.nombreCompleto,

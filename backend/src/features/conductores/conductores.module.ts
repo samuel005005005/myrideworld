@@ -11,9 +11,10 @@ import { ListarConductoresUseCase } from './aplicacion/casos-uso/listar-conducto
 import { SubirDocumentosUseCase } from './aplicacion/casos-uso/subir-documentos.use-case.js';
 import { ObtenerConductorUseCase } from './aplicacion/casos-uso/obtener-conductor.use-case.js';
 import { ActualizarConductorUseCase } from './aplicacion/casos-uso/actualizar-conductor.use-case.js';
+import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ConductorOrmEntity])],
+  imports: [SeguridadModule, TypeOrmModule.forFeature([ConductorOrmEntity])],
   controllers: [ConductoresController],
   providers: [
     {

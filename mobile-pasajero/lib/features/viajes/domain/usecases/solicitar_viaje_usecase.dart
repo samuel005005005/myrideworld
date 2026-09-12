@@ -1,5 +1,4 @@
-import 'package:dartz/dartz.dart';
-import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/viaje.dart';
 import '../repositories/viaje_repository.dart';
@@ -10,7 +9,7 @@ class SolicitarViajeUseCase implements UseCase<Viaje, SolicitarViajeParams> {
   SolicitarViajeUseCase(this.repository);
 
   @override
-  Future<Either<Failure, Viaje>> call(SolicitarViajeParams params) async {
+  Future<Resultado<Viaje>> call(SolicitarViajeParams params) async {
     return await repository.solicitarViaje(
       origenLat: params.origenLat,
       origenLng: params.origenLng,

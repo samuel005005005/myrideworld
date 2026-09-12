@@ -15,18 +15,20 @@ import { PASAJERO_REPOSITORY } from '../../dominio/repositorios/pasajero.reposit
 import { Pasajero } from '../../dominio/entidades/pasajero.entity.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import * as bcrypt from 'bcrypt';
+import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
 let CrearPasajeroUseCase = class CrearPasajeroUseCase {
     pasajeroRepository;
-    constructor(pasajeroRepository) {
+    hasheadorPassword;
+    constructor(pasajeroRepository, hasheadorPassword) {
         this.pasajeroRepository = pasajeroRepository;
+        this.hasheadorPassword = hasheadorPassword;
     }
     async ejecutar(dto) {
         const existeEmail = await this.pasajeroRepository.obtenerPorEmail(dto.email);
         if (existeEmail) {
             throw new DomainException(MENSAJES.EXCEPCIONES.PASAJEROS.EMAIL_REGISTRADO);
         }
-        const passwordHash = await bcrypt.hash(dto.password ?? '123456', 10);
+        const passwordHash = await this.hasheadorPassword.hashear(dto.password ?? '123456');
         const pasajero = Pasajero.crear({
             nombreCompleto: dto.nombreCompleto,
             email: dto.email,
@@ -39,7 +41,8 @@ let CrearPasajeroUseCase = class CrearPasajeroUseCase {
 CrearPasajeroUseCase = __decorate([
     Injectable(),
     __param(0, Inject(PASAJERO_REPOSITORY)),
-    __metadata("design:paramtypes", [Object])
+    __param(1, Inject(HASHEADOR_PASSWORD)),
+    __metadata("design:paramtypes", [Object, Object])
 ], CrearPasajeroUseCase);
 export { CrearPasajeroUseCase };
 //# sourceMappingURL=crear-pasajero.use-case.js.map

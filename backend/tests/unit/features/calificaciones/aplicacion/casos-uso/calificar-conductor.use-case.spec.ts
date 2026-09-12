@@ -1,12 +1,11 @@
-import { NotFoundException } from '@nestjs/common';
-import { CalificarConductorUseCase } from './calificar-conductor.use-case.js';
-import { ICalificacionRepository } from '../../dominio/repositorios/calificacion.repository.js';
-import { IViajeRepository } from '../../../viajes/dominio/repositorios/viaje.repository.js';
-import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
-import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
-import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
-import { Viaje } from '../../../viajes/dominio/entidades/viaje.entity.js';
-import { Calificacion } from '../../dominio/entidades/calificacion.entity.js';
+import { CalificarConductorUseCase } from '../../../../../../src/features/calificaciones/aplicacion/casos-uso/calificar-conductor.use-case.js';
+import { ICalificacionRepository } from '../../../../../../src/features/calificaciones/dominio/repositorios/calificacion.repository.js';
+import { IViajeRepository } from '../../../../../../src/features/viajes/dominio/repositorios/viaje.repository.js';
+import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
+import { EstadosViaje } from '../../../../../../src/compartidos/constantes/estados-viaje.enum.js';
+import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
+import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
+import { Calificacion } from '../../../../../../src/features/calificaciones/dominio/entidades/calificacion.entity.js';
 import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
 
 describe('CalificarConductorUseCase', () => {
@@ -36,7 +35,7 @@ describe('CalificarConductorUseCase', () => {
 
     // Act & Assert
     await expect(useCase.ejecutar('pasajero-1', { viajeId: 'viaje-1', puntuacion: 5 })).rejects.toThrow(
-      new NotFoundException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO)
+      new DomainException(MENSAJES.EXCEPCIONES.CALIFICACIONES.NO_ENCONTRADO, 404)
     );
   });
 

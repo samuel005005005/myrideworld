@@ -1,5 +1,4 @@
-import 'package:dartz/dartz.dart';
-import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/ruta_viaje.dart';
 import '../repositories/routing_repository.dart';
@@ -10,7 +9,7 @@ class ObtenerRutaUseCase implements UseCase<RutaViaje, ObtenerRutaParams> {
   ObtenerRutaUseCase(this.repository);
 
   @override
-  Future<Either<Failure, RutaViaje>> call(ObtenerRutaParams params) async {
+  Future<Resultado<RutaViaje>> call(ObtenerRutaParams params) async {
     return repository.obtenerRuta(
       origenLat: params.origenLat,
       origenLng: params.origenLng,

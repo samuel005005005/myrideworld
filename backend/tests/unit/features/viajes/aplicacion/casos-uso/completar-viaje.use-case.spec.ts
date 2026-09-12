@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { CompletarViajeUseCase } from './completar-viaje.use-case.js';
-import { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
-import { Viaje } from '../../dominio/entidades/viaje.entity.js';
-import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
-import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
-import { GenerarPagoUseCase } from '../../../pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
-import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
-import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
-import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
-import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { CompletarViajeUseCase } from '../../../../../../src/features/viajes/aplicacion/casos-uso/completar-viaje.use-case.js';
+import { IViajeRepository } from '../../../../../../src/features/viajes/dominio/repositorios/viaje.repository.js';
+import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
+import type { INotificadorViaje } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { GenerarPagoUseCase } from '../../../../../../src/features/pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
+import { RegistrarBitacoraUseCase } from '../../../../../../src/features/bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
+import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
+import { EstadosViaje } from '../../../../../../src/compartidos/constantes/estados-viaje.enum.js';
+import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
 
 describe('CompletarViajeUseCase', () => {
   let useCase: CompletarViajeUseCase;

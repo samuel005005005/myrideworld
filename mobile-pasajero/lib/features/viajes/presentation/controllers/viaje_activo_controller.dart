@@ -7,11 +7,11 @@ import '../../data/mappers/recibo_viaje_mapper.dart';
 import 'viaje_activo_state.dart';
 
 final viajeActivoControllerProvider =
-    AutoDisposeNotifierProvider<ViajeActivoController, ViajeActivoState>(
+    NotifierProvider<ViajeActivoController, ViajeActivoState>(
       ViajeActivoController.new,
     );
 
-class ViajeActivoController extends AutoDisposeNotifier<ViajeActivoState> {
+class ViajeActivoController extends Notifier<ViajeActivoState> {
   bool _seguimientoIniciado = false;
 
   @override

@@ -13,11 +13,12 @@ import { CrearPasajeroUseCase } from './aplicacion/casos-uso/crear-pasajero.use-
 import { ObtenerPasajeroUseCase } from './aplicacion/casos-uso/obtener-pasajero.use-case.js';
 import { ActualizarPasajeroUseCase } from './aplicacion/casos-uso/actualizar-pasajero.use-case.js';
 import { PasajerosController } from './presentacion/controladores/pasajeros.controller.js';
+import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 let PasajerosModule = class PasajerosModule {
 };
 PasajerosModule = __decorate([
     Module({
-        imports: [TypeOrmModule.forFeature([PasajeroOrmEntity])],
+        imports: [SeguridadModule, TypeOrmModule.forFeature([PasajeroOrmEntity])],
         controllers: [PasajerosController],
         providers: [
             {
