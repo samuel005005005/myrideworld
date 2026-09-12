@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/sesion_usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -11,10 +12,12 @@ import '../mappers/sesion_usuario_mapper.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AuthLocalDataSource localDataSource;
+  final NetworkInfo networkInfo;
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
+    required this.networkInfo,
   });
 
   @override
@@ -23,6 +26,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     required String rol,
   }) async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(Failure(AppStrings.errorSinConexion));
+    }
+
     try {
       final modelo = await remoteDataSource.iniciarSesion(
         email: email,
@@ -35,6 +42,26 @@ class AuthRepositoryImpl implements AuthRepository {
       return Fallo(Failure(error.mensaje));
     } catch (_) {
       return const Fallo(Failure(AppStrings.errorAutenticacion));
+    }
+  }
+
+  @override
+  Future<Resultado<SesionUsuario?>> obtenerSesion() async {
+    try {
+      final sesion = await localDataSource.obtenerSesion();
+      return Exito(sesion);
+    } catch (_) {
+      return const Fallo(Failure(AppStrings.errorTokenInvalido));
+    }
+  }
+
+  @override
+  Future<Resultado<void>> logout() async {
+    try {
+      await localDataSource.limpiar();
+      return const Exito(null);
+    } catch (_) {
+      return const Fallo(Failure(AppStrings.errorGenerico));
     }
   }
 }

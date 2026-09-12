@@ -3,7 +3,12 @@ class AppStrings {
 
   static const String loginTitle = 'MyRide';
   static const String loginSubtitle = 'Conductor';
-  static const String loginButton = 'INICIAR SESION DEMO';
+  static const String loginButton = 'INICIAR SESION';
+  static const String loginEmailLabel = 'Correo';
+  static const String loginPasswordLabel = 'Contrasena';
+  static const String loginEmptyFields = 'Completa correo y contrasena';
+  static const String loginCerrarSesion = 'Cerrar sesion';
+  static const String errorSinConexion = 'Sin conexion a internet';
 
   static const String homeEstadoEnLinea = 'EN LINEA';
   static const String homeEstadoConectando = 'CONECTANDO...';

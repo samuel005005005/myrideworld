@@ -53,7 +53,7 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
 
           // Map Overlay to darken slightly
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.2)),
+            child: Container(color: Colors.black.withValues(alpha: 0.2)),
           ),
 
           // 3. Bottom Card

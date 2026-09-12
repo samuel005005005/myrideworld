@@ -182,7 +182,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   style: const TextStyle(color: textDark),
                   decoration: InputDecoration(
                     hintText: AppStrings.loginPasswordPlaceholder,
-                    hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
+                    hintStyle: TextStyle(color: textGrey.withValues(alpha: 0.5)),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 16,
@@ -202,7 +202,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                         _obscureText
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: textGrey.withOpacity(0.7),
+                        color: textGrey.withValues(alpha: 0.7),
                         size: 20,
                       ),
                       onPressed: () {
@@ -222,7 +222,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
-                    color: textGrey.withOpacity(0.8),
+                    color: textGrey.withValues(alpha: 0.8),
                     height: 1.4,
                   ),
                 ),
@@ -294,7 +294,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
       style: TextStyle(color: textDark),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
+        hintStyle: TextStyle(color: textGrey.withValues(alpha: 0.5)),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,

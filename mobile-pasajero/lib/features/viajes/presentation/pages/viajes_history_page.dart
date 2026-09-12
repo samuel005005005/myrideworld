@@ -151,8 +151,8 @@ class ViajesHistoryPage extends ConsumerWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isCompleted
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

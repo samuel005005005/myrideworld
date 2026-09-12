@@ -1,0 +1,39 @@
+---
+description: Pureza Clean Architecture + cero valores de negocio hardcodeados
+alwaysApply: true
+---
+# Pureza de capas y valores de negocio
+
+## Dominio y aplicación: cero contaminación
+
+Prohibido en `domain/` / `dominio/` / `aplicacion/` (y equivalentes):
+
+- Frameworks: Flutter, NestJS, TypeORM, Dio, Riverpod, Socket.IO, etc.
+- Libs de conveniencia: Equatable, Freezed, Zod, class-validator, Swagger
+- Implementaciones de infra: HTTP clients, storage, ORM entities, sockets
+
+El dominio solo habla Dart/TS puro, entidades, puertos (interfaces) y reglas.
+
+En Flutter MyRide, **infraestructura = carpeta `data/`** (+ `core/network`, `core/storage`). No inventar carpeta `infrastructure/` salvo decisión explícita del equipo.
+
+## Cero hardcode de negocio (OBLIGATORIO)
+
+Prohibido quemar en código (dominio, UI o data):
+
+| Prohibido | Debe venir de |
+|-----------|----------------|
+| Tarifas, precios base, $/km, mínimos, comisiones | API (`tarifas` / configuración) o `docs/analisis` + endpoint |
+| Radios de asignación, timeouts de viaje | Configuración backend |
+| Credenciales, passwords demo, JWT | Secure storage / env no embebido como secreto de negocio |
+| URLs/IPs de API | `.env` / dart-define (no literales en datasources) |
+
+**Anti-patrón (NO repetir):** `CalculadoraTarifa` con `55`, `2.5`, `0.075` en el dominio del cliente. Eso duplica y desvía la fuente de verdad del backend.
+
+Si el endpoint aún no existe: mostrar estado “pendiente de tarifa oficial” o cablear el puerto al API; **no inventar fórmulas locales**.
+
+## Checklist antes de entregar código de dominio/aplicación
+
+- [ ] Ningún `import` de paquete externo en domain
+- [ ] Ningún número mágico de negocio (tarifas, comisiones, radios)
+- [ ] Token/JWT fuera de entidades de dominio
+- [ ] Adaptadores (Dio, Socket, SecureStorage) solo en `data/` o `infraestructura/`

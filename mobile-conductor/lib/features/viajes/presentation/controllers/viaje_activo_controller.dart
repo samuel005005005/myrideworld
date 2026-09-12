@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/services/socket_service.dart';
 import '../../domain/entities/estado_viaje_activo.dart';
 import '../../domain/entities/viaje.dart';
 import '../providers/viajes_provider.dart';
@@ -31,7 +30,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
     }
 
     _cancelarTemporizador();
-    ref.read(socketServiceProvider).unirseAViaje(viaje.id);
+    ref.read(viajeRealtimeGatewayProvider).unirseAViaje(viaje.id);
 
     state = ViajeActivoState(
       viaje: viaje,
@@ -219,7 +218,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       );
 
       ref
-          .read(socketServiceProvider)
+          .read(viajeRealtimeGatewayProvider)
           .actualizarUbicacion(
             viajeId: viaje.id,
             latitud: nuevaLatitud,

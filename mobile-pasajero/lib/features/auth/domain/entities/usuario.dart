@@ -1,6 +1,4 @@
-import 'package:equatable/equatable.dart';
-
-class Usuario extends Equatable {
+class Usuario {
   final String id;
   final String nombreCompleto;
   final String email;
@@ -14,7 +12,4 @@ class Usuario extends Equatable {
     this.telefono,
     required this.rol,
   });
-
-  @override
-  List<Object?> get props => [id, nombreCompleto, email, telefono, rol];
 }

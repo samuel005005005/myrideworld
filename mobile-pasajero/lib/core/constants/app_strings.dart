@@ -172,7 +172,9 @@ class AppStrings {
   static const String homeVehicleSuvLabel = 'SUV Premium';
   static const String homePaymentCashShort = 'Efectivo';
   static const String homePaymentCardShort = 'Tarjeta';
-  static const String homeCardFeeIncluded = '+7.5% comision incl.';
+  static const String homeCardFeeIncluded = 'Tarifa segun metodo de pago';
+  static const String homeTarifaPendienteApi = 'Tarifa oficial al confirmar';
+  static const String homePrecioNoDisponible = '—';
   static const String homeDrawerPassengerName = 'Juan Perez';
   static const String homeDrawerPassengerCategory = '5.0 Pasajero';
   static const String homeDrawerTrips = 'Mis Viajes';
@@ -235,6 +237,9 @@ class AppStrings {
 
   static String homeSolicitarVehiculo(String vehiculo, double total) =>
       'Pedir $vehiculo • US\$${total.toStringAsFixed(2)}';
+
+  static String homeSolicitarVehiculoSinPrecio(String vehiculo) =>
+      'Pedir $vehiculo';
 
   static String homePrecioVehiculo(double total) =>
       'US\$${total.toStringAsFixed(2)}';

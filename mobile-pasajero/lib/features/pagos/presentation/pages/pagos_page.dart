@@ -49,7 +49,7 @@ class PagosPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
-                border: Border.all(color: brandPrimary.withOpacity(0.5)),
+                border: Border.all(color: brandPrimary.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

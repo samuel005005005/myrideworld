@@ -11,7 +11,6 @@ import '../../domain/entities/tipo_vehiculo.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/home_state.dart';
 import '../controllers/home_state_status.dart';
-import '../providers/viajes_provider.dart';
 import '../widgets/home_drawer.dart';
 import '../widgets/home_vehicle_tile.dart';
 
@@ -46,7 +45,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final estado = ref.watch(homeControllerProvider);
     final selectedVehicle = ref.watch(selectedVehicleProvider);
     final selectedPayment = ref.watch(selectedPaymentProvider);
-    final calculadora = ref.watch(calculadoraTarifaProvider);
     final isRequesting = estado.status == HomeStateStatus.loading;
 
     ref.listen<HomeState>(homeControllerProvider, (anterior, siguiente) {
@@ -101,21 +99,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final etaSedan = _formatEta(routeDurationMin);
     final etaMinivan = _formatEta(routeDurationMin + 2);
     final etaSuv = _formatEta(routeDurationMin + 5);
-
-    final sedanPrice = calculadora.calcularBase(
-      TipoVehiculo.sedan,
-      routeDistanceKm,
-    );
-    final minivanPrice = calculadora.calcularBase(
-      TipoVehiculo.minivan,
-      routeDistanceKm,
-    );
-    final suvPrice = calculadora.calcularBase(TipoVehiculo.suv, routeDistanceKm);
-    final finalPrice = calculadora.calcularTotal(
-      vehiculo: selectedVehicle,
-      metodoPago: selectedPayment,
-      distanciaKm: routeDistanceKm,
-    );
 
     final ubicacionActual =
         estado.currentLocation ?? const LatLng(18.5820, -68.3971);
@@ -408,10 +391,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleSedan,
                           eta: etaSedan,
                           capacity: 4,
-                          basePrice: sedanPrice,
                           icon: Icons.directions_car,
                           selectedId: selectedVehicle.name,
-                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
@@ -422,10 +403,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleMinivan,
                           eta: etaMinivan,
                           capacity: 6,
-                          basePrice: minivanPrice,
                           icon: Icons.airport_shuttle,
                           selectedId: selectedVehicle.name,
-                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
@@ -436,10 +415,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleSuv,
                           eta: etaSuv,
                           capacity: 6,
-                          basePrice: suvPrice,
                           icon: Icons.time_to_leave,
                           selectedId: selectedVehicle.name,
-                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
@@ -529,9 +506,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   )
                                 : Text(
-                                    AppStrings.homeSolicitarVehiculo(
+                                    AppStrings.homeSolicitarVehiculoSinPrecio(
                                       _etiquetaVehiculo(selectedVehicle),
-                                      finalPrice,
                                     ),
                                     style: const TextStyle(
                                       fontSize: 16,

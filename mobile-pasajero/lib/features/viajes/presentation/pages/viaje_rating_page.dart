@@ -48,7 +48,7 @@ class _ViajeRatingPageState extends ConsumerState<ViajeRatingPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -143,7 +143,7 @@ class _ViajeRatingPageState extends ConsumerState<ViajeRatingPage> {
                       style: const TextStyle(color: textDark),
                       decoration: InputDecoration(
                         hintText: AppStrings.ratingCommentHint,
-                        hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
+                        hintStyle: TextStyle(color: textGrey.withValues(alpha: 0.5)),
                         filled: true,
                         fillColor: bgGrey,
                         enabledBorder: OutlineInputBorder(

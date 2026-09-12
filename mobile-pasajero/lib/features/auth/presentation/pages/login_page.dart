@@ -143,7 +143,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: const TextStyle(color: textDark),
                   decoration: InputDecoration(
                     hintText: 'name@example.com',
-                    hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
+                    hintStyle: TextStyle(color: textGrey.withValues(alpha: 0.5)),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 16,
@@ -200,7 +200,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   style: const TextStyle(color: textDark),
                   decoration: InputDecoration(
                     hintText: AppStrings.loginPasswordPlaceholder,
-                    hintStyle: TextStyle(color: textGrey.withOpacity(0.5)),
+                    hintStyle: TextStyle(color: textGrey.withValues(alpha: 0.5)),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 16,
@@ -220,7 +220,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         _obscureText
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: textGrey.withOpacity(0.7),
+                        color: textGrey.withValues(alpha: 0.7),
                         size: 20,
                       ),
                       onPressed: () {

@@ -101,19 +101,21 @@ src/
 ### Capa de Dominio
 
 - Contiene: Entidades, Value Objects, Enumeraciones de dominio, Eventos de dominio, Interfaces de repositorio, Excepciones de dominio.
-- **No** tiene dependencias a frameworks, bases de datos, ni librerías externas.
+- **No** tiene dependencias a frameworks, bases de datos, ni librerías externas (ni Equatable/Freezed/Zod/Nest/TypeORM).
 - Las entidades encapsulan su propia lógica de validación y comportamiento.
 
 ### Capa de Aplicación
 
-- Contiene: Casos de uso (Commands/Queries), DTOs, Interfaces de servicios de aplicación, Validadores, Mappers.
+- Contiene: Casos de uso (Commands/Queries), DTOs de aplicación, Interfaces/puertos de servicios, Validadores de negocio, Mappers de aplicación.
 - Orquesta el flujo entre dominio e infraestructura.
 - Un caso de uso = una operación de negocio completa.
+- **No** importa frameworks de UI/HTTP/BD ni libs de infraestructura. En NestJS, `@Injectable`/`@ApiProperty` en `aplicacion/` es **deuda conocida** a migrar a `presentacion` + `useFactory` (ver `convention-nestjs.mdc`).
 
 ### Capa de Infraestructura
 
 - Contiene: Implementaciones de repositorios, Configuración de BD, Clientes HTTP, Servicios de email/notificaciones, Configuración de frameworks.
 - Implementa las interfaces definidas en Dominio y Aplicación.
+- En Flutter MyRide esta capa se nombra `data/` (equivalente a infraestructura/adaptadores).
 
 ### Capa de Presentación / API
 

@@ -9,7 +9,6 @@ import '../../data/repositories/viaje_repository_impl.dart';
 import '../../domain/repositories/routing_repository.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
 import '../../domain/repositories/viaje_repository.dart';
-import '../../domain/services/calculadora_tarifa.dart';
 import '../../domain/usecases/obtener_ruta_usecase.dart';
 import '../../domain/usecases/solicitar_viaje_usecase.dart';
 
@@ -52,8 +51,4 @@ final solicitarViajeUseCaseProvider = Provider<SolicitarViajeUseCase>((ref) {
 
 final obtenerRutaUseCaseProvider = Provider<ObtenerRutaUseCase>((ref) {
   return ObtenerRutaUseCase(ref.watch(routingRepositoryProvider));
-});
-
-final calculadoraTarifaProvider = Provider<CalculadoraTarifa>((ref) {
-  return CalculadoraTarifa();
 });

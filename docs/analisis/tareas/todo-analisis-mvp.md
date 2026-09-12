@@ -25,11 +25,39 @@
 
 ## Apps cliente
 
-- [ ] **Móvil Pasajero:** UI completa (Solicitud, tracking en vivo, pago, historial) — auth/sesión y core loop en progreso.
-- [ ] **Móvil Conductor:** UI completa (Recepción escalonada, mapa/navegación, máquina de estados, balances).
-- [ ] **Web Admin:** Panel (Gestión de usuarios, tarifario, visor de viajes y auditoría).
+- [ ] **Móvil Pasajero:** UI completa (pago, historial real, perfil editable) — core loop solicitud/tracking/recibo ya cableado.
+- [ ] **Móvil Conductor:** UI completa (mapa/navegación real, balances) — auth/sesión/realtime Clean Arch alineado con pasajero.
+- [ ] **Web Admin:** Panel (Gestión de usuarios, tarifario, visor de viajes y auditoría) — sin capas CA aún.
+
+## Pureza Clean Architecture (2026-09-12)
+
+- [x] Flutter dominio: sin Equatable/frameworks; token fuera de entidades; `data/` = infraestructura.
+- [x] Pasajero + Conductor: SessionStorage seguro, NetworkInfo, gateway realtime, router guards, sin auto-login.
+- [x] Backend **dominio**: limpio (sin Nest/TypeORM).
+- [ ] Backend **aplicación**: quitar `@Injectable`/`@ApiProperty`/`zod+swagger` de use cases/DTOs → composition root + presentacion (epic).
+- [ ] Web-admin: introducir capas o mantener como UI fina sobre API (decidir).
+
+## Móvil Pasajero — infra / seguridad / Clean Arch (2026-09-12)
+
+- [x] Capa infra: `SessionStorage` (secure) + `NetworkInfo` + Dio con 401/cleanup.
+- [x] Auth: sesión restore/logout; JWT fuera del dominio; sin auto-login ni password en `.env`.
+- [x] Router guards (rutas protegidas vs login/welcome).
+- [x] Realtime: puerto `ViajeRealtimeGateway` + `ViajeSocketDataSource` en data.
+- [x] Tarifas en dominio (`CalculadoraTarifa`); HomeState/widgets separados.
+- [x] Tests unitarios: `LoginUseCase`.
+- [x] Eliminada `CalculadoraTarifa` hardcodeada; UI muestra tarifa pendiente de API.
+- [ ] Cablear estimar tarifa desde backend (`tarifas` / configuración) en home.
+- [ ] Features stub: perfil/pagos/soporte con domain+data (hoy solo presentation).
+- [ ] Quitar `.env` como asset en release / usar `--dart-define` o flavors.
+
+## Móvil Conductor — infra / seguridad / Clean Arch (2026-09-12)
+
+- [x] Misma línea que pasajero: secure session, NetworkInfo, gateway socket, login real, guards.
+- [x] Eliminado `DemoCredentials` / auto-login y `SocketService` en core.
+- [x] Test `IniciarSesion`.
+- [ ] Logout en UI home; GPS real (hoy simulado).
 
 ## Calidad
 
 - [ ] **SQA:** Ejecutar caso de prueba E2E (Core Loop de SC-1 en Requerimiento).
-- [ ] Smoke manual: seed + backend con env completo + apps pasajero/conductor.
+- [ ] Smoke manual: seed + backend con env completo + apps pasajero/conductor (login manual obligatorio).

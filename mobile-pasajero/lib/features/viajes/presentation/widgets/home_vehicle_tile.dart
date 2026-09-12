@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../domain/entities/metodo_pago.dart';
-import '../../domain/services/calculadora_tarifa.dart';
 
 class HomeVehicleTile extends StatelessWidget {
   final String id;
   final String name;
   final String eta;
   final int capacity;
-  final double basePrice;
   final IconData icon;
   final String selectedId;
-  final MetodoPago metodoPago;
   final Color brandPrimary;
   final VoidCallback onTap;
 
@@ -22,10 +18,8 @@ class HomeVehicleTile extends StatelessWidget {
     required this.name,
     required this.eta,
     required this.capacity,
-    required this.basePrice,
     required this.icon,
     required this.selectedId,
-    required this.metodoPago,
     required this.brandPrimary,
     required this.onTap,
   });
@@ -37,9 +31,6 @@ class HomeVehicleTile extends StatelessWidget {
     final bgColor = selected
         ? brandPrimary.withValues(alpha: 0.08)
         : Colors.transparent;
-    final finalPrice = metodoPago == MetodoPago.tarjeta
-        ? basePrice * (1 + CalculadoraTarifa.comisionTarjeta)
-        : basePrice;
 
     return InkWell(
       onTap: onTap,
@@ -88,22 +79,21 @@ class HomeVehicleTile extends StatelessWidget {
                 ],
               ),
             ),
-            Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  AppStrings.homePrecioVehiculo(finalPrice),
-                  style: const TextStyle(
+                  AppStrings.homePrecioNoDisponible,
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black87,
                   ),
                 ),
-                if (metodoPago == MetodoPago.tarjeta)
-                  const Text(
-                    AppStrings.homeCardFeeIncluded,
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
-                  ),
+                Text(
+                  AppStrings.homeTarifaPendienteApi,
+                  style: TextStyle(fontSize: 10, color: Colors.black54),
+                ),
               ],
             ),
           ],

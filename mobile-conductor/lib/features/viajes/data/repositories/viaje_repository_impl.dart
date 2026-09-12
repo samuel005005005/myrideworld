@@ -1,5 +1,7 @@
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/repositories/viaje_repository.dart';
@@ -9,8 +11,12 @@ import '../models/viaje_model.dart';
 
 class ViajeRepositoryImpl implements ViajeRepository {
   final ViajeRemoteDataSource remoteDataSource;
+  final NetworkInfo networkInfo;
 
-  ViajeRepositoryImpl({required this.remoteDataSource});
+  ViajeRepositoryImpl({
+    required this.remoteDataSource,
+    required this.networkInfo,
+  });
 
   @override
   Future<Resultado<Viaje>> aceptarViaje({
@@ -43,6 +49,10 @@ class ViajeRepositoryImpl implements ViajeRepository {
   Future<Resultado<Viaje>> _resolver(
     Future<ViajeModel> Function() accion,
   ) async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(Failure(AppStrings.errorSinConexion));
+    }
+
     try {
       final modelo = await accion();
       return Exito(ViajeMapper.toDomain(modelo));

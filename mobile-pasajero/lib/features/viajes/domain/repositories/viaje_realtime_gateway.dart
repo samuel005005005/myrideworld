@@ -1,4 +1,4 @@
-import '../../domain/entities/recibo_viaje.dart';
+import '../entities/recibo_viaje.dart';
 
 /// Puerto de dominio para eventos en tiempo real del viaje.
 abstract class ViajeRealtimeGateway {

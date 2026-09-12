@@ -178,9 +178,7 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) {
 ```dart
 // features/usuarios/domain/entities/usuario.dart
 
-import 'package:equatable/equatable.dart';
-
-class Usuario extends Equatable {
+class Usuario {
   final String id;
   final String nombre;
   final String email;
@@ -208,9 +206,6 @@ class Usuario extends Equatable {
       fechaCreacion: fechaCreacion,
     );
   }
-
-  @override
-  List<Object?> get props => [id, nombre, email, estado, fechaCreacion];
 }
 
 enum EstadoUsuario { activo, inactivo, suspendido }
@@ -772,7 +767,7 @@ class App extends ConsumerWidget {
 5. **`AsyncNotifier`** para controllers con estado mutable. `FutureProvider` para datos de solo lectura.
 6. **Providers organizados por feature**. Un archivo `_provider.dart` por feature con toda la cadena de DI.
 7. **`ref.watch`** en build para reactividad. `ref.read` en callbacks/eventos.
-8. **Entidades inmutables** con `Equatable` o `freezed`. Los models extienden entidades y agregan serialización.
+8. **Entidades de dominio en Dart puro (OBLIGATORIO)**. Prohibido `equatable`, `freezed`, `flutter`, `dio`, Riverpod u otras libs en `domain/`. Comparación por valor: `==`/`hashCode` manual solo si hace falta. Los models de `data/` pueden usar libs de serialización.
 9. **Un UseCase por operación y por archivo**. No agrupar decenas de use cases en un solo `*_usecases.dart`.
 10. **Una clase pública por archivo (obligatorio)**.
     - Prohibido meter varias entidades/`interface class` públicas en el mismo `.dart` (ej. `conductor_models.dart` monolítico).
@@ -782,3 +777,4 @@ class App extends ConsumerWidget {
 12. **Mappers Exclusivos (OBLIGATORIO)**. Prohibido poner lógica `fromJson` o `toJson` dentro de los `Models` o `Entities`. Toda la transformación de JSON a Model/Entity (y viceversa) debe estar en clases estáticas exclusivas en `data/mappers/` (Ej. `UsuarioMapper`). Los Models solo son data classes.
 13. **Cero Strings Hardcodeados (OBLIGATORIO)**. Prohibido usar literales de texto directamente en UI, Controladores o Excepciones (`throw ServerException('error')`). Todo texto legible debe estar centralizado en `lib/core/constants/app_strings.dart` (Ej. `AppStrings.errorServerConnection`).
 14. **Cero URLs Hardcodeadas (OBLIGATORIO)**. Las IPs, URLs base y configuraciones sensibles van en un archivo `.env` (usando `flutter_dotenv`). Las rutas relativas de la API van en `lib/core/constants/api_endpoints.dart`. No usar URLs mágicas en los DataSources.
+15. **Cero tarifas/comisiones/radios hardcodeados (OBLIGATORIO)**. Ver `.cursor/rules/desarrollo-clean-architecture-pureza.mdc`. Prohibido servicios de dominio tipo “calculadora” con constantes inventadas; consumir API de tarifas/configuración.

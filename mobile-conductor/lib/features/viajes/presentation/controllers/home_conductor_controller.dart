@@ -1,12 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/demo_credentials.dart';
-import '../../../../core/services/socket_service.dart';
 import '../../../auth/domain/entities/sesion_usuario.dart';
-import '../../../auth/domain/usecases/iniciar_sesion_params.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
-import '../../data/mappers/viaje_mapper.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/usecases/aceptar_viaje_params.dart';
 import '../providers/viajes_provider.dart';
@@ -23,6 +19,9 @@ class HomeConductorController extends Notifier<HomeConductorState> {
 
   @override
   HomeConductorState build() {
+    ref.onDispose(() {
+      ref.read(viajeRealtimeGatewayProvider).desconectar();
+    });
     return const HomeConductorState();
   }
 
@@ -34,38 +33,12 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     _estaInicializado = true;
     state = state.copyWith(inicializando: true, errorMensaje: null);
 
-    final iniciarSesion = ref.read(iniciarSesionProvider);
-    final resultado = await iniciarSesion(
-      const IniciarSesionParams(
-        email: DemoCredentials.emailConductor,
-        password: DemoCredentials.passwordConductor,
-        rol: DemoCredentials.rolConductor,
-      ),
-    );
-
-    SesionUsuario? sesionAutenticada;
-    String? errorMensaje;
-
-    resultado.fold(
-      (failure) => errorMensaje = failure.mensaje,
-      (sesion) => sesionAutenticada = sesion,
-    );
-
-    if (errorMensaje != null) {
-      _estaInicializado = false;
-      state = state.copyWith(
-        inicializando: false,
-        errorMensaje: errorMensaje,
-      );
-      return;
-    }
-
-    final sesion = sesionAutenticada;
+    final sesion = ref.read(authControllerProvider).asData?.value;
     if (sesion == null) {
       _estaInicializado = false;
       state = state.copyWith(
         inicializando: false,
-        errorMensaje: AppStrings.errorAutenticacion,
+        errorMensaje: AppStrings.errorSinSesion,
       );
       return;
     }
@@ -98,7 +71,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         return null;
       },
       (viajeAceptado) {
-        ref.read(socketServiceProvider).unirseAViaje(viajeAceptado.id);
+        ref.read(viajeRealtimeGatewayProvider).unirseAViaje(viajeAceptado.id);
         state = state.copyWith(
           aceptandoViaje: false,
           viajePendiente: null,
@@ -114,37 +87,24 @@ class HomeConductorController extends Notifier<HomeConductorState> {
   }
 
   Future<void> _configurarSocket(SesionUsuario sesion) async {
-    final socketService = ref.read(socketServiceProvider);
-    await socketService.conectar(token: sesion.token);
-    socketService.identificarConductor(sesion.userId);
-    socketService.escuchar('connect', (_) {
-      state = state.copyWith(enLinea: true);
-      socketService.identificarConductor(sesion.userId);
-    });
-    socketService.escuchar('disconnect', (_) {
-      state = state.copyWith(enLinea: false);
-    });
-    socketService.escuchar('nuevoViajeDisponible', (data) {
-      _procesarNuevoViaje(data);
-    });
-  }
-
-  void _procesarNuevoViaje(dynamic data) {
-    if (data is! Map) {
-      return;
-    }
-
-    try {
-      final viaje = ViajeMapper.toDomain(
-        ViajeMapper.fromApiData(Map<String, dynamic>.from(data)),
-      );
+    final gateway = ref.read(viajeRealtimeGatewayProvider);
+    await gateway.conectar();
+    gateway.identificarConductor(sesion.userId);
+    gateway.escucharEstadoConexion(
+      onConnect: () {
+        state = state.copyWith(enLinea: true);
+        gateway.identificarConductor(sesion.userId);
+      },
+      onDisconnect: () {
+        state = state.copyWith(enLinea: false);
+      },
+    );
+    gateway.escucharNuevoViaje((viaje) {
       state = state.copyWith(
         enLinea: true,
         viajePendiente: viaje,
         errorMensaje: null,
       );
-    } catch (error) {
-      state = state.copyWith(errorMensaje: error.toString());
-    }
+    });
   }
 }

@@ -7,7 +7,7 @@ import '../models/sesion_usuario_model.dart';
 
 class SesionUsuarioMapper {
   static SesionUsuarioModel fromApiResponse(Map<String, dynamic> respuesta) {
-    final token = respuesta['token'];
+    final token = respuesta['token'] ?? respuesta['access_token'];
     if (token is! String || token.isEmpty) {
       throw const AppException(AppStrings.errorRespuestaLogin);
     }
@@ -26,7 +26,6 @@ class SesionUsuarioMapper {
     }
 
     return SesionUsuario(
-      token: modelo.token,
       userId: modelo.userId!,
       rol: modelo.rol ?? '',
     );

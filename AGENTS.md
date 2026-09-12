@@ -20,6 +20,7 @@ Este repo es **MyRide**: plataforma de transporte turístico (pasajero, conducto
 - `.cursor/rules/ops-comandos-usuario.mdc`
 - `.cursor/rules/sesion-y-tokens.mdc`
 - `.cursor/rules/cola-prompts.mdc` — `#retoma` / `#guarda-cola`
+- `.cursor/rules/desarrollo-clean-architecture-pureza.mdc` — dominio/aplicación sin libs; cero tarifas hardcodeadas
 
 ## Modos
 

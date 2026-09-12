@@ -156,6 +156,8 @@ export const USUARIO_REPOSITORY = Symbol('IUsuarioRepository');
 
 ### Aplicación - Caso de Uso
 
+> **Deuda CA:** hoy los use cases usan `@Injectable`/`@Inject` de Nest para DI. Objetivo: clases puras + registro con `useFactory` en el módulo (presentación/composition root). No agregar más acoplamiento Nest a dominio.
+
 ```typescript
 // src/features/usuarios/aplicacion/casos-uso/crear-usuario.use-case.ts
 
