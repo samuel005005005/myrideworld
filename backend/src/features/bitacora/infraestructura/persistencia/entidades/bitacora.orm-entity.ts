@@ -29,15 +29,15 @@ export class BitacoraOrmEntity {
   @CreateDateColumn()
   fecha: Date;
 
-  @Column({ length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip: string | null;
 
-  @Column({ name: 'entidad_id', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'entidad_id', length: 100, nullable: true })
   entidadId: string | null;
 
-  @Column({ length: 50 })
+  @Column({ type: 'varchar', length: 50 })
   accion: string;
 
-  @Column({ name: 'duracion_ms', nullable: true })
+  @Column({ type: 'int', name: 'duracion_ms', nullable: true })
   duracionMs: number | null;
 }

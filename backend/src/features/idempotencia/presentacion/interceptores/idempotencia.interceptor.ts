@@ -3,7 +3,8 @@ import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { IDEMPOTENCIA_REPOSITORY } from '../../dominio/repositorios/idempotencia.repository.js';
 import type { IIdempotenciaRepository } from '../../dominio/repositorios/idempotencia.repository.js';
-import { Idempotencia, EstadoIdempotencia } from '../../dominio/entidades/idempotencia.entity.js';
+import { Idempotencia } from '../../dominio/entidades/idempotencia.entity.js';
+import { EstadoIdempotencia } from '../../dominio/entidades/estado-idempotencia.enum.js';
 import { Request, Response } from 'express';
 import * as crypto from 'crypto';
 

@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -33,6 +34,15 @@ AppModule = __decorate([
                     ttl: 60000,
                     limit: 100,
                 }]),
+            JwtModule.registerAsync({
+                global: true,
+                imports: [ConfigModule],
+                inject: [ConfigService],
+                useFactory: (configService) => ({
+                    secret: configService.get('JWT_SECRET', 'super-secret-key'),
+                    signOptions: { expiresIn: '1d' },
+                }),
+            }),
             TypeOrmModule.forRootAsync({
                 imports: [ConfigModule],
                 inject: [ConfigService],

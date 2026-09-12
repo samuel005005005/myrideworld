@@ -4,8 +4,3 @@ export enum EstadosConductor {
   RECHAZADO = 'Rechazado',
 }
 
-export enum EstadosDisponibilidadConductor {
-  DESCONECTADO = 'Desconectado',
-  CONECTADO = 'Conectado',
-  OCUPADO = 'Ocupado',
-}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GenerarPagoUseCase, GenerarPagoDto } from '../../../../../../src/features/pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
+import { GenerarPagoUseCase } from '../../../../../../src/features/pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
+import { GenerarPagoDto } from '../../../../../../src/features/pagos-balances/aplicacion/dto/generar-pago.dto.js';
 import { PagoBalance } from '../../../../../../src/features/pagos-balances/dominio/entidades/pago-balance.entity.js';
 
 describe('GenerarPagoUseCase', () => {

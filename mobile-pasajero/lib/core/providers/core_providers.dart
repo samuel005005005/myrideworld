@@ -1,18 +1,48 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Cliente HTTP global apuntando al Backend de MyRide
 final dioProvider = Provider<Dio>((ref) {
-  // Ajusta esta IP si estás probando en dispositivo físico (por ejemplo, IP de la PC en tu red local).
-  // 10.0.2.2 es para el emulador de Android apuntando al localhost de la PC.
-  const baseUrl = 'http://10.0.2.2:3000';
-  
-  final dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    headers: {'Content-Type': 'application/json'},
-  ));
-  
+  // Obtenemos la IP base desde .env o fallback por defecto.
+  final baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:3000';
+
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
+
+  // Agregamos el interceptor para ver los logs de las peticiones HTTP
+  dio.interceptors.add(
+    LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ),
+  );
+
+  // Interceptor para inyectar el Token JWT
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('jwt_token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ),
+  );
+
   return dio;
 });

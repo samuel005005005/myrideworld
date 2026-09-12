@@ -24,7 +24,7 @@ export declare class ConductoresController {
         licenciaUrl: string | null;
         seguroUrl: string | null;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
         vehiculo: {
             marca: string;
             modelo: string;
@@ -38,7 +38,7 @@ export declare class ConductoresController {
         email: string;
         telefono: string;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
     }[]>;
     aprobar(id: string): Promise<{
         id: string;
@@ -46,7 +46,7 @@ export declare class ConductoresController {
         email: string;
         telefono: string;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
     }>;
     subirDocumentosEndpoint(id: string, files: {
         fotoPerfil?: Express.Multer.File[];
@@ -61,7 +61,7 @@ export declare class ConductoresController {
         licenciaUrl: string | null;
         seguroUrl: string | null;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
         vehiculo: {
             marca: string;
             modelo: string;
@@ -78,7 +78,7 @@ export declare class ConductoresController {
         licenciaUrl: string | null;
         seguroUrl: string | null;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
         vehiculo: {
             marca: string;
             modelo: string;
@@ -95,7 +95,7 @@ export declare class ConductoresController {
         licenciaUrl: string | null;
         seguroUrl: string | null;
         estadoAprobacion: EstadosConductor;
-        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-conductor.enum.js").EstadosDisponibilidadConductor;
+        estadoDisponibilidad: import("../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js").EstadosDisponibilidadConductor;
         vehiculo: {
             marca: string;
             modelo: string;

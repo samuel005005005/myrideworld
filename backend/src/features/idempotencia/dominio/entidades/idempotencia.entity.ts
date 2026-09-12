@@ -1,20 +1,5 @@
-export enum EstadoIdempotencia {
-  EN_PROGRESO = 'EN_PROGRESO',
-  COMPLETADO = 'COMPLETADO',
-  ERROR = 'ERROR'
-}
-
-export interface IdempotenciaProps {
-  id?: string;
-  llave: string;
-  url: string;
-  cuerpoPeticionHash?: string;
-  respuesta?: any;
-  codigoEstado?: number;
-  estado?: EstadoIdempotencia;
-  fechaCreacion?: Date;
-  fechaActualizacion?: Date;
-}
+import { EstadoIdempotencia } from './estado-idempotencia.enum.js';
+import { IdempotenciaProps } from './idempotencia.props.js';
 
 export class Idempotencia {
   private readonly _id: string;

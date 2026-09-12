@@ -3,8 +3,3 @@ export declare enum EstadosConductor {
     APROBADO = "Aprobado",
     RECHAZADO = "Rechazado"
 }
-export declare enum EstadosDisponibilidadConductor {
-    DESCONECTADO = "Desconectado",
-    CONECTADO = "Conectado",
-    OCUPADO = "Ocupado"
-}

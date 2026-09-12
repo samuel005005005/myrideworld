@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
-import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
+import { EstadosConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
+import { EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 
 @Entity('conductores')
 export class ConductorOrmEntity {

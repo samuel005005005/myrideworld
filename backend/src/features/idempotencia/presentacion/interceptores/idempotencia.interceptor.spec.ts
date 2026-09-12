@@ -1,7 +1,8 @@
 import { ExecutionContext, CallHandler, ConflictException } from '@nestjs/common';
 import { IdempotenciaInterceptor } from './idempotencia.interceptor.js';
 import { IIdempotenciaRepository } from '../../dominio/repositorios/idempotencia.repository.js';
-import { Idempotencia, EstadoIdempotencia } from '../../dominio/entidades/idempotencia.entity.js';
+import { Idempotencia } from '../../dominio/entidades/idempotencia.entity.js';
+import { EstadoIdempotencia } from '../../dominio/entidades/estado-idempotencia.enum.js';
 import { of, throwError } from 'rxjs';
 import { describe, it, expect, beforeEach, vi, Mocked } from 'vitest';
 

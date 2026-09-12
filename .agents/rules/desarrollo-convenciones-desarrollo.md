@@ -189,3 +189,6 @@ Resumen: Arrange/Act/Assert; nombres `DebeX_CuandoY`; mockear externos, no el do
 6. **Aplica DRY** (Don't Repeat Yourself) pero sin abstracciones prematuras.
 7. **Mantén los métodos cortos** (idealmente < 20 líneas). Si crece, refactoriza.
 8. **Usa nombres descriptivos** que revelen intención, no implementación.
+9. **Mappers Exclusivos (OBLIGATORIO)**. Prohibido poner lógica `fromJson`, `toJson`, o de base de datos dentro de los Modelos (Models/Entities). Toda la transformación de datos hacia/desde objetos de dominio debe aislarse en clases dedicadas en carpetas `mappers/` en las capas correspondientes (Data o Aplicación).
+10. **Cero Strings Hardcodeados (OBLIGATORIO)**. Prohibido usar literales de texto esparcidos (errores, mensajes, UI, logs). Deben centralizarse en archivos de constantes (`app_strings`, `mensajes.const`, etc.) y referenciarse mediante sus propiedades constantes.
+11. **Cero Valores/URLs Hardcodeadas (OBLIGATORIO)**. Prohibido "quemar" IPs, endpoints, claves o configuraciones de entorno dentro del código fuente. Todo valor dinámico o dependiente del entorno debe provenir de archivos `.env` o gestores de configuración, complementado con archivos de constantes para las rutas/endpoints fijos.

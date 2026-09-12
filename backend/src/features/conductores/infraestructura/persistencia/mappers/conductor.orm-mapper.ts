@@ -1,6 +1,7 @@
 import { Conductor } from '../../../dominio/entidades/conductor.entity.js';
 import { ConductorOrmEntity } from '../entidades/conductor.orm-entity.js';
-import { EstadosConductor, EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
+import { EstadosConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
+import { EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 
 export class ConductorOrmMapper {
   static toDomain(entity: ConductorOrmEntity): Conductor {

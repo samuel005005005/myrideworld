@@ -5,4 +5,4 @@ export interface IIdempotenciaRepository {
   guardar(idempotencia: Idempotencia): Promise<Idempotencia>;
 }
 
-export const IDEMPOTENCIA_REPOSITORY = Symbol('IIdempotenciaRepository');
+export const IDEMPOTENCIA_REPOSITORY = Symbol.for('IIdempotenciaRepository');

@@ -1,4 +1,5 @@
-import { Idempotencia, EstadoIdempotencia } from '../../../dominio/entidades/idempotencia.entity.js';
+import { Idempotencia } from '../../../dominio/entidades/idempotencia.entity.js';
+import { EstadoIdempotencia } from '../../../dominio/entidades/estado-idempotencia.enum.js';
 import { IdempotenciaOrmEntity } from '../entidades/idempotencia.orm-entity.js';
 
 export class IdempotenciaOrmMapper {

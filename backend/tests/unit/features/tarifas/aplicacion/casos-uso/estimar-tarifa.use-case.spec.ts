@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EstimarTarifaUseCase, EstimarTarifaDto } from '../../../../../../src/features/tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
+import { EstimarTarifaUseCase } from '../../../../../../src/features/tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
+import { EstimarTarifaDto } from '../../../../../../src/features/tarifas/aplicacion/dto/estimar-tarifa.dto.js';
 import { Tarifa } from '../../../../../../src/features/tarifas/dominio/entidades/tarifa.entity.js';
 
 describe('EstimarTarifaUseCase', () => {

@@ -1,11 +1,7 @@
 import type { IPagoBalanceRepository } from '../../dominio/repositorios/pago-balance.repository.js';
 import { PagoBalance } from '../../dominio/entidades/pago-balance.entity.js';
 import type { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
-export interface GenerarPagoDto {
-    viajeId: string;
-    conductorId: string;
-    montoTotal: number;
-}
+import { GenerarPagoDto } from '../dto/generar-pago.dto.js';
 export declare class GenerarPagoUseCase {
     private readonly pagoBalanceRepository;
     private readonly configRepo;

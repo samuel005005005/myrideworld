@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { IdempotenciaOrmEntity } from './infraestructura/persistencia/entidades/idempotencia.orm-entity.js';
 import { IDEMPOTENCIA_REPOSITORY } from './dominio/repositorios/idempotencia.repository.js';
 import { IdempotenciaRepositoryImpl } from './infraestructura/persistencia/repositorios/idempotencia.repository.impl.js';
 import { IdempotenciaInterceptor } from './presentacion/interceptores/idempotencia.interceptor.js';
 
+@Global()
 @Module({
   imports: [TypeOrmModule.forFeature([IdempotenciaOrmEntity])],
   providers: [
@@ -14,6 +15,6 @@ import { IdempotenciaInterceptor } from './presentacion/interceptores/idempotenc
     },
     IdempotenciaInterceptor,
   ],
-  exports: [IdempotenciaInterceptor],
+  exports: [IdempotenciaInterceptor, IDEMPOTENCIA_REPOSITORY],
 })
 export class IdempotenciaModule {}

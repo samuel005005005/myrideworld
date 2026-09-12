@@ -5,13 +5,7 @@ import { Tarifa } from '../../dominio/entidades/tarifa.entity.js';
 import type { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
 import { CONFIGURACION_REPOSITORY } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
 
-export interface EstimarTarifaDto {
-  origenLat: number;
-  origenLng: number;
-  destinoLat: number;
-  destinoLng: number;
-}
-
+import { EstimarTarifaDto } from '../dto/estimar-tarifa.dto.js';
 @Injectable()
 export class EstimarTarifaUseCase {
   constructor(

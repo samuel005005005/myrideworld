@@ -13,7 +13,7 @@ export class DetalleEjecucionOrmEntity {
   @JoinColumn({ name: 'ejecucion_proceso_id' })
   ejecucionProceso: EjecucionProcesoOrmEntity;
 
-  @Column({ name: 'entidad_id', length: 100, nullable: true })
+  @Column({ type: 'varchar', name: 'entidad_id', length: 100, nullable: true })
   entidadId: string | null;
 
   @Column({ length: 10, default: 'PE' })

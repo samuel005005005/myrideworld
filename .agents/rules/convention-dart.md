@@ -779,3 +779,6 @@ class App extends ConsumerWidget {
     - **Única excepción:** `FooPage`/`FooWidget` + su `_FooPageState` / `_FooWidgetState` en el mismo archivo.
     - Widgets privados auxiliares (`_FooCard`) → preferí archivo propio si crecen; no agregues más entidades de dominio al mismo archivo.
 11. **No lógica en widgets**. Los widgets consumen providers y despachan acciones al controller.
+12. **Mappers Exclusivos (OBLIGATORIO)**. Prohibido poner lógica `fromJson` o `toJson` dentro de los `Models` o `Entities`. Toda la transformación de JSON a Model/Entity (y viceversa) debe estar en clases estáticas exclusivas en `data/mappers/` (Ej. `UsuarioMapper`). Los Models solo son data classes.
+13. **Cero Strings Hardcodeados (OBLIGATORIO)**. Prohibido usar literales de texto directamente en UI, Controladores o Excepciones (`throw ServerException('error')`). Todo texto legible debe estar centralizado en `lib/core/constants/app_strings.dart` (Ej. `AppStrings.errorServerConnection`).
+14. **Cero URLs Hardcodeadas (OBLIGATORIO)**. Las IPs, URLs base y configuraciones sensibles van en un archivo `.env` (usando `flutter_dotenv`). Las rutas relativas de la API van en `lib/core/constants/api_endpoints.dart`. No usar URLs mágicas en los DataSources.

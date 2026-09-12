@@ -5,12 +5,7 @@ import { PagoBalance } from '../../dominio/entidades/pago-balance.entity.js';
 import type { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
 import { CONFIGURACION_REPOSITORY } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
 
-export interface GenerarPagoDto {
-  viajeId: string;
-  conductorId: string;
-  montoTotal: number;
-}
-
+import { GenerarPagoDto } from '../dto/generar-pago.dto.js';
 @Injectable()
 export class GenerarPagoUseCase {
   constructor(

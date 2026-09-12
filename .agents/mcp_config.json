@@ -8,6 +8,12 @@
       ],
       "cwd": "tools/mcp-mongodb",
       "env": {}
+    },
+    "stitch": {
+      "serverUrl": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      }
     }
   }
 }
