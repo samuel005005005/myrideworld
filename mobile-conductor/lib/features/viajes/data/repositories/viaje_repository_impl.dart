@@ -1,7 +1,6 @@
-import 'package:dartz/dartz.dart';
-
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/repositories/viaje_repository.dart';
 import '../datasources/viaje_remote_datasource.dart';
@@ -14,7 +13,7 @@ class ViajeRepositoryImpl implements ViajeRepository {
   ViajeRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, Viaje>> aceptarViaje({
+  Future<Resultado<Viaje>> aceptarViaje({
     required String viajeId,
     required String conductorId,
   }) async {
@@ -27,28 +26,28 @@ class ViajeRepositoryImpl implements ViajeRepository {
   }
 
   @override
-  Future<Either<Failure, Viaje>> marcarLlegada(String viajeId) async {
+  Future<Resultado<Viaje>> marcarLlegada(String viajeId) async {
     return _resolver(() => remoteDataSource.marcarLlegada(viajeId));
   }
 
   @override
-  Future<Either<Failure, Viaje>> iniciarViaje(String viajeId) async {
+  Future<Resultado<Viaje>> iniciarViaje(String viajeId) async {
     return _resolver(() => remoteDataSource.iniciarViaje(viajeId));
   }
 
   @override
-  Future<Either<Failure, Viaje>> completarViaje(String viajeId) async {
+  Future<Resultado<Viaje>> completarViaje(String viajeId) async {
     return _resolver(() => remoteDataSource.completarViaje(viajeId));
   }
 
-  Future<Either<Failure, Viaje>> _resolver(
+  Future<Resultado<Viaje>> _resolver(
     Future<ViajeModel> Function() accion,
   ) async {
     try {
       final modelo = await accion();
-      return Right(ViajeMapper.toDomain(modelo));
+      return Exito(ViajeMapper.toDomain(modelo));
     } on AppException catch (error) {
-      return Left(Failure(error.mensaje));
+      return Fallo(Failure(error.mensaje));
     }
   }
 }

@@ -237,7 +237,9 @@ class HomeController extends Notifier<HomeState> {
       },
       (ruta) {
         state = state.copyWith(
-          routePoints: ruta.puntos,
+          routePoints: ruta.puntos
+              .map((punto) => LatLng(punto.latitud, punto.longitud))
+              .toList(),
           routeDistanceKm: ruta.distanciaKm,
           routeDurationMin: ruta.duracionMinutos,
           errorMessage: null,

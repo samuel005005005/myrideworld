@@ -1,4 +1,3 @@
-import '../error/failures.dart';
 import '../tipos/resultado.dart';
 
 /// Clase base para todos los casos de uso.

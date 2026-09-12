@@ -26,7 +26,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const res = exception.getResponse();
       message = typeof res === 'string' ? res : (res as any).message || res;
     } else if (exception instanceof DomainException) {
-      status = HttpStatus.BAD_REQUEST;
+      status = exception.codigoHttp;
       message = exception.message;
     } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;

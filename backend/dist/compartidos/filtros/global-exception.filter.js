@@ -21,7 +21,7 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
             message = typeof res === 'string' ? res : res.message || res;
         }
         else if (exception instanceof DomainException) {
-            status = HttpStatus.BAD_REQUEST;
+            status = exception.codigoHttp;
             message = exception.message;
         }
         else if (exception instanceof Error) {

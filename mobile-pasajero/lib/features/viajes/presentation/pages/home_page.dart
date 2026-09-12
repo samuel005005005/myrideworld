@@ -66,7 +66,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
 
       final errorMessage = siguiente.errorMessage;
-      if (errorMessage != null && errorMessage != anterior?.errorMessage && mounted) {
+      if (errorMessage != null &&
+          errorMessage != anterior?.errorMessage &&
+          mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(errorMessage)));
@@ -405,9 +407,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () => ref
-                              .read(selectedVehicleProvider.notifier)
-                              .state = _vehiculoSedan,
+                          onTap: () =>
+                              ref.read(selectedVehicleProvider.notifier).state =
+                                  _vehiculoSedan,
                         ),
                         _buildUberVehicleTile(
                           id: _vehiculoMinivan,
@@ -419,9 +421,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () => ref
-                              .read(selectedVehicleProvider.notifier)
-                              .state = _vehiculoMinivan,
+                          onTap: () =>
+                              ref.read(selectedVehicleProvider.notifier).state =
+                                  _vehiculoMinivan,
                         ),
                         _buildUberVehicleTile(
                           id: _vehiculoSuv,
@@ -433,9 +435,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           selectedId: selectedVehicle,
                           paymentMethod: selectedPayment,
                           brandPrimary: brandPrimary,
-                          onTap: () => ref
-                              .read(selectedVehicleProvider.notifier)
-                              .state = _vehiculoSuv,
+                          onTap: () =>
+                              ref.read(selectedVehicleProvider.notifier).state =
+                                  _vehiculoSuv,
                         ),
                       ],
                     ),
@@ -451,9 +453,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Row(
                       children: [
                         InkWell(
-                          onTap: () => ref
-                              .read(selectedPaymentProvider.notifier)
-                              .state = selectedPayment == _pagoEfectivo
+                          onTap: () =>
+                              ref
+                                  .read(selectedPaymentProvider.notifier)
+                                  .state = selectedPayment == _pagoEfectivo
                               ? _pagoTarjeta
                               : _pagoEfectivo,
                           borderRadius: BorderRadius.circular(8),
@@ -521,7 +524,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   )
                                 : Text(
                                     AppStrings.homeSolicitarVehiculo(
-                                      _etiquetaVehiculoParaBoton(selectedVehicle),
+                                      _etiquetaVehiculoParaBoton(
+                                        selectedVehicle,
+                                      ),
                                       finalPrice,
                                     ),
                                     style: const TextStyle(
@@ -549,7 +554,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     final now = DateTime.now().add(Duration(minutes: extraMinutes));
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final hour = now.hour > 12
+        ? now.hour - 12
+        : (now.hour == 0 ? 12 : now.hour);
     final minute = now.minute.toString().padLeft(2, '0');
     final ampm = now.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $ampm';
@@ -623,8 +630,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }) {
     final selected = selectedId == id;
     final borderColor = selected ? brandPrimary : Colors.transparent;
-    final bgColor = selected ? brandPrimary.withOpacity(0.08) : Colors.transparent;
-    final finalPrice = paymentMethod == _pagoTarjeta ? basePrice * 1.075 : basePrice;
+    final bgColor = selected
+        ? brandPrimary.withOpacity(0.08)
+        : Colors.transparent;
+    final finalPrice = paymentMethod == _pagoTarjeta
+        ? basePrice * 1.075
+        : basePrice;
 
     return InkWell(
       onTap: onTap,

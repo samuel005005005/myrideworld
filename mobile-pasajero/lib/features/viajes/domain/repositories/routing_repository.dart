@@ -1,10 +1,8 @@
-import 'package:dartz/dartz.dart';
-
-import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../entities/ruta_viaje.dart';
 
 abstract class RoutingRepository {
-  Future<Either<Failure, RutaViaje>> obtenerRuta({
+  Future<Resultado<RutaViaje>> obtenerRuta({
     required double origenLat,
     required double origenLng,
     required double destinoLat,

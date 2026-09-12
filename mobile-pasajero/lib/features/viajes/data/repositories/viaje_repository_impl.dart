@@ -1,8 +1,7 @@
-import 'package:dartz/dartz.dart';
-
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/repositories/viaje_repository.dart';
 import '../datasources/viaje_remote_datasource.dart';
@@ -13,7 +12,7 @@ class ViajeRepositoryImpl implements ViajeRepository {
   ViajeRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, Viaje>> solicitarViaje({
+  Future<Resultado<Viaje>> solicitarViaje({
     required double origenLat,
     required double origenLng,
     required double destinoLat,
@@ -29,11 +28,11 @@ class ViajeRepositoryImpl implements ViajeRepository {
         idempotencyKey: idempotencyKey,
       );
 
-      return Right(viajeModel);
+      return Exito(viajeModel);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.mensaje));
+      return Fallo(ServerFailure(e.mensaje));
     } catch (e) {
-      return Left(ServerFailure(AppStrings.errorUnexpected));
+      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
     }
   }
 }

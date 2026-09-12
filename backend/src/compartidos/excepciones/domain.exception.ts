@@ -1,8 +1,10 @@
 export class DomainException extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly codigoHttp: number = 400,
+  ) {
     super(message);
     this.name = 'DomainException';
-    // Mantiene el stack trace correcto en V8
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, DomainException);
     }
