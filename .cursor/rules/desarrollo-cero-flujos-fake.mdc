@@ -1,0 +1,33 @@
+---
+description: Prohibido flujos fake/stub/demo en código de producto MyRide
+alwaysApply: true
+---
+# Producción real — cero flujos fake
+
+## Principio
+
+MyRide se construye **para producción**. Prohibido dejar en las apps o API caminos “de demo”, datos inventados, GPS simulado, login automático, tarifas locales inventadas, pantallas stub que simulan éxito, o credenciales quemadas.
+
+## Prohibido
+
+- Auto-login / `DemoCredentials` / passwords en `.env` embebido como flujo normal
+- GPS simulado con `Timer` en lugar de `geolocator` (u origen real)
+- Tarifas/comisiones calculadas en el cliente con constantes inventadas
+- Perfil/historial/pagos/ayuda con datos hardcodeados (“Juan Pérez”, `randomuser.me`)
+- Botones que hacen `pop` + SnackBar de éxito sin llamar API
+- Seed/demo solo aceptable en **scripts de desarrollo** explícitos (`npm run seed`), nunca como comportamiento de la app en runtime de producto
+- Comentarios `// por ahora fake` dejando features a medias en main
+
+## Obligatorio
+
+- Toda pantalla de producto consume API/realtime reales vía domain → data
+- Si falta endpoint: **implementar el endpoint** (o dejar la UI deshabilitada con mensaje honesto), no inventar respuesta
+- Ubicación: GPS real + permisos; fallar claro si no hay permiso
+- Auth: login/restore/logout reales; sin bypass
+- Tarifas: solo desde backend (configuración / tarifario)
+
+## Al implementar
+
+1. Buscar stubs en la feature antes de cerrar.
+2. No mezclar “UI bonita fake” con “backend real” en el mismo flujo.
+3. Actualizar `docs/analisis/tareas/todo-analisis-mvp.md` marcando stubs eliminados.

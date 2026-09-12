@@ -41,4 +41,8 @@ class AuthController extends AsyncNotifier<SesionUsuario?> {
     await ref.read(logoutProvider)(NoParams());
     state = const AsyncData(null);
   }
+
+  void actualizarSesionLocal(SesionUsuario sesion) {
+    state = AsyncData(sesion);
+  }
 }

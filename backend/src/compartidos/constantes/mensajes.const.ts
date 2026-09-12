@@ -86,19 +86,44 @@ export const MENSAJES = {
       NO_ENCONTRADO: 'Conductor no encontrado',
       EMAIL_REGISTRADO: 'El email ya está registrado.',
       DOCUMENTOS_SOLO_PROPIOS: 'Solo puedes subir documentos de tu propio perfil.',
+      DISPONIBILIDAD_INVALIDA: 'Estado de disponibilidad no válido.',
+      SOLO_APROBADO_CONECTAR:
+        'Solo un conductor aprobado puede ponerse en línea.',
     },
     CONFIGURACION: {
       VALOR_VACIO: 'El valor no puede estar vacío.',
       CLAVE_OBLIGATORIA: 'La clave es obligatoria.',
       VALOR_OBLIGATORIO: 'El valor es obligatorio.',
+      NO_ENCONTRADA: 'Configuración no encontrada.',
+      NO_DEFINIDA: (clave: string) =>
+        `La configuración "${clave}" no está definida. Debe cargarla el administrador.`,
+      VALOR_NUMERICO_INVALIDO: (clave: string) =>
+        `La configuración "${clave}" no tiene un valor numérico válido.`,
       FEE_PLATAFORMA_DESC: 'Porcentaje de comisión de la plataforma',
       TIMEOUT_VIAJE_MINUTOS_DESC: 'Minutos antes de cancelar un viaje sin aceptar',
+      TARIFA_BASE_DESC: 'Tarifa base (USD) definida por la asociación',
+      TARIFA_KM_DESC: 'Precio por kilómetro (USD) definido por la asociación',
+      TARIFA_MINIMA_DESC: 'Tarifa mínima (USD) definida por la asociación',
+      SOPORTE_TELEFONO_DESC: 'Teléfono de la central de asistencia',
+      SOPORTE_WHATSAPP_DESC: 'WhatsApp oficial (solo dígitos con código país)',
       CLAVE_FEE_PLATAFORMA: 'FEE_PLATAFORMA',
       CLAVE_TIMEOUT_VIAJE_MINUTOS: 'TIMEOUT_VIAJE_MINUTOS',
+      CLAVE_TARIFA_BASE: 'TARIFA_BASE',
+      CLAVE_TARIFA_KM: 'TARIFA_KM',
+      CLAVE_TARIFA_MINIMA: 'TARIFA_MINIMA',
+      CLAVE_SOPORTE_TELEFONO: 'SOPORTE_TELEFONO',
+      CLAVE_SOPORTE_WHATSAPP: 'SOPORTE_WHATSAPP',
+      CLAVE_RADIO_PROXIMIDAD_ORIGEN_M: 'RADIO_PROXIMIDAD_ORIGEN_M',
+      CLAVE_RADIO_PROXIMIDAD_DESTINO_M: 'RADIO_PROXIMIDAD_DESTINO_M',
+      RADIO_PROXIMIDAD_ORIGEN_M_DESC:
+        'Radio en metros para marcar llegada / iniciar cerca del origen',
+      RADIO_PROXIMIDAD_DESTINO_M_DESC:
+        'Radio en metros para completar el viaje cerca del destino',
     },
     TARIFAS: {
       PRECIO_MAYOR_CERO: 'El precio debe ser mayor a cero.',
       ORIGEN_DESTINO_OBLIGATORIOS: 'Origen y destino son obligatorios.',
+      NO_ENCONTRADA: 'Tarifa no encontrada.',
     },
     VIAJES: {
       NO_DISPONIBLE_ASIGNACION: 'El viaje no está disponible para asignación.',
@@ -120,6 +145,11 @@ export const MENSAJES = {
       COMPLETADO_EXITOSO: 'Viaje completado exitosamente',
       TIMEOUT_AGOTADO: 'Tiempo de espera agotado',
       SALA_NO_AUTORIZADA: 'No autorizado para unirse a esta sala.',
+      CONSULTA_NO_AUTORIZADA: 'No autorizado para consultar este viaje.',
+      GPS_CONDUCTOR_REQUERIDO:
+        'Se requiere ubicacion GPS reciente del conductor para esta accion.',
+      FUERA_DE_PROXIMIDAD: (distanciaMetros: number, radioMetros: number) =>
+        `No puedes continuar: estas a ${distanciaMetros} m del punto (maximo permitido ${radioMetros} m). Acercate e intenta de nuevo.`,
     },
     CALIFICACIONES: {
       RANGO_PUNTUACION: 'La puntuación debe estar entre 1 y 5.',
@@ -136,11 +166,22 @@ export const MENSAJES = {
       VIAJE_ID_OBLIGATORIO: 'El ID del viaje es obligatorio.',
       CONDUCTOR_ID_OBLIGATORIO: 'El ID del conductor es obligatorio.',
       MONTO_NETO_NEGATIVO: 'El monto neto no puede ser negativo.',
+      NO_ENCONTRADO: 'Pago o balance no encontrado.',
     },
     AUTH: {
       CREDENCIALES_INVALIDAS: 'Credenciales inválidas.',
       ROL_INVALIDO: 'Rol no válido.',
       TOKEN_AUSENTE: 'Token ausente.',
+      ADMIN_INACTIVO: 'Cuenta de administrador desactivada.',
+    },
+    ADMINISTRADORES: {
+      EMAIL_REGISTRADO: 'El email de administrador ya está registrado.',
+      NO_ENCONTRADO: 'Administrador no encontrado.',
+    },
+    CONDUCTORES_FLOTA: {
+      SOLO_PENDIENTE_RECHAZAR: 'Solo se pueden rechazar conductores pendientes.',
+      SOLO_APROBADO_SUSPENDER: 'Solo se pueden suspender conductores aprobados.',
+      SOLO_SUSPENDIDO_REACTIVAR: 'Solo se pueden reactivar conductores suspendidos.',
     },
     PROCESOS_BATCH: {
       PROCESO_OBLIGATORIO: 'El nombre del proceso es obligatorio.',

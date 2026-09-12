@@ -1,5 +1,6 @@
 import '../../domain/entities/estado_viaje_activo.dart';
 import '../../domain/entities/viaje.dart';
+import '../../../balances/domain/entities/pago_balance.dart';
 
 class ViajeActivoState {
   static const Object _sinCambio = Object();
@@ -11,6 +12,7 @@ class ViajeActivoState {
   final String etaInfo;
   final bool procesando;
   final bool finalizado;
+  final PagoBalance? recibo;
   final String? errorMensaje;
 
   const ViajeActivoState({
@@ -21,6 +23,7 @@ class ViajeActivoState {
     this.etaInfo = '',
     this.procesando = false,
     this.finalizado = false,
+    this.recibo,
     this.errorMensaje,
   });
 
@@ -32,6 +35,7 @@ class ViajeActivoState {
     String? etaInfo,
     bool? procesando,
     bool? finalizado,
+    Object? recibo = _sinCambio,
     Object? errorMensaje = _sinCambio,
   }) {
     return ViajeActivoState(
@@ -42,6 +46,7 @@ class ViajeActivoState {
       etaInfo: etaInfo ?? this.etaInfo,
       procesando: procesando ?? this.procesando,
       finalizado: finalizado ?? this.finalizado,
+      recibo: identical(recibo, _sinCambio) ? this.recibo : recibo as PagoBalance?,
       errorMensaje: identical(errorMensaje, _sinCambio)
           ? this.errorMensaje
           : errorMensaje as String?,

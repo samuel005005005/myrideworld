@@ -7,6 +7,7 @@ class HomeVehicleTile extends StatelessWidget {
   final String name;
   final String eta;
   final int capacity;
+  final double? tarifaOficial;
   final IconData icon;
   final String selectedId;
   final Color brandPrimary;
@@ -18,6 +19,7 @@ class HomeVehicleTile extends StatelessWidget {
     required this.name,
     required this.eta,
     required this.capacity,
+    required this.tarifaOficial,
     required this.icon,
     required this.selectedId,
     required this.brandPrimary,
@@ -31,6 +33,9 @@ class HomeVehicleTile extends StatelessWidget {
     final bgColor = selected
         ? brandPrimary.withValues(alpha: 0.08)
         : Colors.transparent;
+    final precioTexto = tarifaOficial == null
+        ? AppStrings.homePrecioNoDisponible
+        : AppStrings.homePrecioVehiculo(tarifaOficial!);
 
     return InkWell(
       onTap: onTap,
@@ -79,21 +84,22 @@ class HomeVehicleTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  AppStrings.homePrecioNoDisponible,
-                  style: TextStyle(
+                  precioTexto,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black87,
                   ),
                 ),
-                Text(
-                  AppStrings.homeTarifaPendienteApi,
-                  style: TextStyle(fontSize: 10, color: Colors.black54),
-                ),
+                if (tarifaOficial == null)
+                  const Text(
+                    AppStrings.homeTarifaPendienteApi,
+                    style: TextStyle(fontSize: 10, color: Colors.black54),
+                  ),
               ],
             ),
           ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../controllers/viaje_activo_controller.dart';
@@ -63,7 +64,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
 
     const textDark = Color(0xFF1E293B);
     const textGrey = Color(0xFF64748B);
-    const brandPrimary = Color(0xFFF59E0B);
     const borderGrey = Color(0xFFE2E8F0);
     const dangerColor = Color(0xFFDC2626);
 
@@ -116,7 +116,7 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
             ),
           ),
 
-          // Menu/Back Button
+          // Back
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
@@ -125,18 +125,24 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
               radius: 24,
 
               child: IconButton(
-                icon: const Icon(Icons.menu, color: textDark),
-                onPressed: () {},
+                icon: const Icon(Icons.arrow_back, color: textDark),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/home');
+                  }
+                },
               ),
             ),
           ),
 
-          // SOS Button
+          // SOS → ayuda / central
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 16,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => context.push('/ayuda'),
               icon: const Icon(Icons.shield, color: Colors.white, size: 18),
               label: const Text(AppStrings.trackingSOS),
               style: ElevatedButton.styleFrom(
@@ -213,50 +219,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                       // Driver Info
                       Row(
                         children: [
-                          // Avatar
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: Colors.grey.shade200,
-                            backgroundImage: const NetworkImage(
-                              'https://randomuser.me/api/portraits/men/32.jpg', // Placeholder
-                            ),
+                          _AvatarConductor(
+                            nombre: estado.conductor?.nombreCompleto,
+                            fotoUrl: estado.conductor?.fotoUrl,
                           ),
                           const SizedBox(width: 16),
-                          // Details
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Row(
-                                  children: [
-                                    Text(
-                                      AppStrings.trackingDriverNamePlaceholder,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: textDark,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Icon(
-                                      Icons.star,
-                                      color: brandPrimary,
-                                      size: 16,
-                                    ),
-                                    Text(
-                                      AppStrings.trackingDriverRatingPlaceholder,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: textGrey,
-                                      ),
-                                    ),
-                                  ],
+                                Text(
+                                  estado.conductor?.nombreCompleto ??
+                                      AppStrings.trackingConductorPendiente,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: textDark,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  AppStrings.trackingDriverVehiclePlaceholder,
-                                  style: TextStyle(
+                                Text(
+                                  estado.conductor?.vehiculoResumen.isNotEmpty ==
+                                          true
+                                      ? estado.conductor!.vehiculoResumen
+                                      : AppStrings.trackingVehiculoPendiente,
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     color: textGrey,
                                   ),
@@ -264,7 +251,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                               ],
                             ),
                           ),
-                          // License Plate
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -275,9 +261,12 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: Colors.grey.shade300),
                             ),
-                            child: const Text(
-                              AppStrings.trackingDriverPlatePlaceholder,
-                              style: TextStyle(
+                            child: Text(
+                              (estado.conductor?.vehiculoPlaca.isNotEmpty ==
+                                      true)
+                                  ? estado.conductor!.vehiculoPlaca
+                                  : AppStrings.trackingPlacaPendiente,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 1.0,
@@ -289,29 +278,66 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
 
                       const SizedBox(height: 20),
 
-                      // Actions Row
+                      // Acciones reales (llamar conductor si hay teléfono)
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildActionBtn(
                             icon: Icons.call,
                             label: AppStrings.trackingCallAction,
-                            onTap: () {},
-                          ),
-                          _buildActionBtn(
-                            icon: Icons.message,
-                            label: AppStrings.trackingMessageAction,
-                            onTap: () {},
-                          ),
-                          _buildActionBtn(
-                            icon: Icons.share,
-                            label: AppStrings.trackingShareAction,
-                            onTap: () {},
+                            onTap: () => _llamarConductor(
+                              context,
+                              estado.conductor?.telefono,
+                            ),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 24),
+
+                      if (estado.puedeCancelar)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: estado.cancelando
+                                ? null
+                                : () async {
+                                    final ok = await ref
+                                        .read(
+                                          viajeActivoControllerProvider
+                                              .notifier,
+                                        )
+                                        .cancelarViajeActivo();
+                                    if (ok && context.mounted) {
+                                      context.go('/home');
+                                    }
+                                  },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: dangerColor,
+                              side: const BorderSide(color: dangerColor),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: Text(
+                              estado.cancelando
+                                  ? AppStrings.trackingCancelando
+                                  : AppStrings.trackingCancelarViaje,
+                            ),
+                          ),
+                        ),
+
+                      if (estado.errorCancelacion != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          estado.errorCancelacion!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: dangerColor,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
 
                       const Text(
                         AppStrings.trackingWaitingCompletion,
@@ -356,6 +382,64 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _llamarConductor(BuildContext context, String? telefono) async {
+    final numero = telefono?.trim() ?? '';
+    if (numero.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.trackingTelefonoNoDisponible)),
+      );
+      return;
+    }
+
+    final uri = Uri(scheme: 'tel', path: numero);
+    final ok = await launchUrl(uri);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.trackingLlamadaFallida)),
+      );
+    }
+  }
+}
+
+class _AvatarConductor extends StatelessWidget {
+  final String? nombre;
+  final String? fotoUrl;
+
+  const _AvatarConductor({this.nombre, this.fotoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final urlHttp =
+        fotoUrl != null &&
+        (fotoUrl!.startsWith('http://') || fotoUrl!.startsWith('https://'));
+
+    if (urlHttp) {
+      return CircleAvatar(
+        radius: 28,
+        backgroundColor: Colors.grey.shade200,
+        backgroundImage: NetworkImage(fotoUrl!),
+      );
+    }
+
+    final inicial = (nombre != null && nombre!.isNotEmpty)
+        ? nombre![0].toUpperCase()
+        : '?';
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+      child: Text(
+        inicial,
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1E293B),
         ),
       ),
     );

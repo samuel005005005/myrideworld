@@ -61,6 +61,20 @@ class SecureSessionStorage implements SessionStorage {
   }
 
   @override
+  Future<void> actualizarUsuario(Usuario usuario) async {
+    await _storage.write(
+      key: _claveUsuario,
+      value: jsonEncode({
+        'id': usuario.id,
+        'nombreCompleto': usuario.nombreCompleto,
+        'email': usuario.email,
+        'telefono': usuario.telefono,
+        'rol': usuario.rol,
+      }),
+    );
+  }
+
+  @override
   Future<void> limpiar() async {
     await _storage.delete(key: _claveToken);
     await _storage.delete(key: _claveUsuario);

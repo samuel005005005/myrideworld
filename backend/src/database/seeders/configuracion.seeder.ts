@@ -11,18 +11,62 @@ export class ConfiguracionSeeder {
   constructor(
     @Inject(CONFIGURACION_REPOSITORY)
     private readonly configRepo: IConfiguracionRepository,
-  ) { }
+  ) {}
 
   async seed() {
     this.logger.log('Iniciando seed de Configuraciones...');
+    const C = MENSAJES.EXCEPCIONES.CONFIGURACION;
     const configuracionesIniciales = [
-      { clave: MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_FEE_PLATAFORMA, valor: '0.20', descripcion: MENSAJES.EXCEPCIONES.CONFIGURACION.FEE_PLATAFORMA_DESC },
-      { clave: MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_TIMEOUT_VIAJE_MINUTOS, valor: '5', descripcion: MENSAJES.EXCEPCIONES.CONFIGURACION.TIMEOUT_VIAJE_MINUTOS_DESC },
+      {
+        clave: C.CLAVE_FEE_PLATAFORMA,
+        valor: '0.20',
+        descripcion: C.FEE_PLATAFORMA_DESC,
+      },
+      {
+        clave: C.CLAVE_TIMEOUT_VIAJE_MINUTOS,
+        valor: '5',
+        descripcion: C.TIMEOUT_VIAJE_MINUTOS_DESC,
+      },
+      {
+        clave: C.CLAVE_TARIFA_BASE,
+        valor: '30.0',
+        descripcion: C.TARIFA_BASE_DESC,
+      },
+      {
+        clave: C.CLAVE_TARIFA_KM,
+        valor: '15.0',
+        descripcion: C.TARIFA_KM_DESC,
+      },
+      {
+        clave: C.CLAVE_TARIFA_MINIMA,
+        valor: '50.0',
+        descripcion: C.TARIFA_MINIMA_DESC,
+      },
+      {
+        clave: C.CLAVE_SOPORTE_TELEFONO,
+        valor: '+18095550100',
+        descripcion: C.SOPORTE_TELEFONO_DESC,
+      },
+      {
+        clave: C.CLAVE_SOPORTE_WHATSAPP,
+        valor: '18095550100',
+        descripcion: C.SOPORTE_WHATSAPP_DESC,
+      },
+      {
+        clave: C.CLAVE_RADIO_PROXIMIDAD_ORIGEN_M,
+        valor: '200',
+        descripcion: C.RADIO_PROXIMIDAD_ORIGEN_M_DESC,
+      },
+      {
+        clave: C.CLAVE_RADIO_PROXIMIDAD_DESTINO_M,
+        valor: '200',
+        descripcion: C.RADIO_PROXIMIDAD_DESTINO_M_DESC,
+      },
     ];
 
     for (const conf of configuracionesIniciales) {
-      const existe = await this.configRepo.obtenerValor(conf.clave, null as any);
-      if (existe === null) {
+      const existe = await this.configRepo.obtenerPorClave(conf.clave);
+      if (!existe) {
         const nueva = Configuracion.crear(conf);
         await this.configRepo.guardar(nueva);
         this.logger.log(`Configuración creada: ${conf.clave}`);

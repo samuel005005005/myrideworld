@@ -1,8 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Patch, Req, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Patch, Req, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CrearPasajeroUseCase } from '../../aplicacion/casos-uso/crear-pasajero.use-case.js';
 import { ObtenerPasajeroUseCase } from '../../aplicacion/casos-uso/obtener-pasajero.use-case.js';
 import { ActualizarPasajeroUseCase } from '../../aplicacion/casos-uso/actualizar-pasajero.use-case.js';
+import { ListarPasajerosUseCase } from '../../aplicacion/casos-uso/listar-pasajeros.use-case.js';
 import { crearPasajeroSchema } from '../../aplicacion/dto/crear-pasajero.dto.js';
 import { CrearPasajeroDto } from '../../aplicacion/dto/crear-pasajero.dto.js';
 import { actualizarPasajeroSchema, ActualizarPasajeroDto } from '../../aplicacion/dto/actualizar-pasajero.dto.js';
@@ -12,8 +13,11 @@ import { PasajeroResponseDto } from '../../aplicacion/dto/pasajero-response.dto.
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
+import { AdminRolesGuard } from '../../../../compartidos/middlewares/admin-roles.guard.js';
 import { Roles as RolesDecorator } from '../../../../compartidos/decoradores/roles.decorator.js';
+import { AdminRoles } from '../../../../compartidos/decoradores/admin-roles.decorator.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { RolesAdmin } from '../../../../compartidos/constantes/roles-admin.enum.js';
 
 const H = MENSAJES.HTTP.RESPUESTAS;
 
@@ -24,6 +28,7 @@ export class PasajerosController {
     private readonly crearPasajero: CrearPasajeroUseCase,
     private readonly obtenerPasajero: ObtenerPasajeroUseCase,
     private readonly actualizarPasajero: ActualizarPasajeroUseCase,
+    private readonly listarPasajeros: ListarPasajerosUseCase,
   ) {}
 
   @Post()
@@ -34,6 +39,22 @@ export class PasajerosController {
   async crear(@Body(new ZodValidationPipe(crearPasajeroSchema)) dto: CrearPasajeroDto): Promise<PasajeroResponseDto> {
     const pasajero = await this.crearPasajero.ejecutar(dto);
     return PasajeroMapper.toResponse(pasajero);
+  }
+
+  @Get()
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(
+    RolesAdmin.SUPER_ADMIN,
+    RolesAdmin.OPERACIONES,
+    RolesAdmin.AUDITOR,
+  )
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar pasajeros (admin)' })
+  @ApiQuery({ name: 'q', required: false })
+  async listar(@Query('q') q?: string): Promise<PasajeroResponseDto[]> {
+    const lista = await this.listarPasajeros.ejecutar(q);
+    return lista.map((p) => PasajeroMapper.toResponse(p));
   }
 
   @Get('me')

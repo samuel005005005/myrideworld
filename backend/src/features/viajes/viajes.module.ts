@@ -13,6 +13,8 @@ import { CompletarViajeUseCase } from './aplicacion/casos-uso/completar-viaje.us
 import { CancelarViajeUseCase } from './aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { ListarViajesUseCase } from './aplicacion/casos-uso/listar-viajes.use-case.js';
 import { RechazarViajeUseCase } from './aplicacion/casos-uso/rechazar-viaje.use-case.js';
+import { ObtenerViajeActivoUseCase } from './aplicacion/casos-uso/obtener-viaje-activo.use-case.js';
+import { ObtenerViajePorIdUseCase } from './aplicacion/casos-uso/obtener-viaje-por-id.use-case.js';
 import { ViajesController } from './presentacion/controladores/viajes.controller.js';
 import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';
@@ -20,6 +22,7 @@ import { ViajesGateway } from './presentacion/gateways/viajes.gateway.js';
 import { NOTIFICADOR_VIAJE } from './aplicacion/puertos/notificador-viaje.port.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
 import { AsignadorConductorService } from './aplicacion/servicios/asignador-conductor.service.js';
+import { ValidadorProximidadViajeService } from './aplicacion/servicios/validador-proximidad-viaje.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
@@ -38,6 +41,7 @@ import { AuthModule } from '../auth/auth.module.js';
       useClass: ViajeRepositoryImpl,
     },
     AsignadorConductorService,
+    ValidadorProximidadViajeService,
     SolicitarViajeUseCase,
     AceptarViajeUseCase,
     MarcarLlegadaUseCase,
@@ -46,6 +50,8 @@ import { AuthModule } from '../auth/auth.module.js';
     CancelarViajeUseCase,
     ListarViajesUseCase,
     RechazarViajeUseCase,
+    ObtenerViajeActivoUseCase,
+    ObtenerViajePorIdUseCase,
     ViajesGateway,
     {
       provide: NOTIFICADOR_VIAJE,

@@ -6,7 +6,10 @@ import '../../domain/entities/sesion_usuario.dart';
 import '../models/sesion_usuario_model.dart';
 
 class SesionUsuarioMapper {
-  static SesionUsuarioModel fromApiResponse(Map<String, dynamic> respuesta) {
+  static SesionUsuarioModel fromApiResponse(
+    Map<String, dynamic> respuesta, {
+    String? email,
+  }) {
     final token = respuesta['token'] ?? respuesta['access_token'];
     if (token is! String || token.isEmpty) {
       throw const AppException(AppStrings.errorRespuestaLogin);
@@ -17,6 +20,7 @@ class SesionUsuarioMapper {
       token: token,
       userId: payload['sub'] as String?,
       rol: payload['rol'] as String?,
+      email: email,
     );
   }
 
@@ -28,6 +32,7 @@ class SesionUsuarioMapper {
     return SesionUsuario(
       userId: modelo.userId!,
       rol: modelo.rol ?? '',
+      email: modelo.email,
     );
   }
 

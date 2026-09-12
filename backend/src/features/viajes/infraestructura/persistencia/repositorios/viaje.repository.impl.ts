@@ -74,16 +74,36 @@ export class ViajeRepositoryImpl implements IViajeRepository {
     pasajeroId?: string;
     conductorId?: string;
     limite?: number;
+    estado?: string;
+    desde?: Date;
+    hasta?: Date;
   }): Promise<Viaje[]> {
-    const where: Record<string, string> = {};
-    if (filtros?.pasajeroId) where.pasajeroId = filtros.pasajeroId;
-    if (filtros?.conductorId) where.conductorId = filtros.conductorId;
+    const qb = this.ormRepo
+      .createQueryBuilder('v')
+      .orderBy('v.fechaSolicitud', 'DESC')
+      .take(filtros?.limite ?? 100);
 
-    const entities = await this.ormRepo.find({
-      where,
-      order: { fechaSolicitud: 'DESC' },
-      take: filtros?.limite ?? 100,
-    });
+    if (filtros?.pasajeroId) {
+      qb.andWhere('v.pasajeroId = :pasajeroId', {
+        pasajeroId: filtros.pasajeroId,
+      });
+    }
+    if (filtros?.conductorId) {
+      qb.andWhere('v.conductorId = :conductorId', {
+        conductorId: filtros.conductorId,
+      });
+    }
+    if (filtros?.estado) {
+      qb.andWhere('v.estado = :estado', { estado: filtros.estado });
+    }
+    if (filtros?.desde) {
+      qb.andWhere('v.fechaSolicitud >= :desde', { desde: filtros.desde });
+    }
+    if (filtros?.hasta) {
+      qb.andWhere('v.fechaSolicitud <= :hasta', { hasta: filtros.hasta });
+    }
+
+    const entities = await qb.getMany();
     return entities.map((e) => ViajeOrmMapper.toDomain(e));
   }
 
@@ -98,5 +118,21 @@ export class ViajeRepositoryImpl implements IViajeRepository {
       .getMany();
 
     return entities.map((e) => ViajeOrmMapper.toDomain(e));
+  }
+
+  async contarPorEstados(estados: string[]): Promise<number> {
+    if (estados.length === 0) return 0;
+    return this.ormRepo
+      .createQueryBuilder('v')
+      .where('v.estado IN (:...estados)', { estados })
+      .getCount();
+  }
+
+  async contarCompletadosDesde(desde: Date): Promise<number> {
+    return this.ormRepo
+      .createQueryBuilder('v')
+      .where('v.estado = :estado', { estado: EstadosViaje.COMPLETADO })
+      .andWhere('v.fechaSolicitud >= :desde', { desde })
+      .getCount();
   }
 }

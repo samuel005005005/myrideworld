@@ -22,7 +22,12 @@ class SecureSessionStorage implements SessionStorage {
     await _storage.write(key: _claveToken, value: token);
     await _storage.write(
       key: _claveSesion,
-      value: jsonEncode({'userId': sesion.userId, 'rol': sesion.rol}),
+      value: jsonEncode({
+        'userId': sesion.userId,
+        'rol': sesion.rol,
+        'email': sesion.email,
+        'nombreCompleto': sesion.nombreCompleto,
+      }),
     );
   }
 
@@ -42,7 +47,21 @@ class SecureSessionStorage implements SessionStorage {
       return null;
     }
 
-    return SesionUsuario(userId: userId, rol: map['rol'] as String? ?? '');
+    return SesionUsuario(
+      userId: userId,
+      rol: map['rol'] as String? ?? '',
+      email: map['email'] as String?,
+      nombreCompleto: map['nombreCompleto'] as String?,
+    );
+  }
+
+  @override
+  Future<void> actualizarSesion(SesionUsuario sesion) async {
+    final token = await obtenerToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+    await guardarSesion(token: token, sesion: sesion);
   }
 
   @override

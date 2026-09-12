@@ -17,7 +17,11 @@ class ViajeMapper {
         destinoLat: (data['destinoLat'] as num).toDouble(),
         destinoLng: (data['destinoLng'] as num).toDouble(),
         fechaCreacion:
-            DateTime.tryParse(data['fechaCreacion'] as String? ?? '') ??
+            DateTime.tryParse(
+              data['fechaCreacion'] as String? ??
+                  data['fechaSolicitud'] as String? ??
+                  '',
+            ) ??
             DateTime.now(),
       );
     } catch (_) {

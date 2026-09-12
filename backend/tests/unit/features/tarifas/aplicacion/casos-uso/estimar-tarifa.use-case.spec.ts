@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EstimarTarifaUseCase } from '../../../../../../src/features/tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
 import { EstimarTarifaDto } from '../../../../../../src/features/tarifas/aplicacion/dto/estimar-tarifa.dto.js';
 import { Tarifa } from '../../../../../../src/features/tarifas/dominio/entidades/tarifa.entity.js';
+import { Configuracion } from '../../../../../../src/features/configuracion/dominio/entidades/configuracion.entity.js';
+import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
 
 describe('EstimarTarifaUseCase', () => {
   let useCase: EstimarTarifaUseCase;
@@ -14,11 +16,19 @@ describe('EstimarTarifaUseCase', () => {
     };
 
     configRepoMock = {
-      obtenerValor: vi.fn((key: string, defaultValue: string) => {
-        if (key === 'TARIFA_BASE') return Promise.resolve('30.0');
-        if (key === 'TARIFA_KM') return Promise.resolve('15.0');
-        if (key === 'TARIFA_MINIMA') return Promise.resolve('50.0');
-        return Promise.resolve(defaultValue);
+      obtenerPorClave: vi.fn((clave: string) => {
+        const valores: Record<string, string> = {
+          TARIFA_BASE: '30.0',
+          TARIFA_KM: '15.0',
+          TARIFA_MINIMA: '50.0',
+        };
+        const valor = valores[clave];
+        if (!valor) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(
+          Configuracion.crear({ clave, valor, descripcion: clave }),
+        );
       }),
     };
 
@@ -26,41 +36,44 @@ describe('EstimarTarifaUseCase', () => {
   });
 
   it('DebeEstimarTarifaSinPersistir_CuandoCoordenadasSonValidas', async () => {
-    // Arrange
     const dto: EstimarTarifaDto = {
       origenLat: 0,
       origenLng: 0,
-      destinoLat: 1, // approx 111km distance
+      destinoLat: 1,
       destinoLng: 0,
     };
-    // Expected distance ≈ 111.19 km (haversine)
-    // Expected price = 30 + (111.1949 * 15) ≈ 1697.92
 
-    // Act
     const resultado = await useCase.ejecutar(dto);
 
-    // Assert
     expect(resultado).toBeDefined();
     expect(resultado.precio).toBe(1697.92);
+    expect(resultado.distanciaKm).toBeGreaterThan(100);
     expect(tarifaRepositoryMock.guardar).not.toHaveBeenCalled();
   });
 
   it('DebeAsignarTarifaMinima_CuandoDistanciaEsCorta', async () => {
-    // Arrange
     const dto: EstimarTarifaDto = {
       origenLat: 0,
       origenLng: 0,
-      destinoLat: 0.001, // very short distance
+      destinoLat: 0.001,
       destinoLng: 0,
     };
-    // Expected distance = 0.111 km
-    // Price = 30 + (0.111 * 15) = 30 + 1.665 = 31.665 (which is less than 50.0)
-    // Should fallback to 50.0
 
-    // Act
     const resultado = await useCase.ejecutar(dto);
 
-    // Assert
     expect(resultado.precio).toBe(50.0);
+  });
+
+  it('DebeFallar_CuandoAdminNoDefinioTarifaBase', async () => {
+    configRepoMock.obtenerPorClave = vi.fn().mockResolvedValue(null);
+
+    const dto: EstimarTarifaDto = {
+      origenLat: 0,
+      origenLng: 0,
+      destinoLat: 1,
+      destinoLng: 0,
+    };
+
+    await expect(useCase.ejecutar(dto)).rejects.toBeInstanceOf(DomainException);
   });
 });

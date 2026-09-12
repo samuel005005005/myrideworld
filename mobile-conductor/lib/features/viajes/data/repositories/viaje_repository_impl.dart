@@ -46,6 +46,42 @@ class ViajeRepositoryImpl implements ViajeRepository {
     return _resolver(() => remoteDataSource.completarViaje(viajeId));
   }
 
+  @override
+  Future<Resultado<Viaje>> rechazarViaje({required String viajeId}) async {
+    return _resolver(() => remoteDataSource.rechazarViaje(viajeId));
+  }
+
+  @override
+  Future<Resultado<Viaje?>> obtenerViajeActivo() async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(Failure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelo = await remoteDataSource.obtenerViajeActivo();
+      if (modelo == null) {
+        return const Exito(null);
+      }
+      return Exito(ViajeMapper.toDomain(modelo));
+    } on AppException catch (error) {
+      return Fallo(Failure(error.mensaje));
+    }
+  }
+
+  @override
+  Future<Resultado<List<Viaje>>> listarMisViajes() async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(Failure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelos = await remoteDataSource.listarMisViajes();
+      return Exito(modelos.map(ViajeMapper.toDomain).toList());
+    } on AppException catch (error) {
+      return Fallo(Failure(error.mensaje));
+    }
+  }
+
   Future<Resultado<Viaje>> _resolver(
     Future<ViajeModel> Function() accion,
   ) async {

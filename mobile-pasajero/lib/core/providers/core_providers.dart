@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-import '../constants/env_keys.dart';
+import '../config/app_env.dart';
+import '../network/http_logging_interceptor.dart';
 import '../network/network_info.dart';
 import '../network/network_info_impl.dart';
 import '../storage/secure_session_storage.dart';
@@ -20,7 +20,7 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) {
 
 /// Cliente HTTP global apuntando al Backend de MyRide
 final dioProvider = Provider<Dio>((ref) {
-  final baseUrl = dotenv.env[EnvKeys.apiBaseUrl] ?? 'http://10.0.2.2:3000';
+  final baseUrl = AppEnv.apiBaseUrl;
   final sessionStorage = ref.watch(sessionStorageProvider);
 
   final dio = Dio(
@@ -31,19 +31,6 @@ final dioProvider = Provider<Dio>((ref) {
       headers: {'Content-Type': 'application/json'},
     ),
   );
-
-  if (kDebugMode) {
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: false,
-        requestBody: false,
-        responseHeader: false,
-        responseBody: false,
-        error: true,
-      ),
-    );
-  }
 
   dio.interceptors.add(
     InterceptorsWrapper(
@@ -63,20 +50,28 @@ final dioProvider = Provider<Dio>((ref) {
     ),
   );
 
+  // Después del auth para loguear headers finales (token enmascarado).
+  if (kDebugMode) {
+    dio.interceptors.add(HttpLoggingInterceptor());
+  }
+
   return dio;
 });
 
 /// Cliente HTTP dedicado al proveedor de rutas OSRM
 final routingDioProvider = Provider<Dio>((ref) {
-  final baseUrl =
-      dotenv.env[EnvKeys.osrmBaseUrl] ?? 'https://router.project-osrm.org';
-
-  return Dio(
+  final dio = Dio(
     BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: AppEnv.osrmBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {'Content-Type': 'application/json'},
     ),
   );
+
+  if (kDebugMode) {
+    dio.interceptors.add(HttpLoggingInterceptor());
+  }
+
+  return dio;
 });

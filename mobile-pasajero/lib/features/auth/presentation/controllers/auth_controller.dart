@@ -47,4 +47,8 @@ class AuthController extends AsyncNotifier<Usuario?> {
     await logoutUseCase(NoParams());
     state = const AsyncData(null);
   }
+
+  void actualizarUsuarioLocal(Usuario usuario) {
+    state = AsyncData(usuario);
+  }
 }

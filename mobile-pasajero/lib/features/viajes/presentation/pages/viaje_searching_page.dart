@@ -5,9 +5,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../controllers/busqueda_conductor_controller.dart';
+import '../controllers/busqueda_conductor_state.dart';
 
 class ViajeSearchingPage extends ConsumerStatefulWidget {
-  const ViajeSearchingPage({super.key});
+  final String viajeId;
+
+  const ViajeSearchingPage({super.key, required this.viajeId});
 
   @override
   ConsumerState<ViajeSearchingPage> createState() => _ViajeSearchingPageState();
@@ -17,11 +21,10 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
   @override
   void initState() {
     super.initState();
-    // Simulate finding a driver after 4 seconds
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
-        context.go('/active');
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(busquedaConductorControllerProvider.notifier)
+          .iniciar(widget.viajeId);
     });
   }
 
@@ -32,31 +35,43 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
     const brandPrimary = Color(0xFFF59E0B);
     const borderGrey = Color(0xFFE2E8F0);
 
+    ref.listen<BusquedaConductorState>(busquedaConductorControllerProvider, (
+      _,
+      siguiente,
+    ) {
+      if (siguiente.listoParaNavegar && context.mounted) {
+        context.go('/viaje-active', extra: widget.viajeId);
+      }
+      final error = siguiente.error;
+      if (error != null && error.isNotEmpty && context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
+      }
+    });
+
+    final estado = ref.watch(busquedaConductorControllerProvider);
+
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Full Screen Map (OSM)
           Positioned.fill(
             child: FlutterMap(
               options: const MapOptions(
-                initialCenter: LatLng(18.5820, -68.3971), // Punta Cana
+                initialCenter: LatLng(18.5820, -68.3971),
                 initialZoom: 14.0,
               ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.myride',
+                  userAgentPackageName: 'com.myride.pasajero',
                 ),
               ],
             ),
           ),
-
-          // Map Overlay to darken slightly
           Positioned.fill(
             child: Container(color: Colors.black.withValues(alpha: 0.2)),
           ),
-
-          // 3. Bottom Card
           Positioned(
             bottom: 0,
             left: 0,
@@ -85,7 +100,6 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Loading Indicator
                   const SizedBox(
                     width: 48,
                     height: 48,
@@ -95,8 +109,6 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Title
                   const Text(
                     AppStrings.radarSearchingTitle,
                     style: TextStyle(
@@ -106,32 +118,38 @@ class _ViajeSearchingPageState extends ConsumerState<ViajeSearchingPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Subtitle
                   const Text(
                     AppStrings.radarNotifying,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: textGrey),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Cancel Button
                   OutlinedButton(
-                    onPressed: () {
-                      context.go('/home');
-                    },
+                    onPressed: estado.cancelando
+                        ? null
+                        : () async {
+                            final ok = await ref
+                                .read(
+                                  busquedaConductorControllerProvider.notifier,
+                                )
+                                .cancelarSolicitud();
+                            if (ok && context.mounted) {
+                              context.go('/home');
+                            }
+                          },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red.shade600,
-                      side: BorderSide(color: borderGrey),
+                      side: const BorderSide(color: borderGrey),
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      AppStrings.radarCancelBtn,
-                      style: TextStyle(
+                    child: Text(
+                      estado.cancelando
+                          ? AppStrings.radarCancelando
+                          : AppStrings.radarCancelBtn,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),

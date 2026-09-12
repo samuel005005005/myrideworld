@@ -132,6 +132,23 @@ class AppStrings {
       'Atención Bilingüe (Español / English)';
   static const String historyCallCenter = 'Llamar Central';
   static const String historyWhatsApp = 'WhatsApp Oficial';
+  static const String historyEmpty = 'Aun no tienes viajes registrados';
+  static const String historyRetry = 'Reintentar';
+  static const String errorHistorial = 'No se pudo cargar el historial';
+
+  static String formatoMoneda(double valor) {
+    return 'US\$${valor.toStringAsFixed(2)}';
+  }
+
+  static String formatoRutaCoords(
+    double origenLat,
+    double origenLng,
+    double destinoLat,
+    double destinoLng,
+  ) {
+    return '${origenLat.toStringAsFixed(3)}, ${origenLng.toStringAsFixed(3)} → '
+        '${destinoLat.toStringAsFixed(3)}, ${destinoLng.toStringAsFixed(3)}';
+  }
   // Solicitud y Tarifario Fijo
   static const String homeOfficialRateTitle = 'Tarifa Fija Regulada';
   static const String homeOfficialRateBadge = 'Asociación Oficial';
@@ -173,15 +190,32 @@ class AppStrings {
   static const String homePaymentCashShort = 'Efectivo';
   static const String homePaymentCardShort = 'Tarjeta';
   static const String homeCardFeeIncluded = 'Tarifa segun metodo de pago';
-  static const String homeTarifaPendienteApi = 'Tarifa oficial al confirmar';
+  static const String homeTarifaPendienteApi = 'Obteniendo tarifa oficial...';
   static const String homePrecioNoDisponible = '—';
-  static const String homeDrawerPassengerName = 'Juan Perez';
-  static const String homeDrawerPassengerCategory = '5.0 Pasajero';
+  static const String homeMiUbicacion = 'Mi ubicacion actual';
+  static String formatoPuntoMapa(double latitud, double longitud) {
+    return 'Lat ${latitud.toStringAsFixed(5)}, Lng ${longitud.toStringAsFixed(5)}';
+  }
+  static const String errorGpsDesactivado = 'Activa el GPS para continuar';
+  static const String errorGpsPermiso =
+      'Se requiere permiso de ubicacion para solicitar viajes';
+  static const String errorGpsObtener = 'No se pudo obtener la ubicacion GPS';
+  static const String errorEstimarTarifa = 'No se pudo estimar la tarifa oficial';
+  static const String homeDrawerSinSesion = 'Pasajero';
+  static const String homeDrawerSinEmail = '';
   static const String homeDrawerTrips = 'Mis Viajes';
   static const String homeDrawerPaymentMethods = 'Metodos de Pago';
   static const String homeDrawerPromotions = 'Promociones';
   static const String homeDrawerSupport = 'Ayuda y Soporte';
   static const String homeDrawerLogout = 'Cerrar Sesion';
+  static const String perfilTitulo = 'Mi Perfil';
+  static const String perfilNombreLabel = 'Nombre Completo';
+  static const String perfilTelefonoLabel = 'Telefono';
+  static const String perfilEmailLabel = 'Correo Electronico';
+  static const String perfilEmailSoloLectura =
+      'El correo no se puede cambiar desde la app.';
+  static const String perfilGuardar = 'Guardar Cambios';
+  static const String perfilActualizadoOk = 'Perfil actualizado correctamente.';
 
   // Tracking en Vivo y Conductor
   static const String trackingTitle = 'Viaje En Curso';
@@ -206,16 +240,24 @@ class AppStrings {
   static const String trackingConductorHaLlegado = 'El conductor ha llegado';
   static const String trackingViajeEnCursoDestino = 'En viaje hacia tu destino';
   static const String trackingLlegandoEnCincoMinutos = 'Llegando en ~ 5 min';
-  static const String trackingDriverNamePlaceholder = 'Carlos M.';
-  static const String trackingDriverRatingPlaceholder = '4.9';
-  static const String trackingDriverVehiclePlaceholder =
-      'Toyota Corolla - Blanco';
-  static const String trackingDriverPlatePlaceholder = 'A849201';
+  static const String trackingConductorPendiente = 'Buscando conductor...';
+  static const String trackingVehiculoPendiente = 'Vehiculo por confirmar';
+  static const String trackingPlacaPendiente = '---';
+  static const String errorViajeDetalle =
+      'No se pudo cargar el detalle del viaje';
   static const String trackingCallAction = 'Llamar';
   static const String trackingMessageAction = 'Mensaje';
   static const String trackingShareAction = 'Compartir';
+  static const String trackingTelefonoNoDisponible =
+      'El conductor no tiene telefono registrado';
+  static const String trackingLlamadaFallida =
+      'No se pudo iniciar la llamada';
+
   static const String trackingWaitingCompletion =
       'Esperando que el conductor finalice el viaje...';
+  static const String trackingCancelarViaje = 'Cancelar viaje';
+  static const String trackingViajeCancelado = 'Viaje cancelado';
+  static const String trackingCancelando = 'Cancelando…';
   static const String receiptArrivedTitle = 'Llegaste a tu destino';
   static const String receiptThanksMessage =
       'Esperamos que hayas tenido un excelente viaje.';
@@ -252,4 +294,29 @@ class AppStrings {
 
   static String receiptDuracionValor(int duracionMinutos) =>
       '$duracionMinutos min';
+
+  static const String pagosTitulo = 'Metodos de Pago';
+  static const String pagosSeccionTitulo = 'Metodo activo';
+  static const String pagosMvpNota =
+      'En el MVP el cobro se registra en efectivo al finalizar el viaje.';
+  static const String pagosEfectivoTitulo = 'Efectivo';
+  static const String pagosEfectivoDesc = 'Pago al finalizar el viaje';
+
+  static const String ayudaTitulo = 'Ayuda y Soporte';
+  static const String ayudaPregunta = 'En que podemos ayudarte?';
+  static const String ayudaSubtitulo =
+      'Contacto oficial configurado por la asociacion.';
+  static const String ayudaLlamarTitulo = 'Llamar a la Central';
+  static const String ayudaWhatsappTitulo = 'WhatsApp Oficial';
+  static const String ayudaObjetosTitulo = 'Objetos Perdidos';
+  static const String ayudaObjetosDesc =
+      'Reporta por telefono a la central de asistencia';
+  static const String ayudaContactoNoConfigurado =
+      'Contacto no configurado por el administrador';
+  static const String ayudaNoSePudoAbrir = 'No se pudo abrir la aplicacion';
+  static const String ayudaReintentar = 'Reintentar';
+  static const String errorSoporteContacto =
+      'No se pudieron cargar los contactos de soporte';
+  static const String errorCancelarViaje = 'No se pudo cancelar el viaje';
+  static const String radarCancelando = 'Cancelando solicitud...';
 }

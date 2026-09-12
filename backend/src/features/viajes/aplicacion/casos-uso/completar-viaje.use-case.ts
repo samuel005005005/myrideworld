@@ -10,6 +10,7 @@ import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso
 import { TiposBitacora } from '../../../../compartidos/constantes/tipos-bitacora.enum.js';
 import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-sistema.enum.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { ValidadorProximidadViajeService } from '../servicios/validador-proximidad-viaje.service.js';
 
 @Injectable()
 export class CompletarViajeUseCase {
@@ -20,6 +21,7 @@ export class CompletarViajeUseCase {
     private readonly notificadorViaje: INotificadorViaje,
     private readonly generarPagoUseCase: GenerarPagoUseCase,
     private readonly registrarBitacora: RegistrarBitacoraUseCase,
+    private readonly validadorProximidad: ValidadorProximidadViajeService,
   ) {}
 
   async ejecutar(id: string, conductorId: string): Promise<Viaje> {
@@ -36,20 +38,25 @@ export class CompletarViajeUseCase {
       );
     }
 
+    await this.validadorProximidad.asegurarCercaDe(
+      conductorId,
+      viaje.destinoLat,
+      viaje.destinoLng,
+      MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_RADIO_PROXIMIDAD_DESTINO_M,
+    );
+
     viaje.completarViaje();
 
     const guardado = await this.viajeRepository.guardar(viaje);
 
-    // Generar pago/balance automáticamente al completar el viaje
     if (viaje.conductorId) {
-      await this.generarPagoUseCase.ejecutar({ 
+      await this.generarPagoUseCase.ejecutar({
         viajeId: viaje.id,
         conductorId: viaje.conductorId,
         montoTotal: viaje.tarifaEstimada,
       });
     }
 
-    // Registrar bitácora de auditoría
     await this.registrarBitacora.ejecutar({
       tipoEvento: TiposBitacora.INFO,
       servicioSistema: ServiciosSistema.VIAJES,
@@ -60,7 +67,10 @@ export class CompletarViajeUseCase {
       request: { viajeId: id },
     });
 
-    this.notificadorViaje.notificarViajeCompletado(guardado.id, Number(guardado.tarifaEstimada));
+    this.notificadorViaje.notificarViajeCompletado(
+      guardado.id,
+      Number(guardado.tarifaEstimada),
+    );
 
     return guardado;
   }

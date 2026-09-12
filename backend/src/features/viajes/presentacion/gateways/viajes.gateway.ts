@@ -20,6 +20,8 @@ import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
+import type { ViajeAceptadoNotificacion } from '../../aplicacion/puertos/viaje-aceptado-notificacion.js';
 
 type SocketAutenticado = Socket & {
   user?: { sub: string; rol: string };
@@ -74,8 +76,32 @@ export class ViajesGateway
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: SocketAutenticado) {
     this.logger.log(`Cliente desconectado de Sockets: ${client.id}`);
+    const user = client.user;
+    if (!user?.sub || user.rol !== Roles.CONDUCTOR) {
+      return;
+    }
+
+    try {
+      const conductor = await this.conductorRepository.obtenerPorId(user.sub);
+      if (!conductor) {
+        return;
+      }
+      if (
+        conductor.estadoDisponibilidad ===
+        EstadosDisponibilidadConductor.CONECTADO
+      ) {
+        conductor.actualizarDisponibilidad(
+          EstadosDisponibilidadConductor.DESCONECTADO,
+        );
+        await this.conductorRepository.guardar(conductor);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo marcar conductor ${user.sub} como desconectado: ${String(error)}`,
+      );
+    }
   }
 
   @SubscribeMessage('unirseAViaje')
@@ -174,9 +200,9 @@ export class ViajesGateway
     this.logger.log(`Notificado viaje ${viaje.id} al conductor ${conductorId}`);
   }
 
-  notificarViajeAceptado(viajeId: string, conductorId: string) {
-    const room = `viaje_${viajeId}`;
-    this.server.to(room).emit('viajeAceptado', { viajeId, conductorId });
+  notificarViajeAceptado(notificacion: ViajeAceptadoNotificacion) {
+    const room = `viaje_${notificacion.viajeId}`;
+    this.server.to(room).emit('viajeAceptado', notificacion);
   }
 
   notificarConductorLlego(viajeId: string) {

@@ -1,12 +1,11 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
-import '../../../../core/constants/env_keys.dart';
+import '../../../../core/config/app_env.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../domain/entities/recibo_viaje.dart';
+import '../../domain/entities/conductor_asignado.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
+import '../mappers/conductor_asignado_mapper.dart';
 import '../mappers/recibo_viaje_mapper.dart';
 
 class ViajeSocketDataSource implements ViajeRealtimeGateway {
@@ -30,10 +29,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
 
     _socket?.dispose();
     _socket = io.io(
-      dotenv.env[EnvKeys.socketUrl] ??
-          (Platform.isAndroid
-              ? 'http://10.0.2.2:3000'
-              : 'http://127.0.0.1:3000'),
+      AppEnv.socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -87,8 +83,26 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }
 
   @override
-  void escucharViajeAceptado(void Function() callback) {
-    _escuchar('viajeAceptado', (_) => callback());
+  void escucharViajeAceptado(
+    void Function(ConductorAsignado? conductor) callback,
+  ) {
+    _escuchar('viajeAceptado', (data) {
+      if (data is! Map) {
+        callback(null);
+        return;
+      }
+      final payload = Map<String, dynamic>.from(data);
+      final conductorJson = payload['conductor'];
+      if (conductorJson is Map) {
+        callback(
+          ConductorAsignadoMapper.fromJson(
+            Map<String, dynamic>.from(conductorJson),
+          ),
+        );
+        return;
+      }
+      callback(null);
+    });
   }
 
   @override

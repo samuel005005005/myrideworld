@@ -46,6 +46,93 @@ class ViajeRemoteDataSource {
     );
   }
 
+  Future<ViajeModel> rechazarViaje(String viajeId) async {
+    return _ejecutarMutacion(
+      endpoint: ApiEndpoints.rechazarViaje(viajeId),
+      data: const <String, dynamic>{},
+      mensajeError: AppStrings.errorRechazarViaje,
+    );
+  }
+
+  Future<ViajeModel?> obtenerViajeActivo() async {
+    try {
+      final respuesta = await dio.get(ApiEndpoints.viajeActivo);
+      if (respuesta.data == null) {
+        return null;
+      }
+      return ViajeMapper.fromApiData(
+        Map<String, dynamic>.from(respuesta.data as Map),
+      );
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        final mensaje = data['message'];
+        throw AppException(
+          mensaje is List ? mensaje.first.toString() : mensaje.toString(),
+        );
+      }
+      throw const AppException(AppStrings.errorViajeActivo);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const AppException(AppStrings.errorViajeActivo);
+    }
+  }
+
+  Future<List<ViajeModel>> listarMisViajes() async {
+    try {
+      final respuesta = await dio.get(ApiEndpoints.misViajes);
+      final data = respuesta.data;
+      if (data is! List) {
+        throw const AppException(AppStrings.errorHistorial);
+      }
+      return data
+          .map(
+            (item) => ViajeMapper.fromApiData(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        final mensaje = data['message'];
+        throw AppException(
+          mensaje is List ? mensaje.first.toString() : mensaje.toString(),
+        );
+      }
+      throw const AppException(AppStrings.errorHistorial);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const AppException(AppStrings.errorHistorial);
+    }
+  }
+
+  Future<void> actualizarDisponibilidad({required bool disponible}) async {
+    try {
+      await dio.patch(
+        ApiEndpoints.disponibilidadConductor,
+        data: {
+          'estadoDisponibilidad': disponible ? 'Conectado' : 'Desconectado',
+        },
+      );
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        final mensaje = data['message'];
+        throw AppException(
+          mensaje is List ? mensaje.first.toString() : mensaje.toString(),
+        );
+      }
+      throw const AppException(AppStrings.errorDisponibilidad);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const AppException(AppStrings.errorDisponibilidad);
+    }
+  }
+
   Future<ViajeModel> _ejecutarMutacion({
     required String endpoint,
     required Map<String, dynamic> data,

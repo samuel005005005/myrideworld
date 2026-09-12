@@ -1,8 +1,10 @@
 import '../../domain/entities/viaje.dart';
 import '../models/viaje_model.dart';
+import 'conductor_asignado_mapper.dart';
 
 class ViajeMapper {
   static ViajeModel fromJson(Map<String, dynamic> json) {
+    final conductorJson = json['conductor'];
     return ViajeModel(
       id: json['id'] as String,
       pasajeroId: json['pasajeroId'] as String,
@@ -13,7 +15,18 @@ class ViajeMapper {
       origenLng: (json['origenLng'] as num).toDouble(),
       destinoLat: (json['destinoLat'] as num).toDouble(),
       destinoLng: (json['destinoLng'] as num).toDouble(),
-      fechaCreacion: DateTime.parse(json['fechaCreacion'] as String),
+      fechaCreacion:
+          DateTime.tryParse(
+            json['fechaCreacion'] as String? ??
+                json['fechaSolicitud'] as String? ??
+                '',
+          ) ??
+          DateTime.now(),
+      conductor: conductorJson is Map
+          ? ConductorAsignadoMapper.fromJson(
+              Map<String, dynamic>.from(conductorJson),
+            )
+          : null,
     );
   }
 

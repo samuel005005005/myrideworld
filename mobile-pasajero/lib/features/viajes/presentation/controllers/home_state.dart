@@ -12,6 +12,7 @@ class HomeState {
   final List<LatLng> routePoints;
   final double routeDistanceKm;
   final int routeDurationMin;
+  final double? tarifaEstimada;
   final Viaje? activeTrip;
   final String? errorMessage;
 
@@ -24,6 +25,7 @@ class HomeState {
     required this.routePoints,
     required this.routeDistanceKm,
     required this.routeDurationMin,
+    this.tarifaEstimada,
     this.activeTrip,
     this.errorMessage,
   });
@@ -37,6 +39,7 @@ class HomeState {
     List<LatLng>? routePoints,
     double? routeDistanceKm,
     int? routeDurationMin,
+    Object? tarifaEstimada = _sinCambio,
     Viaje? activeTrip,
     String? errorMessage,
   }) {
@@ -49,8 +52,13 @@ class HomeState {
       routePoints: routePoints ?? this.routePoints,
       routeDistanceKm: routeDistanceKm ?? this.routeDistanceKm,
       routeDurationMin: routeDurationMin ?? this.routeDurationMin,
+      tarifaEstimada: identical(tarifaEstimada, _sinCambio)
+          ? this.tarifaEstimada
+          : tarifaEstimada as double?,
       activeTrip: activeTrip ?? this.activeTrip,
       errorMessage: errorMessage,
     );
   }
+
+  static const Object _sinCambio = Object();
 }

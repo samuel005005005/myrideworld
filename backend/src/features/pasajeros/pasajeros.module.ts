@@ -7,6 +7,7 @@ import { PASAJERO_REPOSITORY } from './dominio/repositorios/pasajero.repository.
 import { CrearPasajeroUseCase } from './aplicacion/casos-uso/crear-pasajero.use-case.js';
 import { ObtenerPasajeroUseCase } from './aplicacion/casos-uso/obtener-pasajero.use-case.js';
 import { ActualizarPasajeroUseCase } from './aplicacion/casos-uso/actualizar-pasajero.use-case.js';
+import { ListarPasajerosUseCase } from './aplicacion/casos-uso/listar-pasajeros.use-case.js';
 import { PasajerosController } from './presentacion/controladores/pasajeros.controller.js';
 import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 
@@ -21,6 +22,7 @@ import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js
     CrearPasajeroUseCase,
     ObtenerPasajeroUseCase,
     ActualizarPasajeroUseCase,
+    ListarPasajerosUseCase,
   ],
   exports: [PASAJERO_REPOSITORY, CrearPasajeroUseCase, ObtenerPasajeroUseCase, ActualizarPasajeroUseCase],
 })

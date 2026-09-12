@@ -21,10 +21,23 @@ export class TarifaRepositoryImpl implements ITarifaRepository {
 
   async obtenerTarifaActiva(origen: string, destino: string): Promise<Tarifa | null> {
     const entity = await this.ormRepo.findOne({
-      where: { origen, destino, estado: EstadosTarifa.ACTIVO },
-      order: { id: 'DESC' }, // Obtenemos la última
+      where: {
+        origen: origen.trim(),
+        destino: destino.trim(),
+        estado: EstadosTarifa.ACTIVO,
+      },
+      order: { id: 'DESC' },
     });
     return entity ? TarifaOrmMapper.toDomain(entity) : null;
+  }
+
+  async listar(estado?: EstadosTarifa): Promise<Tarifa[]> {
+    const where = estado ? { estado } : {};
+    const entities = await this.ormRepo.find({
+      where,
+      order: { origen: 'ASC', destino: 'ASC' },
+    });
+    return entities.map((e) => TarifaOrmMapper.toDomain(e));
   }
 
   async guardar(tarifa: Tarifa): Promise<Tarifa> {

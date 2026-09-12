@@ -1,7 +1,11 @@
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
+import { ConductorResumenPublicoDto } from '../../../conductores/aplicacion/dto/conductor-resumen-publico.dto.js';
 
 export class ViajeMapper {
-  static toResponse(viaje: Viaje) {
+  static toResponse(
+    viaje: Viaje,
+    conductor?: ConductorResumenPublicoDto | null,
+  ) {
     return {
       id: viaje.id,
       pasajeroId: viaje.pasajeroId,
@@ -15,6 +19,7 @@ export class ViajeMapper {
       fechaSolicitud: viaje.fechaSolicitud,
       fechaInicio: viaje.fechaInicio,
       fechaFin: viaje.fechaFin,
+      conductor: conductor ?? null,
     };
   }
 }

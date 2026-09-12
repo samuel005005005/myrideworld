@@ -13,6 +13,9 @@ export interface IConductorRepository {
   ): Promise<Conductor[]>;
   guardar(conductor: Conductor): Promise<Conductor>;
   listar(filtros?: { estadoAprobacion?: EstadosConductor }): Promise<Conductor[]>;
+  contarPorDisponibilidad(
+    estadoDisponibilidad: string,
+  ): Promise<number>;
 }
 
 export const CONDUCTOR_REPOSITORY = Symbol('IConductorRepository');

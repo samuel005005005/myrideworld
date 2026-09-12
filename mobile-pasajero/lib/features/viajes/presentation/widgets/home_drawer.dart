@@ -64,7 +64,7 @@ class HomeDrawer extends ConsumerWidget {
                         children: [
                           Text(
                             usuario?.nombreCompleto ??
-                                AppStrings.homeDrawerPassengerName,
+                                AppStrings.homeDrawerSinSesion,
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
@@ -73,33 +73,12 @@ class HomeDrawer extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: brandPrimary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: brandPrimary,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppStrings.homeDrawerPassengerCategory,
-                                  style: TextStyle(
-                                    color: brandPrimary.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            usuario?.email ?? AppStrings.homeDrawerSinEmail,
+                            style: TextStyle(
+                              color: textDark.withValues(alpha: 0.65),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
                             ),
                           ),
                         ],

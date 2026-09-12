@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/sesion_usuario.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/usecases/aceptar_viaje_params.dart';
+import '../../domain/usecases/actualizar_disponibilidad_params.dart';
+import '../../domain/usecases/rechazar_viaje_params.dart';
 import '../providers/viajes_provider.dart';
 import 'home_conductor_state.dart';
 
@@ -44,8 +48,100 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     }
 
     _sesionUsuario = sesion;
-    await _configurarSocket(sesion);
-    state = state.copyWith(inicializando: false, errorMensaje: null);
+
+    final ubicacionResultado = await ref
+        .read(ubicacionGatewayProvider)
+        .obtenerUbicacionActual();
+
+    ubicacionResultado.fold(
+      (failure) {
+        state = state.copyWith(errorMensaje: failure.mensaje);
+      },
+      (coordenada) {
+        state = state.copyWith(
+          ubicacionActual: LatLng(coordenada.latitud, coordenada.longitud),
+        );
+      },
+    );
+
+    final activoResultado = await ref.read(obtenerViajeActivoProvider)(
+      NoParams(),
+    );
+    activoResultado.fold(
+      (_) {},
+      (viajeActivo) {
+        if (viajeActivo != null) {
+          state = state.copyWith(viajeActivoParaRestaurar: viajeActivo);
+        }
+      },
+    );
+
+    state = state.copyWith(inicializando: false, enLinea: false);
+  }
+
+  void consumirViajeActivoRestaurado() {
+    state = state.copyWith(viajeActivoParaRestaurar: null);
+  }
+
+  Future<void> cambiarDisponibilidad(bool disponible) async {
+    if (state.cambiandoDisponibilidad) {
+      return;
+    }
+
+    final sesion = _sesionUsuario;
+    if (sesion == null) {
+      state = state.copyWith(errorMensaje: AppStrings.errorSinSesion);
+      return;
+    }
+
+    if (disponible && state.ubicacionActual == null) {
+      state = state.copyWith(
+        errorMensaje: AppStrings.homeNecesitaGpsParaOnline,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      cambiandoDisponibilidad: true,
+      errorMensaje: null,
+    );
+
+    final resultado = await ref.read(actualizarDisponibilidadProvider)(
+      ActualizarDisponibilidadParams(disponible: disponible),
+    );
+
+    final ok = await resultado.fold(
+      (failure) async {
+        state = state.copyWith(
+          cambiandoDisponibilidad: false,
+          errorMensaje: failure.mensaje,
+        );
+        return false;
+      },
+      (_) async => true,
+    );
+
+    if (!ok) {
+      return;
+    }
+
+    if (disponible) {
+      await _configurarSocket(sesion);
+      state = state.copyWith(
+        cambiandoDisponibilidad: false,
+        enLinea: true,
+        errorMensaje: null,
+      );
+      return;
+    }
+
+    ref.read(viajeRealtimeGatewayProvider).desconectar();
+    state = state.copyWith(
+      cambiandoDisponibilidad: false,
+      enLinea: false,
+      viajePendiente: null,
+      errorMensaje: null,
+    );
   }
 
   Future<Viaje?> aceptarViaje(Viaje viaje) async {
@@ -82,6 +178,45 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     );
   }
 
+  Future<bool> rechazarViaje(Viaje viaje) async {
+    state = state.copyWith(rechazandoViaje: true, errorMensaje: null);
+
+    final resultado = await ref.read(rechazarViajeProvider)(
+      RechazarViajeParams(viajeId: viaje.id),
+    );
+
+    return resultado.fold(
+      (failure) {
+        state = state.copyWith(
+          rechazandoViaje: false,
+          errorMensaje: failure.mensaje,
+        );
+        return false;
+      },
+      (_) {
+        state = state.copyWith(
+          rechazandoViaje: false,
+          viajePendiente: null,
+          errorMensaje: null,
+        );
+        return true;
+      },
+    );
+  }
+
+  Future<void> cerrarSesion() async {
+    if (state.enLinea) {
+      await ref.read(actualizarDisponibilidadProvider)(
+        const ActualizarDisponibilidadParams(disponible: false),
+      );
+    }
+    ref.read(viajeRealtimeGatewayProvider).desconectar();
+    _estaInicializado = false;
+    _sesionUsuario = null;
+    state = const HomeConductorState();
+    await ref.read(authControllerProvider.notifier).logout();
+  }
+
   void limpiarError() {
     state = state.copyWith(errorMensaje: null);
   }
@@ -89,22 +224,25 @@ class HomeConductorController extends Notifier<HomeConductorState> {
   Future<void> _configurarSocket(SesionUsuario sesion) async {
     final gateway = ref.read(viajeRealtimeGatewayProvider);
     await gateway.conectar();
-    gateway.identificarConductor(sesion.userId);
     gateway.escucharEstadoConexion(
       onConnect: () {
-        state = state.copyWith(enLinea: true);
         gateway.identificarConductor(sesion.userId);
       },
       onDisconnect: () {
-        state = state.copyWith(enLinea: false);
+        if (state.enLinea) {
+          state = state.copyWith(enLinea: false);
+        }
       },
     );
     gateway.escucharNuevoViaje((viaje) {
+      if (!state.enLinea) {
+        return;
+      }
       state = state.copyWith(
-        enLinea: true,
         viajePendiente: viaje,
         errorMensaje: null,
       );
     });
+    gateway.identificarConductor(sesion.userId);
   }
 }

@@ -5,8 +5,11 @@ import type { CrearConductorDto } from '../../aplicacion/dto/crear-conductor.dto
 import { ZodValidationPipe } from '../../../../compartidos/utilidades/pipes/zod-validation.pipe.js';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
+import { AdminRolesGuard } from '../../../../compartidos/middlewares/admin-roles.guard.js';
 import { Roles as RolesDecorator } from '../../../../compartidos/decoradores/roles.decorator.js';
+import { AdminRoles } from '../../../../compartidos/decoradores/admin-roles.decorator.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+import { RolesAdmin } from '../../../../compartidos/constantes/roles-admin.enum.js';
 import { UseGuards, Get, Patch, Param, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
@@ -14,11 +17,19 @@ import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 const H = MENSAJES.HTTP.RESPUESTAS;
 import { EstadosConductor } from '../../../../compartidos/constantes/estados-conductor.enum.js';
 import { AprobarConductorUseCase } from '../../aplicacion/casos-uso/aprobar-conductor.use-case.js';
+import { RechazarConductorUseCase } from '../../aplicacion/casos-uso/rechazar-conductor.use-case.js';
+import { SuspenderConductorUseCase } from '../../aplicacion/casos-uso/suspender-conductor.use-case.js';
+import { ReactivarConductorUseCase } from '../../aplicacion/casos-uso/reactivar-conductor.use-case.js';
 import { ListarConductoresUseCase } from '../../aplicacion/casos-uso/listar-conductores.use-case.js';
 import { SubirDocumentosUseCase } from '../../aplicacion/casos-uso/subir-documentos.use-case.js';
 import { ObtenerConductorUseCase } from '../../aplicacion/casos-uso/obtener-conductor.use-case.js';
 import { ActualizarConductorUseCase } from '../../aplicacion/casos-uso/actualizar-conductor.use-case.js';
+import { ActualizarDisponibilidadUseCase } from '../../aplicacion/casos-uso/actualizar-disponibilidad.use-case.js';
 import { actualizarConductorSchema, ActualizarConductorDto } from '../../aplicacion/dto/actualizar-conductor.dto.js';
+import {
+  actualizarDisponibilidadSchema,
+  ActualizarDisponibilidadDto,
+} from '../../aplicacion/dto/actualizar-disponibilidad.dto.js';
 import { ConductorMapper } from '../../aplicacion/mappers/conductor.mapper.js';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
@@ -32,10 +43,14 @@ export class ConductoresController {
   constructor(
     private readonly crearConductor: CrearConductorUseCase,
     private readonly aprobarConductor: AprobarConductorUseCase,
+    private readonly rechazarConductor: RechazarConductorUseCase,
+    private readonly suspenderConductor: SuspenderConductorUseCase,
+    private readonly reactivarConductor: ReactivarConductorUseCase,
     private readonly listarConductores: ListarConductoresUseCase,
     private readonly subirDocumentos: SubirDocumentosUseCase,
     private readonly obtenerConductor: ObtenerConductorUseCase,
     private readonly actualizarConductor: ActualizarConductorUseCase,
+    private readonly actualizarDisponibilidad: ActualizarDisponibilidadUseCase,
   ) {}
 
   @Post()
@@ -49,10 +64,15 @@ export class ConductoresController {
   }
 
   @Get()
-  @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
   @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(
+    RolesAdmin.SUPER_ADMIN,
+    RolesAdmin.OPERACIONES,
+    RolesAdmin.AUDITOR,
+  )
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Listar conductores (Solo Admin)' })
+  @ApiOperation({ summary: 'Listar conductores (Admin flota)' })
   @ApiQuery({ name: 'estado', required: false, enum: EstadosConductor })
   async listar(@Query('estado') estado?: EstadosConductor) {
     const conductores = await this.listarConductores.ejecutar({ estadoAprobacion: estado });
@@ -60,13 +80,50 @@ export class ConductoresController {
   }
 
   @Patch(':id/aprobar')
-  @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
   @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.OPERACIONES)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Aprobar un conductor pendiente (Solo Admin)' })
+  @ApiOperation({ summary: 'Aprobar un conductor pendiente' })
   async aprobar(@Param('id') id: string) {
     const conductor = await this.aprobarConductor.ejecutar(id);
+    return ConductorMapper.toResponseList(conductor);
+  }
+
+  @Patch(':id/rechazar')
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.OPERACIONES)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rechazar un conductor pendiente' })
+  async rechazar(@Param('id') id: string) {
+    const conductor = await this.rechazarConductor.ejecutar(id);
+    return ConductorMapper.toResponseList(conductor);
+  }
+
+  @Patch(':id/suspender')
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.OPERACIONES)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Suspender un conductor aprobado' })
+  async suspender(@Param('id') id: string) {
+    const conductor = await this.suspenderConductor.ejecutar(id);
+    return ConductorMapper.toResponseList(conductor);
+  }
+
+  @Patch(':id/reactivar')
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.OPERACIONES)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reactivar un conductor suspendido' })
+  async reactivar(@Param('id') id: string) {
+    const conductor = await this.reactivarConductor.ejecutar(id);
     return ConductorMapper.toResponseList(conductor);
   }
 
@@ -145,6 +202,26 @@ export class ConductoresController {
     @Body(new ZodValidationPipe(actualizarConductorSchema)) dto: ActualizarConductorDto
   ) {
     const conductor = await this.actualizarConductor.ejecutar(req.user.sub, dto);
+    return ConductorMapper.toResponse(conductor);
+  }
+
+  @Patch('me/disponibilidad')
+  @UseGuards(AuthGuard, RolesGuard)
+  @RolesDecorator(Roles.CONDUCTOR)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ponerse en línea / fuera de línea (Conectado | Desconectado)',
+  })
+  async actualizarDisponibilidadEndpoint(
+    @Req() req: { user: { sub: string } },
+    @Body(new ZodValidationPipe(actualizarDisponibilidadSchema))
+    dto: ActualizarDisponibilidadDto,
+  ) {
+    const conductor = await this.actualizarDisponibilidad.ejecutar(
+      req.user.sub,
+      dto,
+    );
     return ConductorMapper.toResponse(conductor);
   }
 }

@@ -1,26 +1,54 @@
-# Plan de Implementación: Panel de Administración y Consultas (GET)
+# Plan de Implementación: Panel Asociación (backoffice operativo)
 
 ## Objetivo
-Proveer la infraestructura de back-office requerida para administrar conductores en la plataforma y permitir a las aplicaciones frontend visualizar los historiales de viajes.
+Backoffice usable por la asociación: usuarios admin en BD con roles fijos, módulos de flota/tarifario/viajes/balances/bitácora/dashboard, y APIs asociadas.
 
-## Endpoints Nuevos
+## Roles admin (claim JWT `adminRol`; `rol` sigue siendo `ADMIN`)
 
-### 1. Historial de Viajes (`GET /api/viajes`)
-- **Roles:** `ADMIN`
-- **Funcionalidad:** Retorna la lista paginada de todos los viajes registrados en el sistema.
+| Rol | Puede |
+|-----|--------|
+| `SUPER_ADMIN` | Todo + gestionar usuarios admin |
+| `OPERACIONES` | Flota, viajes, dashboard, config operativa |
+| `FINANZAS` | Tarifario, balances/liquidación, config tarifaria |
+| `AUDITOR` | Solo lectura: viajes, balances, bitácora, flota, dashboard |
 
-### 2. Mis Viajes (`GET /api/viajes/mis-viajes`)
-- **Roles:** `PASAJERO`, `CONDUCTOR`
-- **Funcionalidad:** Retorna los viajes asociados al usuario autenticado.
+## Auth admin
+- Tabla `administradores` (nombre, email, passwordHash, rolAdmin, activo).
+- Login `POST /api/auth/login` con `rol: ADMIN` consulta BD + bcrypt; JWT incluye `adminRol`.
+- Seed SuperAdmin desde `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+- Fallback temporal env si aún no hay fila en BD (un release).
 
-### 3. Listar Conductores (`GET /api/conductores`)
-- **Roles:** `ADMIN`
-- **Funcionalidad:** Retorna la lista paginada de conductores, permitiendo filtrar por su estado de aprobación (ej. `?estadoAprobacion=Pendiente`).
+## Endpoints
 
-### 4. Aprobar Conductor (`PATCH /api/conductores/:id/aprobar`)
-- **Roles:** `ADMIN`
-- **Funcionalidad:** Cambia el estado de aprobación de un conductor de `Pendiente` a `Aprobado`. Emite un evento en caso de ser necesario, pero por ahora solo muta la DB.
+### Administradores (`SUPER_ADMIN`)
+- `GET/POST /api/administradores`
+- `PATCH /api/administradores/:id`
 
-## Seguridad (Autenticación Administrador)
-- En la ruta `/api/auth/login`, si el rol solicitado es `ADMIN`, el sistema verificará las credenciales contra variables de entorno (`ADMIN_EMAIL` y `ADMIN_PASSWORD`).
-- Si coinciden, firmará un JWT con `{ sub: 'admin-1', rol: 'ADMIN' }`.
+### Flota
+- `GET /api/conductores?estado=`
+- `PATCH /api/conductores/:id/aprobar|rechazar|suspender|reactivar`
+
+### Tarifario OD
+- `GET/POST /api/tarifas`
+- `PATCH /api/tarifas/:id`
+- `POST /api/tarifas/estimar` prioriza OD activa por `origenNombre`/`destinoNombre`; si no, fórmula base+km.
+
+### Pagos / liquidación
+- `GET /api/pagos-balances` (admin, filtros)
+- `GET /api/pagos-balances/liquidacion`
+
+### Bitácora
+- `GET /api/bitacora` (filtros fecha/servicio/acción)
+
+### Viajes
+- `GET /api/viajes?estado=&desde=&hasta=` (admin + AdminRoles)
+- `GET /api/viajes/:id` detalle
+
+### Flota
+- Lista incluye docs (`fotoUrl`, `licenciaUrl`, `seguroUrl`); UI “Ver docs”.
+- Reactivar solo desde `Suspendido` (no desde Rechazado).
+
+## Smoke asociación
+Ver checklist en `docs/analisis/tareas/todo-analisis-mvp.md`.
+
+Seed: SuperAdmin (`ADMIN_EMAIL`) + demos `ops@` / `finanzas@` / `auditor@myride.com` (misma password que SuperAdmin) + tarifas OD de ejemplo. Docs de flota en `/uploads/`.

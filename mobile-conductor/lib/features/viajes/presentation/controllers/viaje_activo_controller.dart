@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../balances/domain/usecases/obtener_pago_por_viaje_params.dart';
+import '../../../balances/presentation/providers/balances_provider.dart';
 import '../../domain/entities/estado_viaje_activo.dart';
 import '../../domain/entities/viaje.dart';
+import '../../domain/mappers/mapeador_estado_viaje_activo.dart';
 import '../providers/viajes_provider.dart';
 import 'viaje_activo_state.dart';
 
@@ -16,31 +19,47 @@ final viajeActivoControllerProvider =
 
 class ViajeActivoController extends Notifier<ViajeActivoState> {
   final Distance _calculadoraDistancia = const Distance();
-  Timer? _temporizadorGps;
+  StreamSubscription? _suscripcionGps;
 
   @override
   ViajeActivoState build() {
-    ref.onDispose(_cancelarTemporizador);
+    ref.onDispose(_cancelarGps);
     return const ViajeActivoState();
   }
 
-  void inicializar(Viaje viaje) {
-    if (state.viaje?.id == viaje.id && _temporizadorGps != null) {
+  Future<void> inicializar(Viaje viaje) async {
+    if (state.viaje?.id == viaje.id && _suscripcionGps != null) {
       return;
     }
 
-    _cancelarTemporizador();
+    await _cancelarGps();
     ref.read(viajeRealtimeGatewayProvider).unirseAViaje(viaje.id);
+
+    final ubicacionInicial = await ref
+        .read(ubicacionGatewayProvider)
+        .obtenerUbicacionActual();
+
+    final latInicial = ubicacionInicial.fold(
+      (_) => viaje.origenLat,
+      (c) => c.latitud,
+    );
+    final lngInicial = ubicacionInicial.fold(
+      (_) => viaje.origenLng,
+      (c) => c.longitud,
+    );
+
+    final errorGps = ubicacionInicial.fold((f) => f.mensaje, (_) => null);
 
     state = ViajeActivoState(
       viaje: viaje,
-      estado: EstadoViajeActivo.enCaminoAlPasajero,
-      latitudActual: viaje.origenLat - 0.005,
-      longitudActual: viaje.origenLng - 0.005,
+      estado: MapeadorEstadoViajeActivo.desdeApi(viaje.estado),
+      latitudActual: latInicial,
+      longitudActual: lngInicial,
       etaInfo: AppStrings.viajeEsperandoInicio,
+      errorMensaje: errorGps,
     );
 
-    _iniciarSimulacionGps();
+    _iniciarSeguimientoGpsReal();
   }
 
   Future<void> avanzarEstado() async {
@@ -71,7 +90,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
   }
 
   void limpiar() {
-    _cancelarTemporizador();
+    _cancelarGps();
     state = const ViajeActivoState();
   }
 
@@ -166,69 +185,86 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
   Future<void> _ejecutarCompletado(Viaje viaje) async {
     final resultado = await ref.read(completarViajeProvider)(viaje.id);
-    resultado.fold(
-      (failure) {
+    await resultado.fold(
+      (failure) async {
         state = state.copyWith(
           procesando: false,
           errorMensaje: failure.mensaje,
         );
       },
-      (viajeActualizado) {
-        _cancelarTemporizador();
-        state = state.copyWith(
-          viaje: viajeActualizado,
-          estado: EstadoViajeActivo.completado,
-          procesando: false,
-          finalizado: true,
-          errorMensaje: null,
+      (viajeActualizado) async {
+        _cancelarGps();
+        final pagoResultado = await ref.read(obtenerPagoPorViajeProvider)(
+          ObtenerPagoPorViajeParams(viaje.id),
+        );
+
+        pagoResultado.fold(
+          (failure) {
+            state = state.copyWith(
+              viaje: viajeActualizado,
+              estado: EstadoViajeActivo.completado,
+              procesando: false,
+              finalizado: true,
+              errorMensaje: failure.mensaje,
+            );
+          },
+          (pago) {
+            state = state.copyWith(
+              viaje: viajeActualizado,
+              estado: EstadoViajeActivo.completado,
+              procesando: false,
+              finalizado: true,
+              recibo: pago,
+              errorMensaje: null,
+            );
+          },
         );
       },
     );
   }
 
-  void _iniciarSimulacionGps() {
-    _temporizadorGps = Timer.periodic(const Duration(seconds: 2), (_) {
-      final viaje = state.viaje;
-      if (viaje == null) {
-        return;
-      }
+  void _iniciarSeguimientoGpsReal() {
+    _suscripcionGps?.cancel();
+    _suscripcionGps = ref
+        .read(ubicacionGatewayProvider)
+        .observarUbicacion()
+        .listen((coordenada) {
+          final viaje = state.viaje;
+          if (viaje == null) {
+            return;
+          }
 
-      final objetivo = obtenerUbicacionObjetivo();
-      final nuevaLatitud =
-          state.latitudActual + (objetivo.latitude - state.latitudActual) * 0.1;
-      final nuevaLongitud =
-          state.longitudActual +
-          (objetivo.longitude - state.longitudActual) * 0.1;
-
-      final distanciaMetros = _calculadoraDistancia.as(
-        LengthUnit.Meter,
-        LatLng(nuevaLatitud, nuevaLongitud),
-        objetivo,
-      );
-
-      final kilometros = distanciaMetros / 1000;
-      final minutos = (distanciaMetros / 500).ceil();
-
-      state = state.copyWith(
-        latitudActual: nuevaLatitud,
-        longitudActual: nuevaLongitud,
-        etaInfo: distanciaMetros < 50
-            ? AppStrings.viajeMuyCerca
-            : AppStrings.formatoEta(kilometros, minutos),
-      );
-
-      ref
-          .read(viajeRealtimeGatewayProvider)
-          .actualizarUbicacion(
-            viajeId: viaje.id,
-            latitud: nuevaLatitud,
-            longitud: nuevaLongitud,
+          final objetivo = obtenerUbicacionObjetivo();
+          final distanciaMetros = _calculadoraDistancia.as(
+            LengthUnit.Meter,
+            LatLng(coordenada.latitud, coordenada.longitud),
+            objetivo,
           );
-    });
+
+          final kilometros = distanciaMetros / 1000;
+          final minutos = (distanciaMetros / 500).ceil();
+
+          state = state.copyWith(
+            latitudActual: coordenada.latitud,
+            longitudActual: coordenada.longitud,
+            etaInfo: distanciaMetros < 50
+                ? AppStrings.viajeMuyCerca
+                : AppStrings.formatoEta(kilometros, minutos),
+            errorMensaje: null,
+          );
+
+          ref
+              .read(viajeRealtimeGatewayProvider)
+              .actualizarUbicacion(
+                viajeId: viaje.id,
+                latitud: coordenada.latitud,
+                longitud: coordenada.longitud,
+              );
+        });
   }
 
-  void _cancelarTemporizador() {
-    _temporizadorGps?.cancel();
-    _temporizadorGps = null;
+  Future<void> _cancelarGps() async {
+    await _suscripcionGps?.cancel();
+    _suscripcionGps = null;
   }
 }

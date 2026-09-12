@@ -1,4 +1,30 @@
-# Lista de Tareas para Desarrollo MVP (TODO)
+# Lista de Tareas — Producto asociación / MVP técnico
+
+## Producto asociación (backoffice operativo)
+
+- [x] **Admin RBAC:** entidad `administradores`, login BD + claim `adminRol`, `AdminRolesGuard`, seed SuperAdmin.
+- [x] **API flota:** rechazar / suspender / reactivar conductores (+ estado Suspendido).
+- [x] **API bitácora:** `GET /api/bitacora` con filtros.
+- [x] **API pagos admin:** listado + `GET /api/pagos-balances/liquidacion`.
+- [x] **API dashboard:** `GET /api/admin/dashboard`.
+- [x] **API pasajeros:** `GET /api/pasajeros` admin.
+- [x] **API tarifario OD:** CRUD tarifas + estimar prioriza OD activa.
+- [x] **Web-admin:** dashboard, flota, tarifario, viajes, balances, bitácora, usuarios admin, config + RBAC UI.
+- [x] **Apps polish:** tracking pasajero (llamar real / sin botones muertos); mensajes proximidad conductor.
+
+### Checklist smoke asociación
+
+1. API: `cd backend && npm run build && npm run seed && npm run start:dev`
+2. Admin: `cd web-admin && npm run dev` → http://localhost:5174 (o 5173)
+3. Login SuperAdmin: `ADMIN_EMAIL` / `ADMIN_PASSWORD` del `.env` (seed también crea demos con la misma password):
+   - `ops@myride.com` → OPERACIONES
+   - `finanzas@myride.com` → FINANZAS
+   - `auditor@myride.com` → AUDITOR
+4. Verificar nav por rol (ops sin tarifario/usuarios; auditor solo lectura).
+5. Flota: aprobar / rechazar / suspender / reactivar; “Ver docs” abre `/uploads/...`.
+6. Tarifario: OD sembradas (Aeropuerto↔Bávaro, etc.); alta/edición; estimar con nombres OD.
+7. Completar un viaje (apps) → Balances + Bitácora.
+8. Dashboard: contadores con conductores conectados / viaje activo.
 
 ## Infraestructura y base
 
@@ -6,58 +32,41 @@
 - [x] **Base de Datos:** Implementar modelos de datos definidos en `docs/analisis/modelos-datos/` (TypeORM; índices en conductores/viajes).
 - [x] **API:** Implementar endpoints de autenticación y gestión de perfiles (Pasajero/Conductor/Admin).
 - [x] **API:** Implementar módulo de tarifas estáticas (CRUD + estimar Haversine sin persistir por defecto).
+- [x] **API:** Parámetros `TARIFA_BASE` / `TARIFA_KM` / `TARIFA_MINIMA` vía configuración (seed + admin); estimar falla si no están definidos (sin defaults quemados en el use case).
+- [x] **API Admin:** `GET/PATCH /api/configuracion` (rol ADMIN) para listar/actualizar tarifas y demás parámetros.
 
 ## Flujo de viaje (API)
 
-- [x] **API:** Flujo de solicitud de viaje y asignación escalonada (`AsignadorConductorService`, bbox + radio, rechazo → reasignar).
-- [x] **API:** Máquina de estados de viaje (solicitar → aceptar atómico → iniciar/completar con ownership; GPS WS throttled).
-- [ ] **API:** Validación de proximidad GPS al iniciar/completar (regla de negocio pendiente de endurecer).
-- [ ] **API:** Integración pasarela de pagos y módulo de cálculo de balances.
+- [x] **API:** Flujo de solicitud de viaje y asignación escalonada.
+- [x] **API:** Máquina de estados de viaje + GPS WS throttled.
+- [x] **API:** Validación de proximidad GPS (`RADIO_PROXIMIDAD_*_M`).
+- [ ] **API:** Pasarela de pagos online (fase 2; liquidación efectivo ya disponible).
 
-## Seguridad / hardening backend (2026-09-12)
+## Seguridad / hardening backend
 
-- [x] Ownership/IDOR en REST y WebSocket (JWT `sub`, salas por participante).
-- [x] Secretos fail-fast (`JWT_SECRET`, admin env, `BATCH_SECRET`); sin defaults inseguros.
-- [x] CORS por `CORS_ORIGINS`; `synchronize` off en producción; throttling global + login.
-- [x] Idempotencia scoped por usuario; aceptar viaje con `UPDATE` condicional.
-- [x] Upload documentos: ownership + límites Multer/MIME.
-- [x] Tests unitarios backend en `tests/unit/` (38 passing).
+- [x] Ownership/IDOR, secretos fail-fast, CORS, throttling, idempotencia, uploads.
+- [x] Tests unitarios backend en `tests/unit/`.
 
 ## Apps cliente
 
-- [ ] **Móvil Pasajero:** UI completa (pago, historial real, perfil editable) — core loop solicitud/tracking/recibo ya cableado.
-- [ ] **Móvil Conductor:** UI completa (mapa/navegación real, balances) — auth/sesión/realtime Clean Arch alineado con pasajero.
-- [ ] **Web Admin:** Panel (Gestión de usuarios, tarifario, visor de viajes y auditoría) — sin capas CA aún.
+- [x] **Móvil Pasajero:** core loop + perfil/historial/pagos efectivo/ayuda; tracking con llamada real.
+- [x] **Móvil Conductor:** auth/sesión/realtime, GPS, balances, historial; UX proximidad.
+- [x] **Web Admin:** panel asociación con RBAC (no solo env-admin).
 
-## Pureza Clean Architecture (2026-09-12)
+## Pureza Clean Architecture
 
-- [x] Flutter dominio: sin Equatable/frameworks; token fuera de entidades; `data/` = infraestructura.
-- [x] Pasajero + Conductor: SessionStorage seguro, NetworkInfo, gateway realtime, router guards, sin auto-login.
-- [x] Backend **dominio**: limpio (sin Nest/TypeORM).
-- [ ] Backend **aplicación**: quitar `@Injectable`/`@ApiProperty`/`zod+swagger` de use cases/DTOs → composition root + presentacion (epic).
-- [ ] Web-admin: introducir capas o mantener como UI fina sobre API (decidir).
+- [x] Flutter dominio limpio; SessionStorage seguro; sin auto-login.
+- [x] Backend dominio limpio.
+- [ ] Backend aplicación: quitar Nest de use cases/DTOs (epic).
+- [x] Web-admin: UI fina sobre API.
 
-## Móvil Pasajero — infra / seguridad / Clean Arch (2026-09-12)
+## Mandato producto
 
-- [x] Capa infra: `SessionStorage` (secure) + `NetworkInfo` + Dio con 401/cleanup.
-- [x] Auth: sesión restore/logout; JWT fuera del dominio; sin auto-login ni password en `.env`.
-- [x] Router guards (rutas protegidas vs login/welcome).
-- [x] Realtime: puerto `ViajeRealtimeGateway` + `ViajeSocketDataSource` en data.
-- [x] Tarifas en dominio (`CalculadoraTarifa`); HomeState/widgets separados.
-- [x] Tests unitarios: `LoginUseCase`.
-- [x] Eliminada `CalculadoraTarifa` hardcodeada; UI muestra tarifa pendiente de API.
-- [ ] Cablear estimar tarifa desde backend (`tarifas` / configuración) en home.
-- [ ] Features stub: perfil/pagos/soporte con domain+data (hoy solo presentation).
-- [ ] Quitar `.env` como asset en release / usar `--dart-define` o flavors.
+**Cero flujos fake.** Regla: `.cursor/rules/desarrollo-cero-flujos-fake.mdc`.
 
-## Móvil Conductor — infra / seguridad / Clean Arch (2026-09-12)
-
-- [x] Misma línea que pasajero: secure session, NetworkInfo, gateway socket, login real, guards.
-- [x] Eliminado `DemoCredentials` / auto-login y `SocketService` en core.
-- [x] Test `IniciarSesion`.
-- [ ] Logout en UI home; GPS real (hoy simulado).
+- [ ] Pasarela tarjeta / cobro online (fuera de esta fase).
 
 ## Calidad
 
-- [ ] **SQA:** Ejecutar caso de prueba E2E (Core Loop de SC-1 en Requerimiento).
-- [ ] Smoke manual: seed + backend con env completo + apps pasajero/conductor (login manual obligatorio).
+- [ ] **SQA:** E2E Core Loop SC-1.
+- [ ] Smoke manual asociación: checklist arriba + apps.

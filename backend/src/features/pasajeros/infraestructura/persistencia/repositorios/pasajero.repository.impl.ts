@@ -23,6 +23,24 @@ export class PasajeroRepositoryImpl implements IPasajeroRepository {
     return entity ? PasajeroOrmMapper.toDomain(entity) : null;
   }
 
+  async listar(busqueda?: string): Promise<Pasajero[]> {
+    const qb = this.ormRepo
+      .createQueryBuilder('p')
+      .orderBy('p.fechaRegistro', 'DESC')
+      .take(200);
+
+    if (busqueda?.trim()) {
+      const q = `%${busqueda.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(p.nombreCompleto) LIKE :q OR LOWER(p.email) LIKE :q OR p.telefono LIKE :q)',
+        { q },
+      );
+    }
+
+    const entities = await qb.getMany();
+    return entities.map((e) => PasajeroOrmMapper.toDomain(e));
+  }
+
   async guardar(pasajero: Pasajero): Promise<Pasajero> {
     const entity = PasajeroOrmMapper.toOrm(pasajero);
     const saved = await this.ormRepo.save(entity);

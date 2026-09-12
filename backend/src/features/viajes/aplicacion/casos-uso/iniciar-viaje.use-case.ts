@@ -6,6 +6,7 @@ import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { ValidadorProximidadViajeService } from '../servicios/validador-proximidad-viaje.service.js';
 
 @Injectable()
 export class IniciarViajeUseCase {
@@ -14,6 +15,7 @@ export class IniciarViajeUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(NOTIFICADOR_VIAJE)
     private readonly notificadorViaje: INotificadorViaje,
+    private readonly validadorProximidad: ValidadorProximidadViajeService,
   ) {}
 
   async ejecutar(id: string, conductorId: string): Promise<Viaje> {
@@ -29,6 +31,13 @@ export class IniciarViajeUseCase {
         403,
       );
     }
+
+    await this.validadorProximidad.asegurarCercaDe(
+      conductorId,
+      viaje.origenLat,
+      viaje.origenLng,
+      MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_RADIO_PROXIMIDAD_ORIGEN_M,
+    );
 
     viaje.iniciarViaje();
 

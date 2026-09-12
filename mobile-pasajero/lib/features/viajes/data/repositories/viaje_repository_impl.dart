@@ -44,4 +44,58 @@ class ViajeRepositoryImpl implements ViajeRepository {
       return const Fallo(ServerFailure(AppStrings.errorUnexpected));
     }
   }
+
+  @override
+  Future<Resultado<List<Viaje>>> listarMisViajes() async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(NetworkFailure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelos = await remoteDataSource.listarMisViajes();
+      return Exito(List<Viaje>.from(modelos));
+    } on ServerException catch (e) {
+      return Fallo(ServerFailure(e.mensaje));
+    } catch (_) {
+      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    }
+  }
+
+  @override
+  Future<Resultado<Viaje>> obtenerViajePorId(String viajeId) async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(NetworkFailure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelo = await remoteDataSource.obtenerViajePorId(viajeId);
+      return Exito(modelo);
+    } on ServerException catch (e) {
+      return Fallo(ServerFailure(e.mensaje));
+    } catch (_) {
+      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    }
+  }
+
+  @override
+  Future<Resultado<Viaje>> cancelarViaje({
+    required String viajeId,
+    String? motivo,
+  }) async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(NetworkFailure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelo = await remoteDataSource.cancelarViaje(
+        viajeId: viajeId,
+        motivo: motivo,
+      );
+      return Exito(modelo);
+    } on ServerException catch (e) {
+      return Fallo(ServerFailure(e.mensaje));
+    } catch (_) {
+      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    }
+  }
 }

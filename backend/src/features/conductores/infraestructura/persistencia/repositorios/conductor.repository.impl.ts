@@ -73,4 +73,13 @@ export class ConductorRepositoryImpl implements IConductorRepository {
     const entities = await this.ormRepo.find({ where: whereClause, order: { id: 'DESC' } });
     return entities.map(e => ConductorOrmMapper.toDomain(e));
   }
+
+  async contarPorDisponibilidad(estadoDisponibilidad: string): Promise<number> {
+    return this.ormRepo.count({
+      where: {
+        estadoAprobacion: EstadosConductor.APROBADO,
+        estadoDisponibilidad,
+      },
+    });
+  }
 }

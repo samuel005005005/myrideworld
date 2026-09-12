@@ -11,7 +11,9 @@
 | VehiculoModelo | string | Sí | | Modelo del vehículo |
 | VehiculoColor | string | Sí | | Color |
 | VehiculoPlaca | string | Sí | Unique | Matrícula / Placa |
-| EstadoAprobacion | string | Sí | Pendiente/Aprobado/Rechazado | Aprobación por admin |
+| EstadoAprobacion | string | Sí | Pendiente/Aprobado/Rechazado/Suspendido | Aprobación por admin (Suspendido = flota pausada) |
 | EstadoDisponibilidad | string | Sí | Conectado/Desconectado/Ocupado | Estado de operación |
+| LicenciaUrl | string | No | URL/ruta | Documento de licencia |
+| SeguroUrl | string | No | URL/ruta | Documento de seguro |
 | UltimaUbicacionLat | float | No | | Última latitud conocida |
 | UltimaUbicacionLng | float | No | | Última longitud conocida |

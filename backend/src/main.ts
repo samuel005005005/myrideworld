@@ -1,13 +1,19 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module.js';
 import { GlobalExceptionFilter } from './compartidos/filtros/global-exception.filter.js';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? '*')
     .split(',')
@@ -22,9 +28,9 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('MyRide MVP API')
+    .setTitle('MyRide Asociación API')
     .setDescription(
-      'API Core para la plataforma de viajes MyRide (Pasajeros y Conductores)',
+      'API Core para la plataforma de viajes MyRide (Pasajeros, Conductores y Admin)',
     )
     .setVersion('1.0')
     .addBearerAuth()

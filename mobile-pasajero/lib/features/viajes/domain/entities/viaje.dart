@@ -1,3 +1,5 @@
+import 'conductor_asignado.dart';
+
 class Viaje {
   final String id;
   final String pasajeroId;
@@ -9,6 +11,7 @@ class Viaje {
   final double destinoLat;
   final double destinoLng;
   final DateTime fechaCreacion;
+  final ConductorAsignado? conductor;
 
   const Viaje({
     required this.id,
@@ -21,5 +24,6 @@ class Viaje {
     required this.destinoLat,
     required this.destinoLng,
     required this.fechaCreacion,
+    this.conductor,
   });
 }

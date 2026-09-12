@@ -12,15 +12,25 @@ export class ConfiguracionRepositoryImpl implements IConfiguracionRepository {
   constructor(
     @InjectRepository(ConfiguracionOrmEntity)
     private readonly ormRepo: Repository<ConfiguracionOrmEntity>,
-  ) { }
+  ) {}
+
+  async obtenerPorClave(clave: string): Promise<Configuracion | null> {
+    const entity = await this.ormRepo.findOne({ where: { clave } });
+    return entity ? ConfiguracionOrmMapper.toDomain(entity) : null;
+  }
+
+  async listar(): Promise<Configuracion[]> {
+    const entities = await this.ormRepo.find({ order: { clave: 'ASC' } });
+    return entities.map((entity) => ConfiguracionOrmMapper.toDomain(entity));
+  }
 
   async obtenerValor(clave: string, defaultValue: string): Promise<string> {
-    const entity = await this.ormRepo.findOne({ where: { clave } });
-    if (entity) {
-      return entity.valor;
+    const existente = await this.obtenerPorClave(clave);
+    if (existente) {
+      return existente.valor;
     }
 
-    // Upsert (Self-healing): Si no existe, lo creamos con el valor por defecto
+    // Solo para claves legadas no sembradas: auto-crea con default técnico.
     const nuevaConfig = Configuracion.crear({
       clave,
       valor: defaultValue,

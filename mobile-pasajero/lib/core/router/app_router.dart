@@ -57,7 +57,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/home', builder: (context, state) => const HomePage()),
       GoRoute(
         path: '/radar',
-        builder: (context, state) => const ViajeSearchingPage(),
+        builder: (context, state) {
+          final viajeId = resolverViajeId(state.extra);
+          if (viajeId == null || viajeId.isEmpty) {
+            return const HomePage();
+          }
+          return ViajeSearchingPage(viajeId: viajeId);
+        },
       ),
       GoRoute(
         path: '/viaje-active',

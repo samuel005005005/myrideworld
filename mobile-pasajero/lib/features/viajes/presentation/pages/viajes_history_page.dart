@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../domain/entities/viaje.dart';
+import '../controllers/historial_controller.dart';
 
 class ViajesHistoryPage extends ConsumerWidget {
   const ViajesHistoryPage({super.key});
@@ -14,30 +16,7 @@ class ViajesHistoryPage extends ConsumerWidget {
     const borderGrey = Color(0xFFE2E8F0);
     const bgGrey = Color(0xFFF8FAFC);
 
-    // Dummy data for MVP UI
-    final List<Map<String, dynamic>> dummyTrips = [
-      {
-        'date': 'Ayer, 14:30',
-        'route': 'Aeropuerto Punta Cana → Hard Rock Hotel',
-        'price': 'US\$35.00',
-        'status': 'Completado',
-        'car': 'Sedán',
-      },
-      {
-        'date': '10 Sept, 09:15',
-        'route': 'Hard Rock Hotel → Coco Bongo',
-        'price': 'US\$25.00',
-        'status': 'Completado',
-        'car': 'Van Familiar',
-      },
-      {
-        'date': '05 Sept, 18:00',
-        'route': 'Bávaro Beach → Aeropuerto Punta Cana',
-        'price': 'US\$40.00',
-        'status': 'Cancelado',
-        'car': 'SUV Premium',
-      },
-    ];
+    final estado = ref.watch(historialControllerProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -58,119 +37,154 @@ class ViajesHistoryPage extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: dummyTrips.length,
-        separatorBuilder: (context, index) =>
-            const Divider(color: borderGrey, height: 24),
-        itemBuilder: (context, index) {
-          final trip = dummyTrips[index];
-          final isCompleted = trip['status'] == 'Completado';
-
-          return InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bgGrey,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        trip['date'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: textGrey,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        trip['price'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: textDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.directions_car,
-                          size: 20,
-                          color: textDark,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              trip['route'],
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textDark,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              trip['car'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: textGrey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      trip['status'],
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isCompleted
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+      body: estado.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('$error', textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () =>
+                      ref.read(historialControllerProvider.notifier).refrescar(),
+                  child: const Text(AppStrings.historyRetry),
+                ),
+              ],
             ),
+          ),
+        ),
+        data: (viajes) {
+          if (viajes.isEmpty) {
+            return const Center(child: Text(AppStrings.historyEmpty));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: viajes.length,
+            separatorBuilder: (context, index) =>
+                const Divider(color: borderGrey, height: 24),
+            itemBuilder: (context, index) {
+              return _ViajeHistorialTile(
+                viaje: viajes[index],
+                textDark: textDark,
+                textGrey: textGrey,
+                bgGrey: bgGrey,
+              );
+            },
           );
         },
+      ),
+    );
+  }
+}
+
+class _ViajeHistorialTile extends StatelessWidget {
+  final Viaje viaje;
+  final Color textDark;
+  final Color textGrey;
+  final Color bgGrey;
+
+  const _ViajeHistorialTile({
+    required this.viaje,
+    required this.textDark,
+    required this.textGrey,
+    required this.bgGrey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final completado = viaje.estado.toLowerCase() == 'completado';
+    final fecha = viaje.fechaCreacion;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgGrey,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${fecha.day}/${fecha.month}/${fecha.year}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textGrey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                AppStrings.formatoMoneda(viaje.tarifaEstimada),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.directions_car,
+                  size: 20,
+                  color: textDark,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  AppStrings.formatoRutaCoords(
+                    viaje.origenLat,
+                    viaje.origenLng,
+                    viaje.destinoLat,
+                    viaje.destinoLng,
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textDark,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: completado
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              viaje.estado,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: completado
+                    ? Colors.green.shade700
+                    : Colors.orange.shade800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

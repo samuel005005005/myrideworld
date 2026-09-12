@@ -30,6 +30,19 @@ export class Tarifa {
   get precio(): number { return this._precio; }
   get estado(): EstadosTarifa { return this._estado; }
 
+  actualizar(datos: {
+    origen?: string;
+    destino?: string;
+    precio?: number;
+    estado?: EstadosTarifa;
+  }): void {
+    if (datos.origen !== undefined) this._origen = datos.origen;
+    if (datos.destino !== undefined) this._destino = datos.destino;
+    if (datos.precio !== undefined) this._precio = datos.precio;
+    if (datos.estado !== undefined) this._estado = datos.estado;
+    this.validar();
+  }
+
   private validar(): void {
     if (this._precio <= 0) throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.PRECIO_MAYOR_CERO);
     if (!this._origen || !this._destino) throw new DomainException(MENSAJES.EXCEPCIONES.TARIFAS.ORIGEN_DESTINO_OBLIGATORIOS);

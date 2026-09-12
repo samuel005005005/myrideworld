@@ -2,6 +2,15 @@ class ApiEndpoints {
   static const String login = '/api/auth/login';
   static const String solicitarViaje = '/api/viajes';
   static const String viajesBase = '/api/viajes';
+  static const String estimarTarifa = '/api/tarifas/estimar';
+  static const String perfilPasajero = '/api/pasajeros/me';
+  static const String misViajes = '/api/viajes/mis-viajes';
+  static const String configuracionPublica = '/api/configuracion/publica';
+
+  static String viajePorId(String viajeId) => '/api/viajes/$viajeId';
+
+  static String cancelarViaje(String viajeId) => '/api/viajes/$viajeId/cancelar';
+
   static const String osrmRutaConduccion = '/route/v1/driving';
   static const String osrmGeometriasGeoJson = 'geometries=geojson';
 

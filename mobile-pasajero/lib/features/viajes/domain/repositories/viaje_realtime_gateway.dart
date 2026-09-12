@@ -1,4 +1,5 @@
 import '../entities/recibo_viaje.dart';
+import '../entities/conductor_asignado.dart';
 
 /// Puerto de dominio para eventos en tiempo real del viaje.
 abstract class ViajeRealtimeGateway {
@@ -10,7 +11,9 @@ abstract class ViajeRealtimeGateway {
     void Function(double latitud, double longitud) callback,
   );
 
-  void escucharViajeAceptado(void Function() callback);
+  void escucharViajeAceptado(
+    void Function(ConductorAsignado? conductor) callback,
+  );
 
   void escucharConductorLlego(void Function() callback);
 

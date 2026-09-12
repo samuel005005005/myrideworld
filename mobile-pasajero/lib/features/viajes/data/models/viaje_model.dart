@@ -12,5 +12,6 @@ class ViajeModel extends Viaje {
     required super.destinoLat,
     required super.destinoLng,
     required super.fechaCreacion,
+    super.conductor,
   });
 }

@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MyRide Conductor necesita tu ubicacion GPS para asignacion y seguimiento de viajes.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MyRide Conductor necesita tu ubicacion GPS para asignacion y seguimiento de viajes.</string>
 </dict>
 </plist>

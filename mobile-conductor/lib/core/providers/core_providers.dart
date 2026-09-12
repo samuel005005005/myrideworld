@@ -1,11 +1,10 @@
-import 'dart:io' show Platform;
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../config/app_env.dart';
+import '../network/http_logging_interceptor.dart';
 import '../network/network_info.dart';
 import '../network/network_info_impl.dart';
 import '../storage/secure_session_storage.dart';
@@ -19,18 +18,9 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) {
   return NetworkInfoImpl(Connectivity());
 });
 
-final apiBaseUrlProvider = Provider<String>((ref) {
-  return dotenv.env['API_BASE_URL'] ??
-      (Platform.isAndroid
-          ? 'http://10.0.2.2:3000/api'
-          : 'http://127.0.0.1:3000/api');
-});
+final apiBaseUrlProvider = Provider<String>((ref) => AppEnv.apiBaseUrl);
 
-final socketBaseUrlProvider = Provider<String>((ref) {
-  final apiBaseUrl = ref.watch(apiBaseUrlProvider);
-  return dotenv.env['SOCKET_URL'] ??
-      apiBaseUrl.replaceFirst(RegExp(r'/api/?$'), '');
-});
+final socketBaseUrlProvider = Provider<String>((ref) => AppEnv.socketUrl);
 
 final dioProvider = Provider<Dio>((ref) {
   final sessionStorage = ref.watch(sessionStorageProvider);
@@ -43,19 +33,6 @@ final dioProvider = Provider<Dio>((ref) {
       headers: const {'Content-Type': 'application/json'},
     ),
   );
-
-  if (kDebugMode) {
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: false,
-        requestBody: false,
-        responseHeader: false,
-        responseBody: false,
-        error: true,
-      ),
-    );
-  }
 
   dio.interceptors.add(
     InterceptorsWrapper(
@@ -74,6 +51,11 @@ final dioProvider = Provider<Dio>((ref) {
       },
     ),
   );
+
+  // Después del auth para loguear headers finales (token enmascarado).
+  if (kDebugMode) {
+    dio.interceptors.add(HttpLoggingInterceptor());
+  }
 
   return dio;
 });

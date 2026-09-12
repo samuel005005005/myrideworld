@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_strings.dart';
 import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -13,7 +14,8 @@ class App extends ConsumerWidget {
 
     return MaterialApp.router(
       title: AppStrings.appName,
-      themeMode: ThemeMode.system,
+      theme: AppTheme.light,
+      themeMode: ThemeMode.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

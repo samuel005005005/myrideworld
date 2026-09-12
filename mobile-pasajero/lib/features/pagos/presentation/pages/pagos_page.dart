@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_strings.dart';
+
+/// MVP: el backend solo registra pagos en efectivo.
 class PagosPage extends StatelessWidget {
   const PagosPage({super.key});
 
@@ -17,7 +20,7 @@ class PagosPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'Métodos de Pago',
+          AppStrings.pagosTitulo,
           style: TextStyle(
             color: textDark,
             fontWeight: FontWeight.bold,
@@ -35,16 +38,19 @@ class PagosPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Tus métodos de pago',
+              AppStrings.pagosSeccionTitulo,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: textDark,
               ),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              AppStrings.pagosMvpNota,
+              style: TextStyle(fontSize: 13, color: textGrey),
+            ),
             const SizedBox(height: 16),
-
-            // Cash Option (Default)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -71,7 +77,7 @@ class PagosPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Efectivo',
+                          AppStrings.pagosEfectivoTitulo,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -79,7 +85,7 @@ class PagosPage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Pago al finalizar el viaje',
+                          AppStrings.pagosEfectivoDesc,
                           style: TextStyle(color: textGrey, fontSize: 13),
                         ),
                       ],
@@ -87,84 +93,6 @@ class PagosPage extends StatelessWidget {
                   ),
                   const Icon(Icons.check_circle, color: brandPrimary),
                 ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Card Mock
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade200),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.credit_card, color: Colors.blue.shade700),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '•••• 4242',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: textDark,
-                          ),
-                        ),
-                        Text(
-                          'Expira 12/28',
-                          style: TextStyle(color: textGrey, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Add Card Button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Integración de pasarela de pagos próximamente.',
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add, color: textDark),
-                label: const Text(
-                  'Añadir Tarjeta',
-                  style: TextStyle(
-                    color: textDark,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey.shade300, width: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
               ),
             ),
           ],

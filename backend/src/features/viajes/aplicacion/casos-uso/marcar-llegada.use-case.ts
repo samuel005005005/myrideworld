@@ -6,6 +6,7 @@ import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { ValidadorProximidadViajeService } from '../servicios/validador-proximidad-viaje.service.js';
 
 @Injectable()
 export class MarcarLlegadaUseCase {
@@ -14,6 +15,7 @@ export class MarcarLlegadaUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(NOTIFICADOR_VIAJE)
     private readonly notificadorViaje: INotificadorViaje,
+    private readonly validadorProximidad: ValidadorProximidadViajeService,
   ) {}
 
   async ejecutar(viajeId: string, conductorId: string): Promise<Viaje> {
@@ -26,11 +28,17 @@ export class MarcarLlegadaUseCase {
       throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.LLEGADA_SOLO_CONDUCTOR);
     }
 
+    await this.validadorProximidad.asegurarCercaDe(
+      conductorId,
+      viaje.origenLat,
+      viaje.origenLng,
+      MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_RADIO_PROXIMIDAD_ORIGEN_M,
+    );
+
     viaje.marcarLlegada();
 
     const guardado = await this.viajeRepository.guardar(viaje);
 
-    // Notificamos al pasajero que el conductor está esperando afuera
     this.notificadorViaje.notificarConductorLlego(guardado.id);
 
     return guardado;

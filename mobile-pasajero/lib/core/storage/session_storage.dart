@@ -13,5 +13,7 @@ abstract class SessionStorage {
 
   Future<String?> obtenerUsuarioId();
 
+  Future<void> actualizarUsuario(Usuario usuario);
+
   Future<void> limpiar();
 }

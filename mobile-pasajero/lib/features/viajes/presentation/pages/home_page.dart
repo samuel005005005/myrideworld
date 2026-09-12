@@ -84,7 +84,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           viaje.id != anterior?.activeTrip?.id &&
           siguiente.status == HomeStateStatus.tripRequested &&
           mounted) {
-        context.go('/viaje-active', extra: viaje);
+        context.go('/radar', extra: viaje);
       }
     });
 
@@ -115,6 +115,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               options: MapOptions(
                 initialCenter: ubicacionActual,
                 initialZoom: 12.0,
+                onTap: (_, punto) {
+                  ref
+                      .read(homeControllerProvider.notifier)
+                      .seleccionarDestinoEnMapa(punto);
+                },
               ),
               children: [
                 TileLayer(
@@ -235,6 +240,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  if (estado.destinationLocation == null)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        AppStrings.homeMoveMap,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Container(
@@ -391,6 +408,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleSedan,
                           eta: etaSedan,
                           capacity: 4,
+                          tarifaOficial: estado.tarifaEstimada,
                           icon: Icons.directions_car,
                           selectedId: selectedVehicle.name,
                           brandPrimary: brandPrimary,
@@ -403,6 +421,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleMinivan,
                           eta: etaMinivan,
                           capacity: 6,
+                          tarifaOficial: estado.tarifaEstimada,
                           icon: Icons.airport_shuttle,
                           selectedId: selectedVehicle.name,
                           brandPrimary: brandPrimary,
@@ -415,6 +434,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           name: AppStrings.homeVehicleSuv,
                           eta: etaSuv,
                           capacity: 6,
+                          tarifaOficial: estado.tarifaEstimada,
                           icon: Icons.time_to_leave,
                           selectedId: selectedVehicle.name,
                           brandPrimary: brandPrimary,
@@ -480,7 +500,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: isRequesting
+                            onPressed: isRequesting ||
+                                    estado.tarifaEstimada == null ||
+                                    estado.destinationLocation == null
                                 ? null
                                 : () async {
                                     await ref
@@ -506,9 +528,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                   )
                                 : Text(
-                                    AppStrings.homeSolicitarVehiculoSinPrecio(
-                                      _etiquetaVehiculo(selectedVehicle),
-                                    ),
+                                    estado.tarifaEstimada == null
+                                        ? AppStrings.homeSolicitarVehiculoSinPrecio(
+                                            _etiquetaVehiculo(selectedVehicle),
+                                          )
+                                        : AppStrings.homeSolicitarVehiculo(
+                                            _etiquetaVehiculo(selectedVehicle),
+                                            estado.tarifaEstimada!,
+                                          ),
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

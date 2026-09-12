@@ -72,6 +72,36 @@ export class Conductor {
     this._estadoDisponibilidad = EstadosDisponibilidadConductor.CONECTADO;
   }
 
+  rechazar(): void {
+    if (this._estadoAprobacion !== EstadosConductor.PENDIENTE) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES_FLOTA.SOLO_PENDIENTE_RECHAZAR,
+      );
+    }
+    this._estadoAprobacion = EstadosConductor.RECHAZADO;
+    this._estadoDisponibilidad = EstadosDisponibilidadConductor.DESCONECTADO;
+  }
+
+  suspender(): void {
+    if (this._estadoAprobacion !== EstadosConductor.APROBADO) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES_FLOTA.SOLO_APROBADO_SUSPENDER,
+      );
+    }
+    this._estadoAprobacion = EstadosConductor.SUSPENDIDO;
+    this._estadoDisponibilidad = EstadosDisponibilidadConductor.DESCONECTADO;
+  }
+
+  reactivar(): void {
+    if (this._estadoAprobacion !== EstadosConductor.SUSPENDIDO) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES_FLOTA.SOLO_SUSPENDIDO_REACTIVAR,
+      );
+    }
+    this._estadoAprobacion = EstadosConductor.APROBADO;
+    this._estadoDisponibilidad = EstadosDisponibilidadConductor.DESCONECTADO;
+  }
+
   actualizarDocumentos(rutas: { fotoPerfil?: string; licencia?: string; seguro?: string }): void {
     if (rutas.fotoPerfil) this._fotoUrl = rutas.fotoPerfil;
     if (rutas.licencia) this._licenciaUrl = rutas.licencia;
@@ -98,6 +128,28 @@ export class Conductor {
   actualizarUbicacion(lat: number, lng: number): void {
     this._ultimaUbicacionLat = lat;
     this._ultimaUbicacionLng = lng;
+  }
+
+  actualizarDisponibilidad(estado: EstadosDisponibilidadConductor): void {
+    if (
+      estado !== EstadosDisponibilidadConductor.CONECTADO &&
+      estado !== EstadosDisponibilidadConductor.DESCONECTADO
+    ) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES.DISPONIBILIDAD_INVALIDA,
+      );
+    }
+
+    if (
+      estado === EstadosDisponibilidadConductor.CONECTADO &&
+      this._estadoAprobacion !== EstadosConductor.APROBADO
+    ) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES.SOLO_APROBADO_CONECTAR,
+      );
+    }
+
+    this._estadoDisponibilidad = estado;
   }
 
   private validar(): void {

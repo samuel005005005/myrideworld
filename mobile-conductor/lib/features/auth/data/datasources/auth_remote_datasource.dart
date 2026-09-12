@@ -24,6 +24,7 @@ class AuthRemoteDataSource {
 
       return SesionUsuarioMapper.fromApiResponse(
         Map<String, dynamic>.from(respuesta.data as Map),
+        email: email,
       );
     } on DioException catch (error) {
       final data = error.response?.data;

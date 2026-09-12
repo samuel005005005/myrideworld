@@ -18,6 +18,8 @@ import { CalificacionesModule } from './features/calificaciones/calificaciones.m
 import { BitacoraModule } from './features/bitacora/bitacora.module.js';
 import { ProcesosBatchModule } from './features/procesos-batch/procesos-batch.module.js';
 import { IdempotenciaModule } from './features/idempotencia/idempotencia.module.js';
+import { AdministradoresModule } from './features/administradores/administradores.module.js';
+import { AdminDashboardModule } from './features/admin-dashboard/admin-dashboard.module.js';
 import { MENSAJES } from './compartidos/constantes/mensajes.const.js';
 
 function obtenerJwtSecret(): string {
@@ -76,6 +78,8 @@ function obtenerJwtSecret(): string {
     BitacoraModule,
     ProcesosBatchModule,
     IdempotenciaModule,
+    AdministradoresModule,
+    AdminDashboardModule,
   ],
   controllers: [AppController],
   providers: [

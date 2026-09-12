@@ -15,6 +15,15 @@ abstract class ViajeRemoteDataSource {
     required double destinoLng,
     required String idempotencyKey,
   });
+
+  Future<List<ViajeModel>> listarMisViajes();
+
+  Future<ViajeModel> obtenerViajePorId(String viajeId);
+
+  Future<ViajeModel> cancelarViaje({
+    required String viajeId,
+    String? motivo,
+  });
 }
 
 class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
@@ -58,6 +67,89 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       if (e.response != null && e.response?.data != null) {
         final message =
             e.response?.data['message'] ?? AppStrings.errorTripRequest;
+        throw ServerException(
+          message is List ? message.first : message.toString(),
+        );
+      }
+      throw ServerException(AppStrings.errorServerConnection);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException('${AppStrings.errorUnexpected}$e');
+    }
+  }
+
+  @override
+  Future<List<ViajeModel>> listarMisViajes() async {
+    try {
+      final response = await dio.get(ApiEndpoints.misViajes);
+      final data = response.data;
+      if (data is! List) {
+        throw ServerException(AppStrings.errorHistorial);
+      }
+      return data
+          .map(
+            (item) => ViajeMapper.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final message =
+            e.response?.data['message'] ?? AppStrings.errorHistorial;
+        throw ServerException(
+          message is List ? message.first : message.toString(),
+        );
+      }
+      throw ServerException(AppStrings.errorServerConnection);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException('${AppStrings.errorUnexpected}$e');
+    }
+  }
+
+  @override
+  Future<ViajeModel> obtenerViajePorId(String viajeId) async {
+    try {
+      final response = await dio.get(ApiEndpoints.viajePorId(viajeId));
+      return ViajeMapper.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final message =
+            e.response?.data['message'] ?? AppStrings.errorViajeDetalle;
+        throw ServerException(
+          message is List ? message.first : message.toString(),
+        );
+      }
+      throw ServerException(AppStrings.errorServerConnection);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException('${AppStrings.errorUnexpected}$e');
+    }
+  }
+
+  @override
+  Future<ViajeModel> cancelarViaje({
+    required String viajeId,
+    String? motivo,
+  }) async {
+    try {
+      final response = await dio.post(
+        ApiEndpoints.cancelarViaje(viajeId),
+        data: {?motivo: motivo},
+      );
+      return ViajeMapper.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final message =
+            e.response?.data['message'] ?? AppStrings.errorCancelarViaje;
         throw ServerException(
           message is List ? message.first : message.toString(),
         );

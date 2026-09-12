@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/ubicaciones_turisticas.dart';
+
 class ViajeSearchLocationPage extends StatefulWidget {
   final String initialPickup;
   final String initialDropoff;
@@ -21,30 +24,36 @@ class ViajeSearchLocationPage extends StatefulWidget {
 class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
   late TextEditingController _pickupController;
   late TextEditingController _dropoffController;
-
-  final List<String> _dummyResults = [
-    'Aeropuerto Internacional de Punta Cana (PUJ)',
-    'Hard Rock Hotel & Casino Punta Cana',
-    'Coco Bongo Punta Cana',
-    'Bávaro Beach Resort',
-    'Cap Cana Marina',
-    'Uvero Alto Plaza',
-    'BlueMall Puntacana',
-    'Downtown Punta Cana',
-  ];
+  late TextEditingController _filtroController;
 
   @override
   void initState() {
     super.initState();
     _pickupController = TextEditingController(text: widget.initialPickup);
     _dropoffController = TextEditingController(text: widget.initialDropoff);
+    _filtroController = TextEditingController();
   }
 
   @override
   void dispose() {
     _pickupController.dispose();
     _dropoffController.dispose();
+    _filtroController.dispose();
     super.dispose();
+  }
+
+  List<String> get _resultados {
+    final filtro = _filtroController.text.trim().toLowerCase();
+    final base = <String>[
+      AppStrings.homeMiUbicacion,
+      ...UbicacionesTuristicas.resultadosBusqueda,
+    ];
+    if (filtro.isEmpty) {
+      return base;
+    }
+    return base
+        .where((nombre) => nombre.toLowerCase().contains(filtro))
+        .toList();
   }
 
   @override
@@ -52,13 +61,13 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
     const textDark = Color(0xFF1E293B);
     const bgGrey = Color(0xFFEEEEEE);
     const dividerColor = Color(0xFFE2E2E2);
+    final resultados = _resultados;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar
             Row(
               children: [
                 IconButton(
@@ -67,13 +76,10 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                 ),
               ],
             ),
-
-            // Search Inputs
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  // Vertical Dots
                   Column(
                     children: [
                       Container(
@@ -101,8 +107,6 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                     ],
                   ),
                   const SizedBox(width: 16),
-
-                  // Inputs
                   Expanded(
                     child: Column(
                       children: [
@@ -111,6 +115,12 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                           hint: 'Punto de partida',
                           autofocus: !widget.autofocusDropoff,
                           bgGrey: bgGrey,
+                          onChanged: (value) {
+                            if (!widget.autofocusDropoff) {
+                              _filtroController.text = value;
+                              setState(() {});
+                            }
+                          },
                         ),
                         const SizedBox(height: 12),
                         _buildSearchInput(
@@ -118,6 +128,12 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                           hint: '¿A dónde vas?',
                           autofocus: widget.autofocusDropoff,
                           bgGrey: bgGrey,
+                          onChanged: (value) {
+                            if (widget.autofocusDropoff) {
+                              _filtroController.text = value;
+                              setState(() {});
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -125,18 +141,16 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
             const Divider(color: dividerColor, height: 1),
-
-            // Results List
             Expanded(
               child: ListView.separated(
-                itemCount: _dummyResults.length,
+                itemCount: resultados.length,
                 separatorBuilder: (context, index) =>
                     const Divider(color: dividerColor, indent: 56, height: 1),
                 itemBuilder: (context, index) {
-                  final result = _dummyResults[index];
+                  final result = resultados[index];
+                  final esGps = result == AppStrings.homeMiUbicacion;
                   return ListTile(
                     leading: Container(
                       padding: const EdgeInsets.all(8),
@@ -144,8 +158,8 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                         color: Colors.grey.shade100,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.location_on,
+                      child: Icon(
+                        esGps ? Icons.my_location : Icons.location_on,
                         color: textDark,
                         size: 20,
                       ),
@@ -158,16 +172,15 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
                       ),
                     ),
                     subtitle: Text(
-                      'Punta Cana, República Dominicana',
+                      esGps
+                          ? 'Usar GPS del dispositivo'
+                          : 'Punta Cana, República Dominicana',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 12,
                       ),
                     ),
-                    onTap: () {
-                      // Return the selected location
-                      context.pop(result);
-                    },
+                    onTap: () => context.pop(result),
                   );
                 },
               ),
@@ -183,12 +196,14 @@ class _ViajeSearchLocationPageState extends State<ViajeSearchLocationPage> {
     required String hint,
     required bool autofocus,
     required Color bgGrey,
+    required ValueChanged<String> onChanged,
   }) {
     return SizedBox(
       height: 40,
       child: TextField(
         controller: controller,
         autofocus: autofocus,
+        onChanged: onChanged,
         style: const TextStyle(
           fontWeight: FontWeight.w500,
           fontSize: 14,

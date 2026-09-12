@@ -1,17 +1,21 @@
-# mobile_conductor
+# MyRide — App Conductor
 
-A new Flutter project.
+## Configuración de entorno
 
-## Getting Started
+No se empaqueta `.env` en el binario.
 
-This project is a starting point for a Flutter application.
+```bash
+cp .env.example .env
+flutter pub get
+flutter run --dart-define-from-file=.env
+```
 
-A few resources to get you started if this is your first Flutter project:
+`API_BASE_URL` debe incluir el prefijo `/api` (ej. `http://10.0.2.2:3000/api`).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Release:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter build apk --dart-define-from-file=.env
+```
+
+En **debug** sin defines, `AppEnv` usa defaults de emulador/simulador.

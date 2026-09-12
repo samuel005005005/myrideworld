@@ -9,11 +9,15 @@ import {
   UseGuards,
   Req,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
+import { AdminRolesGuard } from '../../../../compartidos/middlewares/admin-roles.guard.js';
 import { Roles } from '../../../../compartidos/decoradores/roles.decorator.js';
+import { AdminRoles } from '../../../../compartidos/decoradores/admin-roles.decorator.js';
+import { RolesAdmin } from '../../../../compartidos/constantes/roles-admin.enum.js';
 import { SolicitarViajeUseCase } from '../../aplicacion/casos-uso/solicitar-viaje.use-case.js';
 import {
   solicitarViajeSchema,
@@ -26,7 +30,10 @@ import { CompletarViajeUseCase } from '../../aplicacion/casos-uso/completar-viaj
 import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.use-case.js';
 import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
 import { RechazarViajeUseCase } from '../../aplicacion/casos-uso/rechazar-viaje.use-case.js';
+import { ObtenerViajeActivoUseCase } from '../../aplicacion/casos-uso/obtener-viaje-activo.use-case.js';
+import { ObtenerViajePorIdUseCase } from '../../aplicacion/casos-uso/obtener-viaje-por-id.use-case.js';
 import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
+import { ConductorMapper } from '../../../conductores/aplicacion/mappers/conductor.mapper.js';
 import {
   AceptarViajeDto,
   aceptarViajeSchema,
@@ -38,6 +45,7 @@ import {
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
 import { IdempotenciaInterceptor } from '../../../idempotencia/presentacion/interceptores/idempotencia.interceptor.js';
 import { ZodValidationPipe } from '../../../../compartidos/utilidades/pipes/zod-validation.pipe.js';
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
 
 @ApiTags('Viajes')
 @ApiBearerAuth()
@@ -52,16 +60,36 @@ export class ViajesController {
     private readonly cancelarViaje: CancelarViajeUseCase,
     private readonly listarViajes: ListarViajesUseCase,
     private readonly rechazarViaje: RechazarViajeUseCase,
+    private readonly obtenerViajeActivo: ObtenerViajeActivoUseCase,
+    private readonly obtenerViajePorId: ObtenerViajePorIdUseCase,
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard, RolesGuard)
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
   @Roles(RolesEnum.ADMIN)
-  @ApiOperation({ summary: 'Listar todos los viajes (Solo Admin)' })
-  async listarTodos(@Req() req: { user: { sub: string; rol: string } }) {
+  @AdminRoles(
+    RolesAdmin.SUPER_ADMIN,
+    RolesAdmin.OPERACIONES,
+    RolesAdmin.AUDITOR,
+  )
+  @ApiOperation({ summary: 'Listar viajes (admin)' })
+  @ApiQuery({ name: 'estado', required: false, enum: EstadosViaje })
+  @ApiQuery({ name: 'desde', required: false })
+  @ApiQuery({ name: 'hasta', required: false })
+  async listarTodos(
+    @Req() req: { user: { sub: string; rol: string } },
+    @Query('estado') estado?: string,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
     const viajes = await this.listarViajes.ejecutar(
       req.user.sub,
       req.user.rol as RolesEnum,
+      {
+        estado,
+        desde: desde ? new Date(desde) : undefined,
+        hasta: hasta ? new Date(hasta) : undefined,
+      },
     );
     return viajes.map((v) => ViajeMapper.toResponse(v));
   }
@@ -76,6 +104,38 @@ export class ViajesController {
       req.user.rol as RolesEnum,
     );
     return viajes.map((v) => ViajeMapper.toResponse(v));
+  }
+
+  @Get('activo')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.CONDUCTOR)
+  @ApiOperation({ summary: 'Obtener viaje activo del conductor (si existe)' })
+  async viajeActivo(@Req() req: { user: { sub: string } }) {
+    const viaje = await this.obtenerViajeActivo.ejecutar(req.user.sub);
+    return viaje ? ViajeMapper.toResponse(viaje) : null;
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR, RolesEnum.ADMIN)
+  @ApiOperation({
+    summary: 'Detalle de viaje (participantes) con resumen del conductor',
+  })
+  async obtenerPorId(
+    @Param('id') id: string,
+    @Req() req: { user: { sub: string; rol: string } },
+  ) {
+    const detalle = await this.obtenerViajePorId.ejecutar(
+      id,
+      req.user.sub,
+      req.user.rol as RolesEnum,
+    );
+    return ViajeMapper.toResponse(
+      detalle.viaje,
+      detalle.conductor
+        ? ConductorMapper.toResumenPublico(detalle.conductor)
+        : null,
+    );
   }
 
   @Post()
@@ -164,7 +224,7 @@ export class ViajesController {
     const viaje = await this.cancelarViaje.ejecutar(
       id,
       req.user.sub,
-      req.user.rol,
+      req.user.rol as RolesEnum,
       dto.motivo,
     );
     return ViajeMapper.toResponse(viaje);

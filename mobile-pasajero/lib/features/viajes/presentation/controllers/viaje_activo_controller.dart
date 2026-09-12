@@ -3,6 +3,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
+import '../../domain/usecases/cancelar_viaje_params.dart';
+import '../../domain/usecases/obtener_viaje_por_id_params.dart';
 import '../providers/viajes_provider.dart';
 import 'viaje_activo_state.dart';
 
@@ -33,21 +35,27 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
     _seguimientoIniciado = true;
 
+    if (viajeId != null && viajeId.isNotEmpty) {
+      state = state.copyWith(viajeId: viajeId);
+    }
+
     final gateway = _gateway;
     await gateway.conectar();
 
     if (viajeId != null && viajeId.isNotEmpty) {
       gateway.unirseAViaje(viajeId);
+      await _cargarDetalleViaje(viajeId);
     }
 
     gateway.escucharUbicacionActualizada((lat, lng) {
       state = state.copyWith(ubicacionConductor: LatLng(lat, lng));
     });
 
-    gateway.escucharViajeAceptado(() {
+    gateway.escucharViajeAceptado((conductor) {
       state = state.copyWith(
         estadoViaje: AppStrings.trackingConductorEnCamino,
         infoEta: AppStrings.trackingLlegandoEnCincoMinutos,
+        conductor: conductor,
       );
     });
 
@@ -67,6 +75,56 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
     gateway.escucharViajeCompletado((recibo) {
       state = state.copyWith(reciboPendiente: recibo);
+    });
+  }
+
+  Future<bool> cancelarViajeActivo() async {
+    final id = state.viajeId;
+    if (id == null || id.isEmpty || state.cancelando) {
+      return false;
+    }
+
+    state = state.copyWith(cancelando: true, errorCancelacion: null);
+    final resultado = await ref.read(cancelarViajeUseCaseProvider)(
+      CancelarViajeParams(viajeId: id),
+    );
+
+    return resultado.fold(
+      (failure) {
+        state = state.copyWith(
+          cancelando: false,
+          errorCancelacion: failure.mensaje,
+        );
+        return false;
+      },
+      (_) {
+        state = state.copyWith(
+          cancelando: false,
+          cancelado: true,
+          estadoViaje: AppStrings.trackingViajeCancelado,
+          infoEta: null,
+        );
+        detenerSeguimiento();
+        return true;
+      },
+    );
+  }
+
+  Future<void> _cargarDetalleViaje(String viajeId) async {
+    final resultado = await ref.read(obtenerViajePorIdUseCaseProvider)(
+      ObtenerViajePorIdParams(viajeId),
+    );
+    resultado.fold((_) {}, (viaje) {
+      final conductor = viaje.conductor;
+      if (conductor != null) {
+        state = state.copyWith(
+          viajeId: viajeId,
+          conductor: conductor,
+          estadoViaje: AppStrings.trackingConductorEnCamino,
+        );
+      } else {
+        state = state.copyWith(viajeId: viajeId);
+      }
     });
   }
 

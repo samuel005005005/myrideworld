@@ -10,5 +10,7 @@ abstract class SessionStorage {
 
   Future<SesionUsuario?> obtenerSesion();
 
+  Future<void> actualizarSesion(SesionUsuario sesion);
+
   Future<void> limpiar();
 }
