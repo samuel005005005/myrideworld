@@ -1,0 +1,12 @@
+# Artefactos locales del backend NestJS (no versionar)
+dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# Dependencias y logs
+node_modules/
+logs/
+*.log
+coverage/

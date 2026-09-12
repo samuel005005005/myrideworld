@@ -12,8 +12,11 @@ build/
 out/
 *.tsbuildinfo
 
-# Entornos y Secretos
+# Entornos y Secretos (mantener *.env.example versionados)
 .env
+.env.*
+!.env.example
+!**/.env.example
 .env.local
 .env.development.local
 .env.test.local

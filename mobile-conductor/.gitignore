@@ -1,3 +1,8 @@
+# Entornos (mantener .env.example)
+.env
+.env.*
+!.env.example
+
 # Miscellaneous
 *.class
 *.log
