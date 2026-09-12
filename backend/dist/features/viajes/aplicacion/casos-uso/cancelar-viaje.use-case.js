@@ -10,23 +10,23 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let CancelarViajeUseCase = class CancelarViajeUseCase {
     viajeRepository;
-    viajesGateway;
-    constructor(viajeRepository, viajesGateway) {
+    notificadorViaje;
+    constructor(viajeRepository, notificadorViaje) {
         this.viajeRepository = viajeRepository;
-        this.viajesGateway = viajesGateway;
+        this.notificadorViaje = notificadorViaje;
     }
     async ejecutar(viajeId, actorId, rol, motivo) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
         if (!viaje) {
-            throw new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         if (rol === Roles.PASAJERO && viaje.pasajeroId !== actorId) {
             throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.CANCELACION_NO_SOLICITADO);
@@ -36,14 +36,15 @@ let CancelarViajeUseCase = class CancelarViajeUseCase {
         }
         viaje.cancelar(rol, motivo);
         const guardado = await this.viajeRepository.guardar(viaje);
-        this.viajesGateway.notificarViajeCancelado(guardado.id, rol, motivo);
+        this.notificadorViaje.notificarViajeCancelado(guardado.id, rol, motivo);
         return guardado;
     }
 };
 CancelarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, ViajesGateway])
+    __param(1, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object])
 ], CancelarViajeUseCase);
 export { CancelarViajeUseCase };
 //# sourceMappingURL=cancelar-viaje.use-case.js.map

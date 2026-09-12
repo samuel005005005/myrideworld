@@ -1,0 +1,35 @@
+---
+description: Selección de modo de trabajo al inicio de sesión (Desarrollo/Análisis/Calidad)
+alwaysApply: true
+---
+# Selección de Modo de Trabajo
+
+## Regla obligatoria
+
+Al inicio de una **sesión nueva**, preguntar al usuario qué modo de trabajo desea activar:
+
+| Modo | Descripción | Rule que activa |
+|------|-------------|-----------------|
+| **Desarrollo** | Tareas de código, arquitectura, testing, commits, infraestructura | `.cursor/rules/modo-desarrollo.mdc` |
+| **Análisis** | Tareas de requerimientos, escenarios de uso, artefactos locales | `.cursor/rules/modo-analisis.mdc` |
+| **Calidad (SQA)** | Tareas de aseguramiento de calidad, pruebas, validación | `.cursor/rules/modo-calidad.mdc` |
+
+## Cuándo preguntar
+
+- Una sola vez al **inicio de la sesión**, antes de ejecutar cualquier flujo estructurado.
+
+## Cuándo NO preguntar
+
+- Si el usuario ya indicó explícitamente el modo (ej. "modo desarrollo", "modo análisis").
+- Si la tarea es inequívocamente de un solo modo (ej. "corrige este bug en el código" → desarrollo; "documenta el escenario de consulta" → análisis).
+- Si el modo ya fue seleccionado en la sesión actual.
+- En prompts subsiguientes dentro de la misma sesión (el modo persiste hasta que el usuario lo cambie).
+
+## Formato de la pregunta
+
+```
+¿En qué modo deseas trabajar esta sesión?
+1. **Desarrollo** — código, arquitectura, testing, deploy
+2. **Análisis** — requerimientos, escenarios, artefactos locales
+3. **Calidad (SQA)** — pruebas, validación, aseguramiento de calidad
+```

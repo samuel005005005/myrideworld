@@ -63,10 +63,10 @@ let ViajesGateway = ViajesGateway_1 = class ViajesGateway {
             timestamp: new Date().toISOString(),
         });
     }
-    notificarNuevoViaje(viajeId, conductorId) {
+    notificarNuevoViaje(conductorId, viaje) {
         const room = `conductor_${conductorId}`;
-        this.server.to(room).emit('nuevoViajeDisponible', { viajeId });
-        this.logger.log(`Notificado viaje ${viajeId} al conductor ${conductorId}`);
+        this.server.to(room).emit('nuevoViajeDisponible', viaje);
+        this.logger.log(`Notificado viaje ${viaje.id} al conductor ${conductorId}`);
     }
     notificarViajeAceptado(viajeId, conductorId) {
         const room = `viaje_${viajeId}`;
@@ -79,6 +79,14 @@ let ViajesGateway = ViajesGateway_1 = class ViajesGateway {
     notificarViajeCancelado(viajeId, actor, motivo) {
         const room = `viaje_${viajeId}`;
         this.server.to(room).emit('viajeCancelado', { viajeId, actor, motivo });
+    }
+    notificarViajeIniciado(viajeId) {
+        const room = `viaje_${viajeId}`;
+        this.server.to(room).emit('viajeIniciado', { viajeId });
+    }
+    notificarViajeCompletado(viajeId, tarifaEstimada) {
+        const room = `viaje_${viajeId}`;
+        this.server.to(room).emit('viajeCompletado', { viajeId, tarifaEstimada });
     }
 };
 __decorate([

@@ -1,0 +1,24 @@
+---
+description: Activa modo Análisis: requerimientos, escenarios y artefactos locales
+alwaysApply: false
+---
+# Modo Análisis
+
+Activa las reglas y guías para tareas de análisis de requerimientos: elicitación, calidad, definition of ready, estructura de datos y documentación local en `docs/analisis/`.
+
+En MyRide, el análisis se guarda como Markdown en `docs/analisis/` (requerimientos, feru, escenarios, modelos-datos, planes, tareas).
+
+Cuando el usuario elija **modo Análisis**, lee y aplica estas rules del proyecto:
+
+- `.cursor/rules/analisis-destino-local.mdc`
+- `.cursor/rules/analisis-rol-analista-requerimientos.mdc`
+- `.cursor/rules/analisis-elicitacion-requerimientos.mdc`
+- `.cursor/rules/analisis-estandares-calidad-requerimientos.mdc`
+- `.cursor/rules/analisis-definition-of-ready.mdc`
+- `.cursor/rules/analisis-flujo-completo-post-levantamiento.mdc`
+- `.cursor/rules/analisis-reglas-estructura-de-datos.mdc`
+- `.cursor/rules/analisis-reglas-metodos-servicios.mdc`
+- `.cursor/rules/analisis-reglas-modelo-de-datos.mdc`
+- `.cursor/rules/analisis-reglas-escenarios-de-uso.mdc`
+
+Skills: `analisis-documentacion-escenarios`, `analisis-requirements-engineering`.

@@ -20,3 +20,4 @@ Cuando el usuario elija **modo Análisis**, lee y aplica estas rules del proyect
 - `.agents/rules/analisis-reglas-estructura-de-datos.md`
 - `.agents/rules/analisis-reglas-metodos-servicios.md`
 - `.agents/rules/analisis-reglas-modelo-de-datos.md`
+- `.agents/rules/analisis-reglas-escenarios-de-uso.md`

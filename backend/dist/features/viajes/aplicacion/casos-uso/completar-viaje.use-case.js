@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { GenerarPagoUseCase } from '../../../pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
@@ -20,10 +21,12 @@ import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-s
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let CompletarViajeUseCase = class CompletarViajeUseCase {
     viajeRepository;
+    notificadorViaje;
     generarPagoUseCase;
     registrarBitacora;
-    constructor(viajeRepository, generarPagoUseCase, registrarBitacora) {
+    constructor(viajeRepository, notificadorViaje, generarPagoUseCase, registrarBitacora) {
         this.viajeRepository = viajeRepository;
+        this.notificadorViaje = notificadorViaje;
         this.generarPagoUseCase = generarPagoUseCase;
         this.registrarBitacora = registrarBitacora;
     }
@@ -44,19 +47,21 @@ let CompletarViajeUseCase = class CompletarViajeUseCase {
         await this.registrarBitacora.ejecutar({
             tipoEvento: TiposBitacora.INFO,
             servicioSistema: ServiciosSistema.VIAJES,
-            detalle: `Viaje completado exitosamente: ${viaje.id}`,
+            detalle: `${MENSAJES.EXCEPCIONES.VIAJES.COMPLETADO_EXITOSO}: ${viaje.id}`,
             usuario: `conductor-${viaje.conductorId}`,
             entidadId: viaje.id,
             accion: 'COMPLETAR_VIAJE',
             request: { viajeId: id },
         });
+        this.notificadorViaje.notificarViajeCompletado(guardado.id, Number(guardado.tarifaEstimada));
         return guardado;
     }
 };
 CompletarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, GenerarPagoUseCase,
+    __param(1, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object, GenerarPagoUseCase,
         RegistrarBitacoraUseCase])
 ], CompletarViajeUseCase);
 export { CompletarViajeUseCase };

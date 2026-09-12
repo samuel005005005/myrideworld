@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +12,11 @@ final apiServiceProvider = Provider<ApiService>((ref) {
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['API_BASE_URL'] ?? 'http://10.0.0.202:3000/api',
+      baseUrl:
+          dotenv.env['API_BASE_URL'] ??
+          (Platform.isAndroid
+              ? 'http://10.0.2.2:3000/api'
+              : 'http://127.0.0.1:3000/api'),
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),

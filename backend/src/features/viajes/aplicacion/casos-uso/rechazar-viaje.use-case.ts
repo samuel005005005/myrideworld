@@ -1,13 +1,15 @@
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 
 @Injectable()
 export class RechazarViajeUseCase {
@@ -16,13 +18,14 @@ export class RechazarViajeUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
-    private readonly viajesGateway: ViajesGateway,
+    @Inject(NOTIFICADOR_VIAJE)
+    private readonly notificadorViaje: INotificadorViaje,
   ) {}
 
   async ejecutar(viajeId: string, conductorId: string): Promise<Viaje> {
     const viaje = await this.viajeRepository.obtenerPorId(viajeId);
     if (!viaje) {
-      throw new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
     }
 
     // El dominio valida que el viaje esté en estado SOLICITADO
@@ -55,13 +58,19 @@ export class RechazarViajeUseCase {
     }
 
     if (conductorSugerido) {
-      // Emitir al siguiente en la cascada
-      this.viajesGateway.notificarNuevoViaje(guardado.id, conductorSugerido.id);
+      this.notificadorViaje.notificarNuevoViaje(conductorSugerido.id, {
+        id: guardado.id,
+        origenLat: guardado.origenLat,
+        origenLng: guardado.origenLng,
+        destinoLat: guardado.destinoLat,
+        destinoLng: guardado.destinoLng,
+        tarifaEstimada: Number(guardado.tarifaEstimada),
+      });
     } else {
       // No hay más conductores disponibles: Cancelar viaje automáticamente
-      guardado.cancelar(Roles.SISTEMA, 'No hay conductores disponibles');
+      guardado.cancelar(Roles.SISTEMA, MENSAJES.EXCEPCIONES.VIAJES.SIN_CONDUCTORES);
       await this.viajeRepository.guardar(guardado);
-      this.viajesGateway.notificarViajeCancelado(guardado.id, 'SISTEMA', 'No hay conductores disponibles en tu zona');
+      this.notificadorViaje.notificarViajeCancelado(guardado.id, 'SISTEMA', MENSAJES.EXCEPCIONES.VIAJES.SIN_CONDUCTORES_ZONA);
     }
 
     return guardado;

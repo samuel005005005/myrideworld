@@ -14,19 +14,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { EstimarTarifaUseCase } from '../../../tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 let SolicitarViajeUseCase = class SolicitarViajeUseCase {
     viajeRepository;
     conductorRepository;
     estimarTarifa;
-    viajesGateway;
-    constructor(viajeRepository, conductorRepository, estimarTarifa, viajesGateway) {
+    notificadorViaje;
+    constructor(viajeRepository, conductorRepository, estimarTarifa, notificadorViaje) {
         this.viajeRepository = viajeRepository;
         this.conductorRepository = conductorRepository;
         this.estimarTarifa = estimarTarifa;
-        this.viajesGateway = viajesGateway;
+        this.notificadorViaje = notificadorViaje;
     }
     async ejecutar(dto) {
         const tarifa = await this.estimarTarifa.ejecutar({
@@ -59,9 +59,14 @@ let SolicitarViajeUseCase = class SolicitarViajeUseCase {
             }
         }
         if (conductorSugerido) {
-            this.viajesGateway.notificarNuevoViaje(guardado.id, conductorSugerido.id);
-        }
-        else {
+            this.notificadorViaje.notificarNuevoViaje(conductorSugerido.id, {
+                id: guardado.id,
+                origenLat: guardado.origenLat,
+                origenLng: guardado.origenLng,
+                destinoLat: guardado.destinoLat,
+                destinoLng: guardado.destinoLng,
+                tarifaEstimada: Number(guardado.tarifaEstimada),
+            });
         }
         return guardado;
     }
@@ -70,8 +75,8 @@ SolicitarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
     __param(1, Inject(CONDUCTOR_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, Object, EstimarTarifaUseCase,
-        ViajesGateway])
+    __param(3, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object, EstimarTarifaUseCase, Object])
 ], SolicitarViajeUseCase);
 export { SolicitarViajeUseCase };
 //# sourceMappingURL=solicitar-viaje.use-case.js.map

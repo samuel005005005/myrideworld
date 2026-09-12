@@ -1,8 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { RechazarViajeUseCase } from './rechazar-viaje.use-case.js';
 import { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { Conductor } from '../../../conductores/dominio/entidades/conductor.entity.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
@@ -18,7 +18,7 @@ describe('RechazarViajeUseCase', () => {
   let useCase: RechazarViajeUseCase;
   let viajeRepositoryMock: Mocked<IViajeRepository>;
   let conductorRepositoryMock: Mocked<IConductorRepository>;
-  let viajesGatewayMock: Mocked<ViajesGateway>;
+  let notificadorViajeMock: Mocked<INotificadorViaje>;
 
   beforeEach(() => {
     viajeRepositoryMock = {
@@ -30,7 +30,7 @@ describe('RechazarViajeUseCase', () => {
       obtenerDisponibles: vi.fn(),
     } as any;
 
-    viajesGatewayMock = {
+    notificadorViajeMock = {
       notificarNuevoViaje: vi.fn(),
       notificarViajeCancelado: vi.fn(),
     } as any;
@@ -38,7 +38,7 @@ describe('RechazarViajeUseCase', () => {
     useCase = new RechazarViajeUseCase(
       viajeRepositoryMock,
       conductorRepositoryMock,
-      viajesGatewayMock,
+      notificadorViajeMock,
     );
   });
 
@@ -48,7 +48,7 @@ describe('RechazarViajeUseCase', () => {
 
     // Act & Assert
     await expect(useCase.ejecutar('viaje-1', 'cond-1')).rejects.toThrow(
-      new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO)
+      new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO)
     );
   });
 
@@ -58,6 +58,9 @@ describe('RechazarViajeUseCase', () => {
       id: 'viaje-1',
       origenLat: 10,
       origenLng: 10,
+      destinoLat: 11,
+      destinoLng: 11,
+      tarifaEstimada: 25,
       conductoresRechazados: [],
       rechazar: vi.fn().mockImplementation(function (this: any, cId: string) {
         this.conductoresRechazados.push(cId);
@@ -81,8 +84,15 @@ describe('RechazarViajeUseCase', () => {
     // Assert
     expect(viajeMock.rechazar).toHaveBeenCalledWith('cond-1');
     expect(viajeRepositoryMock.guardar).toHaveBeenCalledWith(viajeMock);
-    expect(viajesGatewayMock.notificarNuevoViaje).toHaveBeenCalledWith('viaje-1', 'cond-2');
-    expect(viajesGatewayMock.notificarViajeCancelado).not.toHaveBeenCalled();
+    expect(notificadorViajeMock.notificarNuevoViaje).toHaveBeenCalledWith('cond-2', {
+      id: 'viaje-1',
+      origenLat: 10,
+      origenLng: 10,
+      destinoLat: 11,
+      destinoLng: 11,
+      tarifaEstimada: 25,
+    });
+    expect(notificadorViajeMock.notificarViajeCancelado).not.toHaveBeenCalled();
     expect(result).toBe(viajeMock);
   });
 
@@ -110,12 +120,12 @@ describe('RechazarViajeUseCase', () => {
     expect(viajeMock.rechazar).toHaveBeenCalledWith('cond-1');
     expect(viajeMock.cancelar).toHaveBeenCalledWith(Roles.SISTEMA, 'No hay conductores disponibles');
     expect(viajeRepositoryMock.guardar).toHaveBeenCalledTimes(2); // Uno al rechazar, otro al cancelar
-    expect(viajesGatewayMock.notificarViajeCancelado).toHaveBeenCalledWith(
+    expect(notificadorViajeMock.notificarViajeCancelado).toHaveBeenCalledWith(
       'viaje-2',
       'SISTEMA',
       'No hay conductores disponibles en tu zona'
     );
-    expect(viajesGatewayMock.notificarNuevoViaje).not.toHaveBeenCalled();
+    expect(notificadorViajeMock.notificarNuevoViaje).not.toHaveBeenCalled();
     expect(result).toBe(viajeMock);
   });
 });

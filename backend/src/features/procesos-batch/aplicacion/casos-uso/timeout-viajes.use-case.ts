@@ -8,10 +8,12 @@ import { CONFIGURACION_REPOSITORY } from '../../../configuracion/dominio/reposit
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { EjecucionProceso } from '../../dominio/entidades/ejecucion-proceso.entity.js';
 import { DetalleEjecucionProceso } from '../../dominio/entidades/detalle-ejecucion.entity.js';
-import { ViajesGateway } from '../../../viajes/presentacion/gateways/viajes.gateway.js';
+import type { INotificadorViaje } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
 import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
 import { TiposBitacora } from '../../../../compartidos/constantes/tipos-bitacora.enum.js';
 import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-sistema.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 @Injectable()
 export class TimeoutViajesUseCase {
@@ -21,7 +23,8 @@ export class TimeoutViajesUseCase {
     @Inject(VIAJE_REPOSITORY) private readonly viajeRepo: IViajeRepository,
     @Inject(EJECUCION_PROCESO_REPOSITORY) private readonly ejecucionRepo: IEjecucionProcesoRepository,
     @Inject(CONFIGURACION_REPOSITORY) private readonly configRepo: IConfiguracionRepository,
-    private readonly viajesGateway: ViajesGateway,
+    @Inject(NOTIFICADOR_VIAJE)
+    private readonly notificadorViaje: INotificadorViaje,
     private readonly registrarBitacora: RegistrarBitacoraUseCase,
   ) {}
 
@@ -62,7 +65,7 @@ export class TimeoutViajesUseCase {
         await this.viajeRepo.guardar(viaje);
 
         // 2d. Notificar por WS
-        this.viajesGateway.notificarViajeCancelado(viaje.id, 'SISTEMA', 'Tiempo de espera agotado');
+        this.notificadorViaje.notificarViajeCancelado(viaje.id, 'SISTEMA', MENSAJES.EXCEPCIONES.VIAJES.TIMEOUT_AGOTADO);
 
         // Registro en Bitácora individual
         await this.registrarBitacora.ejecutar({

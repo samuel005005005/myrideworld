@@ -14,7 +14,7 @@ async function simulate() {
     const response = await axios.post('http://localhost:3000/api/auth/login', {
       email: 'conductor@myride.com',
       password: '12345678',
-      rol: 'conductor'
+      rol: 'CONDUCTOR'
     });
 
     const token = response.data.token;

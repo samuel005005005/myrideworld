@@ -95,6 +95,11 @@ export class Conductor {
     this.validar();
   }
 
+  actualizarUbicacion(lat: number, lng: number): void {
+    this._ultimaUbicacionLat = lat;
+    this._ultimaUbicacionLng = lng;
+  }
+
   private validar(): void {
     if (!this._nombreCompleto?.trim()) throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.NOMBRE_OBLIGATORIO);
     if (!this._email?.includes('@')) throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.EMAIL_INVALIDO);

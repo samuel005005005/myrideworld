@@ -7,6 +7,7 @@ import { Idempotencia } from '../../dominio/entidades/idempotencia.entity.js';
 import { EstadoIdempotencia } from '../../dominio/entidades/estado-idempotencia.enum.js';
 import { Request, Response } from 'express';
 import * as crypto from 'crypto';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
 @Injectable()
 export class IdempotenciaInterceptor implements NestInterceptor {
@@ -39,7 +40,7 @@ export class IdempotenciaInterceptor implements NestInterceptor {
     if (registro) {
       // Validar si el cuerpo cambió (opcional pero recomendado)
       if (registro.cuerpoPeticionHash && registro.cuerpoPeticionHash !== requestHash) {
-        throw new ConflictException('Idempotency-Key está siendo usada con un payload diferente.');
+        throw new ConflictException(MENSAJES.EXCEPCIONES.IDEMPOTENCIA.PAYLOAD_DIFERENTE);
       }
 
       if (registro.estado === EstadoIdempotencia.COMPLETADO) {
@@ -49,7 +50,7 @@ export class IdempotenciaInterceptor implements NestInterceptor {
       }
 
       if (registro.estado === EstadoIdempotencia.EN_PROGRESO) {
-        throw new ConflictException('La solicitud está en progreso. Intente nuevamente en unos segundos.');
+        throw new ConflictException(MENSAJES.EXCEPCIONES.IDEMPOTENCIA.EN_PROGRESO);
       }
 
       // Si es ERROR, podríamos permitir reintentar o devolver el error

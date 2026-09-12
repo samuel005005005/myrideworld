@@ -1,0 +1,100 @@
+---
+description: Contexto del proyecto MyRide: stack, apps, análisis, comandos
+alwaysApply: true
+---
+# Contexto del Proyecto
+
+## Información General
+
+| Campo | Valor |
+|-------|-------|
+| **Nombre del proyecto** | MyRide |
+| **Descripción** | Plataforma de transporte turístico (Punta Cana): pasajeros solicitan viajes, conductores aceptan por proximidad, admin gestiona tarifas y flota. |
+| **Requerimiento activo** | [REQ MVP](../../docs/analisis/requerimientos/req-mvp-plataforma-transporte.md) · [FERU](../../docs/analisis/feru/feru-mvp-plataforma-transporte.md) |
+| **Repositorio** | `/Users/spaez/Documents/Desarrollo/dev-ch/archivos/myride` |
+| **Gestor de tareas** | Local (`docs/analisis/tareas/`) |
+| **Formato de tareas** | Archivos Markdown en `docs/analisis/` |
+
+Copia de origen (no borrar): `.agents/`. Copia activa para Cursor: `.cursor/rules/` y `.cursor/skills/`.
+
+---
+
+## Enfoque
+
+Analizar en `docs/analisis/` → implementar en las apps de este repo. Código en **español**. Clean Architecture + vertical slices. Una clase/interfaz pública por archivo.
+
+---
+
+## Apps de este repo
+
+| Carpeta | Tecnología | Rol |
+|---------|------------|-----|
+| `backend/` | NestJS 12 + TypeScript + TypeORM + PostgreSQL + Socket.IO + Zod + JWT + Vitest | API REST + WebSocket |
+| `mobile-pasajero/` | Flutter Dart ^3.11 + Riverpod + go_router + flutter_map | App pasajero |
+| `mobile-conductor/` | Flutter Dart ^3.11 + Riverpod + go_router + flutter_map | App conductor |
+| `web-admin/` | React 19 + Vite + TypeScript | Panel admin |
+| `docs/analisis/` | Markdown | Requerimientos, escenarios, modelos, planes |
+
+### Módulos backend (`backend/src/features/`)
+
+pasajeros · conductores · tarifas · viajes · pagos-balances · configuracion · auth · calificaciones · bitacora · procesos-batch · idempotencia
+
+### Stack destino (este repo)
+
+| Carpeta | Convención Cursor |
+|---------|-------------------|
+| `backend/` | `convention-nestjs.mdc` + `convention-typescript.mdc` |
+| `mobile-pasajero/` / `mobile-conductor/` | `convention-dart.mdc` |
+| `web-admin/` | `convention-react.mdc` + `convention-typescript.mdc` |
+
+**Clean Architecture** (obligatoria): `.cursor/rules/desarrollo-convenciones-desarrollo.mdc` + `convention-*.mdc` + skill `dev-clean-architecture`. Se aplica en **modo Desarrollo**.
+
+---
+
+## Infraestructura
+
+| Campo | Valor |
+|-------|-------|
+| **BD** | PostgreSQL (`myride_mvp` por defecto) |
+| **Realtime** | Socket.IO (`@nestjs/websockets`) |
+| **Auth** | JWT Bearer |
+| **API docs** | Swagger en `/api/docs` |
+| **Puerto API** | `PORT` en `.env` (default 3000) |
+
+---
+
+## Comandos esenciales
+
+| Acción | Comando |
+|--------|---------|
+| API install/run | En `backend/`: `npm install` → `npm run start:dev` |
+| API tests | En `backend/`: `npm test` / `npm run test:e2e` / `npm run test:cov` |
+| API seed | En `backend/`: `npm run build` → `npm run seed` |
+| API lint | En `backend/`: `npm run lint` |
+| Pasajero | En `mobile-pasajero/`: `flutter pub get` → `flutter run` (+ `.env`) |
+| Conductor | En `mobile-conductor/`: `flutter pub get` → `flutter run` (+ `.env`) |
+| Admin | En `web-admin/`: `npm install` → `npm run dev` |
+
+---
+
+## Tareas / análisis activo
+
+| Artefacto | Tema |
+|-----------|------|
+| `docs/analisis/tareas/todo-analisis-mvp.md` | TODO MVP |
+| `docs/analisis/escenarios/eu-solicitud-asignacion-viaje.md` | Solicitud y asignación |
+| `docs/analisis/escenarios/eu-ejecucion-finalizacion-viaje.md` | Ejecución y fin de viaje |
+| `docs/analisis/escenarios/eu-gestion-tarifas-balances.md` | Tarifas y balances |
+| `docs/analisis/modelos-datos/` | md-viaje, md-pasajero, md-conductor, md-tarifa, md-pago-balance |
+
+---
+
+## Reglas para el agente
+
+1. **Lee este archivo al inicio** de cada sesión para contexto.
+2. **No inventes** stack, URLs, comandos ni módulos: si falta un TODO, pregunta.
+3. **Actualiza este documento** cuando cambien tareas activas, stack o decisiones.
+4. **Consulta los artefactos en `docs/analisis/`** cuando necesites detalle de análisis.
+5. **Código de este repo** es el sistema MyRide (no copiar de otros repos salvo que el usuario lo pida).
+6. **No proponer implementación** de un dominio hasta haber leído su análisis en `docs/analisis/`.
+7. **Al completar una tarea**, resume cambios y pregunta si actualizar `docs/analisis/tareas/`.

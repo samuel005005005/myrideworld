@@ -6,9 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../../core/services/socket_service.dart';
 
 final selectedVehicleProvider = StateProvider<String>((ref) => 'sedan');
 final selectedPaymentProvider = StateProvider<String>((ref) => 'cash');
@@ -62,7 +60,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       final apiService = ref.read(apiServiceProvider);
       // Background silent login with the seeded test user
-      await apiService.login('pasajero@myride.com', '12345678', 'pasajero');
+      await apiService.login('pasajero@myride.com', '12345678', 'PASAJERO');
       print('Auto-login successful!');
     } catch (e) {
       print('Auto-login failed: $e');
@@ -397,6 +395,36 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: dividerColor),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: dividerColor),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${_routeDistanceKm.toStringAsFixed(1)} km',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                      Text(
+                        'ETA: $_routeDurationMin min',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                   // Vehicle List
                   SizedBox(
@@ -522,6 +550,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           apiService.currentUserId;
 
                                       if (pasajeroId == null) {
+                                        ref
+                                                .read(
+                                                  isRequestingProvider.notifier,
+                                                )
+                                                .state =
+                                            false;
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
@@ -547,6 +581,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             destinoLat: end.latitude,
                                             destinoLng: end.longitude,
                                           );
+
+                                      print(
+                                        '==================================================',
+                                      );
+                                      print(
+                                        '🚗 ¡VIAJE SOLICITADO EXITOSAMENTE!',
+                                      );
+                                      print(
+                                        'Copia este ID y úsalo en el simulador:',
+                                      );
+                                      print(viajeId);
+                                      print(
+                                        'Comando: node simulator.js $viajeId',
+                                      );
+                                      print(
+                                        '==================================================',
+                                      );
 
                                       if (context.mounted) {
                                         ref

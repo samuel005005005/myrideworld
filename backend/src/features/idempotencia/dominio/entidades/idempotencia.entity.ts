@@ -1,3 +1,4 @@
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { EstadoIdempotencia } from './estado-idempotencia.enum.js';
 import { IdempotenciaProps } from './idempotencia.props.js';
 
@@ -65,7 +66,7 @@ export class Idempotencia {
 
   private validar(): void {
     if (!this._llave?.trim()) {
-      throw new Error('La llave de idempotencia es requerida.');
+      throw new Error(MENSAJES.EXCEPCIONES.IDEMPOTENCIA.LLAVE_REQUERIDA);
     }
   }
 }

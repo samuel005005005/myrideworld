@@ -1,0 +1,784 @@
+---
+description: Convenciones Dart/Flutter Clean Architecture + Riverpod
+globs: **/*.dart
+alwaysApply: false
+---
+# Estructura Base - Dart/Flutter con Clean Architecture + Riverpod
+
+## Propósito
+
+Define la estructura obligatoria para proyectos Dart/Flutter siguiendo Clean Architecture con Riverpod como state management y DI. Se activa automáticamente al trabajar con archivos `.dart`.
+
+---
+
+## Estructura de Proyecto - Flutter + Clean Arch + Riverpod
+
+```
+📁 lib/
+├── 📁 core/                               # Configuración y utilidades globales
+│   ├── 📁 error/
+│   │   ├── exceptions.dart                # Excepciones técnicas
+│   │   └── failures.dart                  # Failures de dominio
+│   ├── 📁 network/
+│   │   └── network_info.dart
+│   ├── 📁 usecases/
+│   │   └── usecase.dart                   # Clase base UseCase<Type, Params>
+│   ├── 📁 theme/
+│   │   └── app_theme.dart
+│   ├── 📁 router/
+│   │   └── app_router.dart                # GoRouter con riverpod
+│   ├── 📁 utils/
+│   │   └── input_converter.dart
+│   └── 📁 providers/
+│       └── core_providers.dart            # Providers globales (http client, etc.)
+│
+├── 📁 features/                           # Agrupado por feature
+│   └── 📁 usuarios/
+│       ├── 📁 domain/                     # Capa de Dominio
+│       │   ├── 📁 entities/
+│       │   │   └── usuario.dart
+│       │   ├── 📁 repositories/
+│       │   │   └── usuario_repository.dart  # Interfaz abstracta
+│       │   └── 📁 usecases/
+│       │       ├── obtener_usuario.dart
+│       │       ├── crear_usuario.dart
+│       │       └── listar_usuarios.dart
+│       │
+│       ├── 📁 data/                       # Capa de Datos
+│       │   ├── 📁 datasources/
+│       │   │   ├── usuario_remote_datasource.dart
+│       │   │   └── usuario_local_datasource.dart
+│       │   ├── 📁 models/
+│       │   │   └── usuario_model.dart     # Extiende entidad + JSON
+│       │   └── 📁 repositories/
+│       │       └── usuario_repository_impl.dart
+│       │
+│       └── 📁 presentation/              # Capa de Presentación
+│           ├── 📁 providers/
+│           │   ├── usuarios_provider.dart       # Providers de la feature
+│           │   └── usuario_form_provider.dart
+│           ├── 📁 controllers/
+│           │   └── usuarios_controller.dart     # AsyncNotifier / Notifier
+│           ├── 📁 pages/
+│           │   ├── usuarios_page.dart
+│           │   └── usuario_detalle_page.dart
+│           └── 📁 widgets/
+│               ├── usuario_card.dart
+│               └── usuario_form.dart
+│
+├── 📁 shared/                             # Widgets y utilidades compartidas
+│   ├── 📁 widgets/
+│   │   ├── loading_widget.dart
+│   │   └── error_widget.dart
+│   └── 📁 extensions/
+│       └── context_extensions.dart
+│
+├── app.dart                               # MaterialApp.router con ProviderScope
+└── main.dart                              # Entry point
+
+📁 test/
+├── 📁 features/
+│   └── 📁 usuarios/
+│       ├── 📁 domain/
+│       │   └── 📁 usecases/
+│       ├── 📁 data/
+│       │   ├── 📁 datasources/
+│       │   └── 📁 repositories/
+│       └── 📁 presentation/
+│           └── 📁 controllers/
+└── 📁 helpers/
+    └── test_helper.dart
+```
+
+---
+
+## Patrones por Capa
+
+### Core - Clase Base UseCase
+
+```dart
+// core/usecases/usecase.dart
+
+import 'package:dartz/dartz.dart';
+import 'package:equatable/equatable.dart';
+
+import '../error/failures.dart';
+
+/// Clase base para todos los casos de uso.
+abstract class UseCase<Type, Params> {
+  Future<Either<Failure, Type>> call(Params params);
+}
+
+/// Para use cases sin parámetros.
+class NoParams extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
+```
+
+### Core - Failures
+
+```dart
+// core/error/failures.dart
+
+import 'package:equatable/equatable.dart';
+
+sealed class Failure extends Equatable {
+  final String mensaje;
+
+  const Failure(this.mensaje);
+
+  @override
+  List<Object?> get props => [mensaje];
+}
+
+class ServerFailure extends Failure {
+  const ServerFailure([super.mensaje = 'Error del servidor']);
+}
+
+class CacheFailure extends Failure {
+  const CacheFailure([super.mensaje = 'Error de caché local']);
+}
+
+class ValidationFailure extends Failure {
+  const ValidationFailure(super.mensaje);
+}
+```
+
+### Core - Providers Globales
+
+```dart
+// core/providers/core_providers.dart
+
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+import '../network/network_info.dart';
+
+/// Cliente HTTP global
+final dioProvider = Provider<Dio>((ref) {
+  final dio = Dio(BaseOptions(
+    baseUrl: 'https://api.ejemplo.com',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
+    headers: {'Content-Type': 'application/json'},
+  ));
+  return dio;
+});
+
+/// Información de conectividad
+final networkInfoProvider = Provider<NetworkInfo>((ref) {
+  return NetworkInfoImpl(Connectivity());
+});
+```
+
+### Dominio - Entidad
+
+```dart
+// features/usuarios/domain/entities/usuario.dart
+
+import 'package:equatable/equatable.dart';
+
+class Usuario extends Equatable {
+  final String id;
+  final String nombre;
+  final String email;
+  final EstadoUsuario estado;
+  final DateTime fechaCreacion;
+
+  const Usuario({
+    required this.id,
+    required this.nombre,
+    required this.email,
+    this.estado = EstadoUsuario.activo,
+    required this.fechaCreacion,
+  });
+
+  Usuario copyWith({
+    String? nombre,
+    String? email,
+    EstadoUsuario? estado,
+  }) {
+    return Usuario(
+      id: id,
+      nombre: nombre ?? this.nombre,
+      email: email ?? this.email,
+      estado: estado ?? this.estado,
+      fechaCreacion: fechaCreacion,
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, nombre, email, estado, fechaCreacion];
+}
+
+enum EstadoUsuario { activo, inactivo, suspendido }
+```
+
+### Dominio - Interfaz de Repositorio
+
+```dart
+// features/usuarios/domain/repositories/usuario_repository.dart
+
+import 'package:dartz/dartz.dart';
+
+import '../../../../core/error/failures.dart';
+import '../entities/usuario.dart';
+
+abstract class UsuarioRepository {
+  Future<Either<Failure, Usuario>> obtenerPorId(String id);
+  Future<Either<Failure, List<Usuario>>> listarTodos();
+  Future<Either<Failure, Usuario>> crear(String nombre, String email);
+  Future<Either<Failure, Usuario>> actualizar(Usuario usuario);
+  Future<Either<Failure, void>> eliminar(String id);
+}
+```
+
+### Dominio - Caso de Uso
+
+```dart
+// features/usuarios/domain/usecases/obtener_usuario.dart
+
+import 'package:dartz/dartz.dart';
+import 'package:equatable/equatable.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../../../core/usecases/usecase.dart';
+import '../entities/usuario.dart';
+import '../repositories/usuario_repository.dart';
+
+class ObtenerUsuario implements UseCase<Usuario, ObtenerUsuarioParams> {
+  final UsuarioRepository repository;
+
+  ObtenerUsuario(this.repository);
+
+  @override
+  Future<Either<Failure, Usuario>> call(ObtenerUsuarioParams params) {
+    return repository.obtenerPorId(params.id);
+  }
+}
+
+class ObtenerUsuarioParams extends Equatable {
+  final String id;
+
+  const ObtenerUsuarioParams({required this.id});
+
+  @override
+  List<Object?> get props => [id];
+}
+```
+
+### Data - Model
+
+```dart
+// features/usuarios/data/models/usuario_model.dart
+
+import '../../domain/entities/usuario.dart';
+
+class UsuarioModel extends Usuario {
+  const UsuarioModel({
+    required super.id,
+    required super.nombre,
+    required super.email,
+    super.estado,
+    required super.fechaCreacion,
+  });
+
+  factory UsuarioModel.fromJson(Map<String, dynamic> json) {
+    return UsuarioModel(
+      id: json['id'] as String,
+      nombre: json['nombre'] as String,
+      email: json['email'] as String,
+      estado: EstadoUsuario.values.byName(json['estado'] as String),
+      fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'email': email,
+      'estado': estado.name,
+      'fecha_creacion': fechaCreacion.toIso8601String(),
+    };
+  }
+}
+```
+
+### Data - DataSource
+
+```dart
+// features/usuarios/data/datasources/usuario_remote_datasource.dart
+
+import 'package:dio/dio.dart';
+
+import '../../../../core/error/exceptions.dart';
+import '../models/usuario_model.dart';
+
+abstract class UsuarioRemoteDataSource {
+  Future<UsuarioModel> obtenerPorId(String id);
+  Future<List<UsuarioModel>> listarTodos();
+  Future<UsuarioModel> crear(String nombre, String email);
+}
+
+class UsuarioRemoteDataSourceImpl implements UsuarioRemoteDataSource {
+  final Dio dio;
+
+  UsuarioRemoteDataSourceImpl({required this.dio});
+
+  @override
+  Future<UsuarioModel> obtenerPorId(String id) async {
+    try {
+      final response = await dio.get('/api/usuarios/$id');
+      return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.statusMessage ?? 'Error al obtener usuario',
+      );
+    }
+  }
+
+  @override
+  Future<List<UsuarioModel>> listarTodos() async {
+    try {
+      final response = await dio.get('/api/usuarios');
+      final lista = response.data as List<dynamic>;
+      return lista
+          .map((json) => UsuarioModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.statusMessage ?? 'Error al listar usuarios',
+      );
+    }
+  }
+
+  @override
+  Future<UsuarioModel> crear(String nombre, String email) async {
+    try {
+      final response = await dio.post(
+        '/api/usuarios',
+        data: {'nombre': nombre, 'email': email},
+      );
+      return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ServerException(
+        e.response?.statusMessage ?? 'Error al crear usuario',
+      );
+    }
+  }
+}
+```
+
+### Data - Implementación del Repositorio
+
+```dart
+// features/usuarios/data/repositories/usuario_repository_impl.dart
+
+import 'package:dartz/dartz.dart';
+
+import '../../../../core/error/exceptions.dart';
+import '../../../../core/error/failures.dart';
+import '../../../../core/network/network_info.dart';
+import '../../domain/entities/usuario.dart';
+import '../../domain/repositories/usuario_repository.dart';
+import '../datasources/usuario_local_datasource.dart';
+import '../datasources/usuario_remote_datasource.dart';
+
+class UsuarioRepositoryImpl implements UsuarioRepository {
+  final UsuarioRemoteDataSource remoteDataSource;
+  final UsuarioLocalDataSource localDataSource;
+  final NetworkInfo networkInfo;
+
+  UsuarioRepositoryImpl({
+    required this.remoteDataSource,
+    required this.localDataSource,
+    required this.networkInfo,
+  });
+
+  @override
+  Future<Either<Failure, Usuario>> obtenerPorId(String id) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final remoteUsuario = await remoteDataSource.obtenerPorId(id);
+        await localDataSource.cachearUsuario(remoteUsuario);
+        return Right(remoteUsuario);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(e.mensaje));
+      }
+    } else {
+      try {
+        final localUsuario = await localDataSource.obtenerUsuario(id);
+        return Right(localUsuario);
+      } on CacheException {
+        return const Left(CacheFailure());
+      }
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Usuario>>> listarTodos() async {
+    try {
+      final usuarios = await remoteDataSource.listarTodos();
+      return Right(usuarios);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.mensaje));
+    }
+  }
+
+  // ... demás métodos
+}
+```
+
+### Presentación - Providers (Riverpod)
+
+```dart
+// features/usuarios/presentation/providers/usuarios_provider.dart
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/providers/core_providers.dart';
+import '../../data/datasources/usuario_remote_datasource.dart';
+import '../../data/datasources/usuario_local_datasource.dart';
+import '../../data/repositories/usuario_repository_impl.dart';
+import '../../domain/repositories/usuario_repository.dart';
+import '../../domain/usecases/obtener_usuario.dart';
+import '../../domain/usecases/listar_usuarios.dart';
+import '../../domain/usecases/crear_usuario.dart';
+
+// === Data Sources ===
+final usuarioRemoteDataSourceProvider = Provider<UsuarioRemoteDataSource>((ref) {
+  return UsuarioRemoteDataSourceImpl(dio: ref.watch(dioProvider));
+});
+
+final usuarioLocalDataSourceProvider = Provider<UsuarioLocalDataSource>((ref) {
+  return UsuarioLocalDataSourceImpl();
+});
+
+// === Repository ===
+final usuarioRepositoryProvider = Provider<UsuarioRepository>((ref) {
+  return UsuarioRepositoryImpl(
+    remoteDataSource: ref.watch(usuarioRemoteDataSourceProvider),
+    localDataSource: ref.watch(usuarioLocalDataSourceProvider),
+    networkInfo: ref.watch(networkInfoProvider),
+  );
+});
+
+// === Use Cases ===
+final obtenerUsuarioUseCaseProvider = Provider<ObtenerUsuario>((ref) {
+  return ObtenerUsuario(ref.watch(usuarioRepositoryProvider));
+});
+
+final listarUsuariosUseCaseProvider = Provider<ListarUsuarios>((ref) {
+  return ListarUsuarios(ref.watch(usuarioRepositoryProvider));
+});
+
+final crearUsuarioUseCaseProvider = Provider<CrearUsuario>((ref) {
+  return CrearUsuario(ref.watch(usuarioRepositoryProvider));
+});
+```
+
+### Presentación - Controller (AsyncNotifier)
+
+```dart
+// features/usuarios/presentation/controllers/usuarios_controller.dart
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../domain/entities/usuario.dart';
+import '../../domain/usecases/listar_usuarios.dart';
+import '../../domain/usecases/crear_usuario.dart';
+import '../../../../core/usecases/usecase.dart';
+import '../providers/usuarios_provider.dart';
+
+/// Provider del controller de lista de usuarios
+final usuariosControllerProvider =
+    AsyncNotifierProvider<UsuariosController, List<Usuario>>(
+  UsuariosController.new,
+);
+
+class UsuariosController extends AsyncNotifier<List<Usuario>> {
+  @override
+  Future<List<Usuario>> build() async {
+    return _cargarUsuarios();
+  }
+
+  Future<List<Usuario>> _cargarUsuarios() async {
+    final listarUsuarios = ref.read(listarUsuariosUseCaseProvider);
+    final resultado = await listarUsuarios(NoParams());
+
+    return resultado.fold(
+      (failure) => throw Exception(failure.mensaje),
+      (usuarios) => usuarios,
+    );
+  }
+
+  Future<void> refrescar() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(_cargarUsuarios);
+  }
+
+  Future<void> crearUsuario({
+    required String nombre,
+    required String email,
+  }) async {
+    final crearUsuarioUseCase = ref.read(crearUsuarioUseCaseProvider);
+    final resultado = await crearUsuarioUseCase(
+      CrearUsuarioParams(nombre: nombre, email: email),
+    );
+
+    resultado.fold(
+      (failure) => state = AsyncError(failure.mensaje, StackTrace.current),
+      (nuevoUsuario) {
+        final listaActual = state.valueOrNull ?? [];
+        state = AsyncData([...listaActual, nuevoUsuario]);
+      },
+    );
+  }
+}
+```
+
+### Presentación - Provider para detalle (Family)
+
+```dart
+// features/usuarios/presentation/providers/usuario_detalle_provider.dart
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../domain/entities/usuario.dart';
+import '../../domain/usecases/obtener_usuario.dart';
+import 'usuarios_provider.dart';
+
+/// Provider para obtener un usuario por ID (usa family para parámetro)
+final usuarioDetalleProvider =
+    FutureProvider.family<Usuario, String>((ref, id) async {
+  final obtenerUsuario = ref.read(obtenerUsuarioUseCaseProvider);
+  final resultado = await obtenerUsuario(ObtenerUsuarioParams(id: id));
+
+  return resultado.fold(
+    (failure) => throw Exception(failure.mensaje),
+    (usuario) => usuario,
+  );
+});
+```
+
+### Presentación - Page
+
+```dart
+// features/usuarios/presentation/pages/usuarios_page.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../controllers/usuarios_controller.dart';
+import '../widgets/usuario_card.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../shared/widgets/error_widget.dart' as app;
+
+class UsuariosPage extends ConsumerWidget {
+  const UsuariosPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuariosAsync = ref.watch(usuariosControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Usuarios')),
+      body: usuariosAsync.when(
+        loading: () => const LoadingWidget(),
+        error: (error, stack) => app.ErrorWidget(
+          mensaje: error.toString(),
+          onReintentar: () {
+            ref.read(usuariosControllerProvider.notifier).refrescar();
+          },
+        ),
+        data: (usuarios) => RefreshIndicator(
+          onRefresh: () {
+            return ref.read(usuariosControllerProvider.notifier).refrescar();
+          },
+          child: ListView.builder(
+            itemCount: usuarios.length,
+            itemBuilder: (context, index) {
+              return UsuarioCard(usuario: usuarios[index]);
+            },
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _mostrarFormularioCrear(context),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _mostrarFormularioCrear(BuildContext context) {
+    // Navegar a formulario de creación
+  }
+}
+```
+
+### Presentación - Page con Detalle (Family Provider)
+
+```dart
+// features/usuarios/presentation/pages/usuario_detalle_page.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../providers/usuario_detalle_provider.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+
+class UsuarioDetallePage extends ConsumerWidget {
+  final String usuarioId;
+
+  const UsuarioDetallePage({super.key, required this.usuarioId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuarioAsync = ref.watch(usuarioDetalleProvider(usuarioId));
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalle de Usuario')),
+      body: usuarioAsync.when(
+        loading: () => const LoadingWidget(),
+        error: (error, _) => Center(child: Text('Error: $error')),
+        data: (usuario) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(usuario.nombre, style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 8),
+              Text(usuario.email),
+              const SizedBox(height: 8),
+              Chip(label: Text(usuario.estado.name)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Entry Point con ProviderScope
+
+```dart
+// main.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'app.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(
+    const ProviderScope(
+      child: App(),
+    ),
+  );
+}
+```
+
+```dart
+// app.dart
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
+
+class App extends ConsumerWidget {
+  const App({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
+      title: 'Mi App',
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      routerConfig: router,
+    );
+  }
+}
+```
+
+---
+
+## Paquetes Recomendados
+
+| Paquete | Propósito |
+|---------|-----------|
+| `flutter_riverpod` | State management + DI |
+| `riverpod_annotation` + `riverpod_generator` | Code generation para providers |
+| `dartz` | Either, Option (programación funcional) |
+| `freezed` + `freezed_annotation` | Data classes inmutables, sealed unions |
+| `equatable` | Comparación por valor (entidades) |
+| `dio` | Cliente HTTP |
+| `hive` / `isar` | Almacenamiento local |
+| `go_router` | Navegación declarativa |
+| `json_serializable` | Serialización JSON |
+| `connectivity_plus` | Estado de red |
+| `mockito` + `mocktail` | Testing |
+
+---
+
+## Convenciones de Nomenclatura Dart/Flutter
+
+| Elemento | Patrón | Ejemplo |
+|----------|--------|---------|
+| Archivos | snake_case | `usuario_repository.dart` |
+| Clases | PascalCase | `UsuarioRepository` |
+| Interfaces abstractas | PascalCase (sin prefijo) | `UsuarioRepository` (abstract) |
+| Implementaciones | PascalCase + Impl | `UsuarioRepositoryImpl` |
+| Funciones/métodos | camelCase | `obtenerPorId()` |
+| Variables | camelCase | `nombreCompleto` |
+| Constantes | camelCase con `const` | `const maxReintentos = 3` |
+| Privados | prefijo `_` | `_nombre`, `_calcularTotal()` |
+| Providers | camelCase + Provider | `usuariosControllerProvider` |
+| Controllers (Notifier) | PascalCase + Controller | `UsuariosController` |
+| Pages | PascalCase + Page | `UsuariosPage` |
+| Widgets | PascalCase descriptivo | `UsuarioCard` |
+
+---
+
+## Patrones Riverpod
+
+| Tipo de Provider | Cuándo usarlo |
+|-----------------|---------------|
+| `Provider` | Dependencias sincronas (repositorios, use cases, datasources) |
+| `FutureProvider` | Datos async que se leen una vez (config, feature flags) |
+| `FutureProvider.family` | Datos async con parámetro (detalle por ID) |
+| `AsyncNotifierProvider` | Estado async con mutaciones (CRUD, listas) |
+| `NotifierProvider` | Estado sincrónico con mutaciones (formularios, UI local) |
+| `StreamProvider` | Datos en tiempo real (WebSocket, Firestore) |
+| `StateProvider` | Estado simple (filtros, toggles, paginación) |
+
+---
+
+## Reglas para el Agente
+
+1. **Feature-first**. Cada feature tiene su propio domain/data/presentation. No mezclar features.
+2. **Riverpod para todo**. State management Y dependency injection. No usar GetIt, Provider, ni BLoC.
+3. **`ConsumerWidget`** en lugar de `StatelessWidget`. `ConsumerStatefulWidget` solo cuando necesites lifecycle.
+4. **`Either<Failure, T>`** para manejo de errores en dominio y datos. En la capa de presentación, `AsyncValue` de Riverpod maneja loading/error/data.
+5. **`AsyncNotifier`** para controllers con estado mutable. `FutureProvider` para datos de solo lectura.
+6. **Providers organizados por feature**. Un archivo `_provider.dart` por feature con toda la cadena de DI.
+7. **`ref.watch`** en build para reactividad. `ref.read` en callbacks/eventos.
+8. **Entidades inmutables** con `Equatable` o `freezed`. Los models extienden entidades y agregan serialización.
+9. **Un UseCase por operación y por archivo**. No agrupar decenas de use cases en un solo `*_usecases.dart`.
+10. **Una clase pública por archivo (obligatorio)**.
+    - Prohibido meter varias entidades/`interface class` públicas en el mismo `.dart` (ej. `conductor_models.dart` monolítico).
+    - **Única excepción:** `FooPage`/`FooWidget` + su `_FooPageState` / `_FooWidgetState` en el mismo archivo.
+    - Widgets privados auxiliares (`_FooCard`) → preferí archivo propio si crecen; no agregues más entidades de dominio al mismo archivo.
+11. **No lógica en widgets**. Los widgets consumen providers y despachan acciones al controller.
+12. **Mappers Exclusivos (OBLIGATORIO)**. Prohibido poner lógica `fromJson` o `toJson` dentro de los `Models` o `Entities`. Toda la transformación de JSON a Model/Entity (y viceversa) debe estar en clases estáticas exclusivas en `data/mappers/` (Ej. `UsuarioMapper`). Los Models solo son data classes.
+13. **Cero Strings Hardcodeados (OBLIGATORIO)**. Prohibido usar literales de texto directamente en UI, Controladores o Excepciones (`throw ServerException('error')`). Todo texto legible debe estar centralizado en `lib/core/constants/app_strings.dart` (Ej. `AppStrings.errorServerConnection`).
+14. **Cero URLs Hardcodeadas (OBLIGATORIO)**. Las IPs, URLs base y configuraciones sensibles van en un archivo `.env` (usando `flutter_dotenv`). Las rutas relativas de la API van en `lib/core/constants/api_endpoints.dart`. No usar URLs mágicas en los DataSources.

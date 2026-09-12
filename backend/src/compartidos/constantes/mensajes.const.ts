@@ -112,6 +112,10 @@ export const MENSAJES = {
       CANCELACION_NO_SOLICITADO: 'No puedes cancelar un viaje que no solicitaste.',
       CANCELACION_NO_ASIGNADO: 'No puedes cancelar un viaje que no tienes asignado.',
       LLEGADA_SOLO_CONDUCTOR: 'Solo el conductor asignado puede marcar la llegada.',
+      SIN_CONDUCTORES: 'No hay conductores disponibles',
+      SIN_CONDUCTORES_ZONA: 'No hay conductores disponibles en tu zona',
+      COMPLETADO_EXITOSO: 'Viaje completado exitosamente',
+      TIMEOUT_AGOTADO: 'Tiempo de espera agotado',
     },
     CALIFICACIONES: {
       RANGO_PUNTUACION: 'La puntuación debe estar entre 1 y 5.',
@@ -140,6 +144,11 @@ export const MENSAJES = {
       EJECUCION_ID_OBLIGATORIO: 'ID de ejecución padre es obligatorio.',
       VALOR_CLAVE_OBLIGATORIO: 'El valor clave (identificador legible) es obligatorio.',
       DISPARADO_OK: 'Proceso de timeout de viajes disparado correctamente',
+    },
+    IDEMPOTENCIA: {
+      LLAVE_REQUERIDA: 'La llave de idempotencia es requerida.',
+      PAYLOAD_DIFERENTE: 'Idempotency-Key está siendo usada con un payload diferente.',
+      EN_PROGRESO: 'La solicitud está en progreso. Intente nuevamente en unos segundos.',
     },
     BITACORA: {
       DETALLE_OBLIGATORIO: 'El detalle de la bitácora es obligatorio.',

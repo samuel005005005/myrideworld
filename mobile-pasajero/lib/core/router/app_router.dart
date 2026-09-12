@@ -5,6 +5,7 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/welcome_page.dart';
 import '../../features/viajes/presentation/pages/home_page.dart';
 import '../../features/viajes/presentation/pages/viaje_active_page.dart';
+import '../../features/viajes/presentation/pages/viaje_recibo_page.dart';
 import '../../features/viajes/presentation/pages/viajes_history_page.dart';
 import '../../features/viajes/presentation/pages/viaje_searching_page.dart';
 import '../../features/viajes/presentation/pages/viaje_rating_page.dart';
@@ -31,7 +32,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/viaje-active',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
-          return ViajeActivePage(viajeId: extra['viajeId']);
+          return ViajeActivePage(
+            viajeId: extra['viajeId'] as String?,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/recibo',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final tarifa = (extra['tarifa'] as num?)?.toDouble() ?? 0.0;
+          final distancia = (extra['distancia'] as num?)?.toDouble() ?? 0.0;
+          final duracion =
+              (extra['duracionMinutos'] as num?)?.toInt() ?? 0;
+          return ViajeReciboPage(
+            tarifa: tarifa,
+            distancia: distancia,
+            duracionMinutos: duracion,
+          );
         },
       ),
       GoRoute(

@@ -1,0 +1,51 @@
+---
+description: Checklist obligatorio post-levantamiento de requerimientos
+alwaysApply: false
+---
+# Flujo Completo Post-Levantamiento: Checklist Obligatorio
+
+**NUNCA** se debe considerar terminado un levantamiento hasta que TODOS los pasos estén completados o el usuario indique explícitamente que no los necesita.
+
+## Regla Principal
+
+**Después de completar el levantamiento de requerimientos (Fases 1-3 del skill de requirements-engineering), el agente DEBE ejecutar los siguientes pasos EN ORDEN y SIN OMISIONES**, creando archivos Markdown locales.
+
+## Checklist de Ejecución Obligatoria
+
+### Paso 1: Crear el Requerimiento ✅
+- Archivo en `docs/analisis/requerimientos/<nombre>.md`.
+- Incluir objetivo, alcance, criterios de aceptación, actors/roles.
+- Crear tareas hijas en `docs/analisis/tareas/` (Análisis, Desarrollo, SQA, Aceptación, Revisión, Implementación, Monitoreo) con links al REQ.
+
+### Paso 2: Crear el FERU ✅
+- Archivo en `docs/analisis/feru/<nombre>.md`.
+- Incluir: interpretación de necesidades, contribuciones del analista, tabla de análisis de impacto.
+- Referenciar el REQ con ruta relativa.
+
+### Paso 3: Crear los Artefactos de Análisis ✅
+Documentación técnica en `docs/analisis/` siguiendo el skill `analisis-documentacion-escenarios`:
+
+#### 3.1 Escenarios de Uso → `docs/analisis/escenarios/`
+#### 3.2 Estructuras de Datos → `docs/analisis/estructuras-datos/`
+#### 3.3 Modelo de Datos → `docs/analisis/modelos-datos/`
+#### 3.4 Métodos / Servicios → `docs/analisis/metodos/`
+#### 3.5 Especificaciones Suplementarias → `docs/analisis/especificaciones/`
+
+Por cada artefacto, crear también una tarea en `docs/analisis/tareas/` que referencie el REQ.
+
+### Paso 4: Presentar Resumen Final ✅
+- Tabla consolidada con rutas de todos los archivos creados.
+- Confirmar que el flujo completo se ejecutó.
+
+## Reglas de Comportamiento
+
+- Tras el Paso 1: continuar automáticamente con el FERU (salvo que el usuario diga lo contrario).
+- Tras el Paso 2: continuar con artefactos de análisis.
+- Tras el Paso 3: presentar resumen y preguntar si necesita ajustes.
+- Si el usuario pide "solo el requerimiento" o "sin FERU", respetar e informar qué queda pendiente.
+
+## Notas
+
+- Los artefactos del Paso 3 son lo que el desarrollador necesita para codificar.
+- Usar plantillas en `.cursor/skills/analisis-requirements-engineering/references/`.
+- Todo queda versionado en git junto al código.

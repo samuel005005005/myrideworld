@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
+import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { GenerarPagoUseCase } from '../../../pagos-balances/aplicacion/casos-uso/generar-pago.use-case.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
@@ -14,6 +16,8 @@ export class CompletarViajeUseCase {
   constructor(
     @Inject(VIAJE_REPOSITORY)
     private readonly viajeRepository: IViajeRepository,
+    @Inject(NOTIFICADOR_VIAJE)
+    private readonly notificadorViaje: INotificadorViaje,
     private readonly generarPagoUseCase: GenerarPagoUseCase,
     private readonly registrarBitacora: RegistrarBitacoraUseCase,
   ) {}
@@ -42,12 +46,14 @@ export class CompletarViajeUseCase {
     await this.registrarBitacora.ejecutar({
       tipoEvento: TiposBitacora.INFO,
       servicioSistema: ServiciosSistema.VIAJES,
-      detalle: `Viaje completado exitosamente: ${viaje.id}`,
+      detalle: `${MENSAJES.EXCEPCIONES.VIAJES.COMPLETADO_EXITOSO}: ${viaje.id}`,
       usuario: `conductor-${viaje.conductorId}`,
       entidadId: viaje.id,
       accion: 'COMPLETAR_VIAJE',
       request: { viajeId: id },
     });
+
+    this.notificadorViaje.notificarViajeCompletado(guardado.id, Number(guardado.tarifaEstimada));
 
     return guardado;
   }

@@ -50,5 +50,6 @@ export declare class Conductor {
         vehiculoColor?: string;
         vehiculoPlaca?: string;
     }): void;
+    actualizarUbicacion(lat: number, lng: number): void;
     private validar;
 }

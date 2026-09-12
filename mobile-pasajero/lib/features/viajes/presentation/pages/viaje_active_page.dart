@@ -18,6 +18,10 @@ class ViajeActivePage extends ConsumerStatefulWidget {
 class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
   LatLng _driverLocation = const LatLng(18.5820, -68.3971);
   final MapController _mapController = MapController();
+  
+  String _tripStatus = 'Esperando confirmación...';
+  String? _etaInfo;
+  double? _tarifaFinal;
 
   @override
   void initState() {
@@ -46,6 +50,37 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
         _mapController.move(_driverLocation, 16.0);
       }
     };
+
+    // Escuchar el ciclo de vida del viaje
+    socketService.on('viajeAceptado', (data) {
+      setState(() {
+        _tripStatus = 'Conductor en camino';
+      });
+    });
+
+    socketService.on('conductorLlego', (data) {
+      setState(() {
+        _tripStatus = '¡El conductor ha llegado!';
+      });
+    });
+
+    socketService.on('viajeIniciado', (data) {
+      setState(() {
+        _tripStatus = 'En viaje hacia tu destino';
+      });
+    });
+
+    socketService.on('viajeCompletado', (data) {
+      final payload = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      _tarifaFinal = (payload['tarifaEstimada'] as num?)?.toDouble() ?? 0.0;
+      if (mounted) {
+        context.go('/recibo', extra: {
+          'tarifa': _tarifaFinal,
+          'distancia': 0.0,
+          'duracionMinutos': 0,
+        });
+      }
+    });
   }
 
   @override
@@ -188,19 +223,20 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                   const SizedBox(height: 16),
 
                   // ETA and Status
-                  const Text(
-                    AppStrings.trackingStatusTitle,
-                    style: TextStyle(
+                  Text(
+                    _tripStatus,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: textDark,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    '${AppStrings.trackingArrivesIn} 5 min',
-                    style: TextStyle(fontSize: 14, color: textGrey),
-                  ),
+                  if (_tripStatus == 'Conductor en camino')
+                    const Text(
+                      'Llegando en ~ 5 min',
+                      style: TextStyle(fontSize: 14, color: textGrey),
+                    ),
                   const SizedBox(height: 16),
                   const Divider(color: borderGrey),
                   const SizedBox(height: 16),
@@ -301,26 +337,10 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
 
                   const SizedBox(height: 24),
 
-                  // Simulation Button to end trip (for MVP testing)
-                  ElevatedButton(
-                    onPressed: () {
-                      context.go('/rating');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: textDark,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Simular Llegada al Destino', // Temporary for testing
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  Text(
+                    'Esperando que el conductor finalice el viaje…',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: textGrey),
                   ),
                 ],
               ),

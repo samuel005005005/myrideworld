@@ -4,7 +4,8 @@ import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { SolicitarViajeDto } from '../dto/solicitar-viaje.dto.js';
 import { EstimarTarifaUseCase } from '../../../tarifas/aplicacion/casos-uso/estimar-tarifa.use-case.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
@@ -17,7 +18,8 @@ export class SolicitarViajeUseCase {
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
     private readonly estimarTarifa: EstimarTarifaUseCase,
-    private readonly viajesGateway: ViajesGateway,
+    @Inject(NOTIFICADOR_VIAJE)
+    private readonly notificadorViaje: INotificadorViaje,
   ) {}
 
   async ejecutar(dto: SolicitarViajeDto): Promise<Viaje> {
@@ -63,10 +65,14 @@ export class SolicitarViajeUseCase {
     }
 
     if (conductorSugerido) {
-      // Emitir notificación SÓLO al conductor más cercano
-      this.viajesGateway.notificarNuevoViaje(guardado.id, conductorSugerido.id);
-    } else {
-      // Opcional: Manejar caso donde no hay conductores
+      this.notificadorViaje.notificarNuevoViaje(conductorSugerido.id, {
+        id: guardado.id,
+        origenLat: guardado.origenLat,
+        origenLng: guardado.origenLng,
+        destinoLat: guardado.destinoLat,
+        destinoLng: guardado.destinoLng,
+        tarifaEstimada: Number(guardado.tarifaEstimada),
+      });
     }
 
     return guardado;

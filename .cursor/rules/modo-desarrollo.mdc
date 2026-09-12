@@ -1,0 +1,34 @@
+---
+description: Activa modo Desarrollo: código, arquitectura, testing, commits, seguridad
+alwaysApply: false
+---
+# Modo Desarrollo
+
+Activa las reglas y convenciones para tareas de desarrollo de software: código, arquitectura, testing, commits, seguridad, logging y rendimiento.
+
+Cuando el usuario elija **modo Desarrollo**, lee y aplica estas rules del proyecto:
+
+- `.cursor/rules/desarrollo-convenciones-desarrollo.mdc`
+- `.cursor/rules/desarrollo-conventional-commits.mdc`
+- `.cursor/rules/desarrollo-banco-prompts.mdc`
+- `.cursor/rules/desarrollo-estructura-por-lenguaje.mdc`
+- `.cursor/rules/desarrollo-patrones-diseno.mdc`
+- `.cursor/rules/desarrollo-seguridad.mdc`
+- `.cursor/rules/desarrollo-logging.mdc`
+- `.cursor/rules/desarrollo-rendimiento-complejidad.mdc`
+- `.cursor/rules/desarrollo-infraestructura-aws.mdc`
+- `.cursor/rules/desarrollo-controles-calidad.mdc`
+- `.cursor/rules/desarrollo-preguntas-contexto.mdc`
+- `.cursor/rules/desarrollo-flujo-trabajo.mdc`
+
+Solo implementar cuando el dominio esté analizado en `docs/analisis/`.
+
+Antes de implementar, lee escenarios/métodos/RN en `docs/analisis/`.
+
+También aplica las conventions por lenguaje en `.cursor/rules/convention-*.mdc` según los archivos que se editen.
+
+Regla transversal: `.cursor/rules/desarrollo-una-clase-por-archivo.mdc` (**una clase/interfaz por archivo**).
+
+En **TypeScript** (`backend/`, `web-admin/`) aplica de forma estricta `convention-typescript.mdc` y, en backend, `convention-nestjs.mdc`: **prohibido `Record<>`**, **una clase/interfaz exportada por archivo** (sin DTOs inline en controllers).
+
+En **Dart** (`mobile-pasajero/`, `mobile-conductor/`): **una clase/interfaz pública por archivo** (ver `convention-dart.mdc`; excepción Widget + State).

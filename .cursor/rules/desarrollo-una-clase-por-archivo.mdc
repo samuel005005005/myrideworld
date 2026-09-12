@@ -1,0 +1,35 @@
+---
+description: Una clase/interfaz por archivo — Clean Architecture greenfield
+globs:
+  - backend/src/**/*.ts
+  - web-admin/src/**/*.{ts,tsx}
+  - mobile-conductor/lib/**/*.dart
+  - mobile-pasajero/lib/**/*.dart
+alwaysApply: false
+---
+
+# Una clase o interfaz por archivo
+
+Obligatorio en código **nuevo** y en cualquier archivo que se edite en greenfield.
+
+## Regla
+
+- **Un** `class` / `interface` / `data class` / puerto **público** por archivo.
+- Nombre de archivo = nombre del tipo principal.
+- No agregar otro tipo público a un archivo que ya viola la regla: **extraé** el nuevo tipo a archivo propio.
+
+## Excepciones
+
+| Stack | Excepción |
+|-------|-----------|
+| Dart/Flutter | `FooWidget`/`FooPage` + su `_FooState` en el mismo archivo |
+| Kotlin | Un `sealed` raíz + sus variantes en el mismo archivo |
+| TypeScript | Types auxiliares del mismo contrato (no otra clase/interfaz de dominio) |
+
+## Prohibido
+
+- DTOs inline en controllers Nest.
+- Varios `@Injectable` / casos de uso en un solo `.ts` o `.dart`.
+- `Puertos.kt` / `Modelos*.kt` / `*_usecases.dart` / `*_models.dart` monolíticos en código nuevo.
+
+Si el archivo ya es monolito legado: no lo agrandes; al tocar una pieza, preferí extraerla.

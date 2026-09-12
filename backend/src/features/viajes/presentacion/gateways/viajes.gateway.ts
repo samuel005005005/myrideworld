@@ -13,6 +13,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { WsJwtGuard } from '../../../../compartidos/middlewares/ws-jwt.guard.js';
+import type { INotificadorViaje } from '../../aplicacion/puertos/notificador-viaje.port.js';
+import type { ViajeDisponibleNotificacion } from '../../aplicacion/puertos/viaje-disponible-notificacion.js';
 
 @Injectable()
 @WebSocketGateway({
@@ -21,7 +23,7 @@ import { WsJwtGuard } from '../../../../compartidos/middlewares/ws-jwt.guard.js'
   },
 })
 @UseGuards(WsJwtGuard)
-export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect, INotificadorViaje {
   private readonly logger = new Logger(ViajesGateway.name);
 
   constructor(
@@ -93,11 +95,13 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Métodos expuestos para inyectar en Casos de Uso
   // ==========================================
 
-  notificarNuevoViaje(viajeId: string, conductorId: string) {
-    // Alerta SÓLO al conductor más cercano
+  notificarNuevoViaje(
+    conductorId: string,
+    viaje: ViajeDisponibleNotificacion,
+  ) {
     const room = `conductor_${conductorId}`;
-    this.server.to(room).emit('nuevoViajeDisponible', { viajeId });
-    this.logger.log(`Notificado viaje ${viajeId} al conductor ${conductorId}`);
+    this.server.to(room).emit('nuevoViajeDisponible', viaje);
+    this.logger.log(`Notificado viaje ${viaje.id} al conductor ${conductorId}`);
   }
 
   notificarViajeAceptado(viajeId: string, conductorId: string) {
@@ -114,5 +118,15 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   notificarViajeCancelado(viajeId: string, actor: string, motivo: string | undefined) {
     const room = `viaje_${viajeId}`;
     this.server.to(room).emit('viajeCancelado', { viajeId, actor, motivo });
+  }
+
+  notificarViajeIniciado(viajeId: string) {
+    const room = `viaje_${viajeId}`;
+    this.server.to(room).emit('viajeIniciado', { viajeId });
+  }
+
+  notificarViajeCompletado(viajeId: string, tarifaEstimada: number) {
+    const room = `viaje_${viajeId}`;
+    this.server.to(room).emit('viajeCompletado', { viajeId, tarifaEstimada });
   }
 }

@@ -10,36 +10,37 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let MarcarLlegadaUseCase = class MarcarLlegadaUseCase {
     viajeRepository;
-    viajesGateway;
-    constructor(viajeRepository, viajesGateway) {
+    notificadorViaje;
+    constructor(viajeRepository, notificadorViaje) {
         this.viajeRepository = viajeRepository;
-        this.viajesGateway = viajesGateway;
+        this.notificadorViaje = notificadorViaje;
     }
     async ejecutar(viajeId, conductorId) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
         if (!viaje) {
-            throw new NotFoundException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+            throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         if (viaje.conductorId !== conductorId) {
             throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.LLEGADA_SOLO_CONDUCTOR);
         }
         viaje.marcarLlegada();
         const guardado = await this.viajeRepository.guardar(viaje);
-        this.viajesGateway.notificarConductorLlego(guardado.id);
+        this.notificadorViaje.notificarConductorLlego(guardado.id);
         return guardado;
     }
 };
 MarcarLlegadaUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, ViajesGateway])
+    __param(1, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object])
 ], MarcarLlegadaUseCase);
 export { MarcarLlegadaUseCase };
 //# sourceMappingURL=marcar-llegada.use-case.js.map

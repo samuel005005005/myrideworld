@@ -12,12 +12,15 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let IniciarViajeUseCase = class IniciarViajeUseCase {
     viajeRepository;
-    constructor(viajeRepository) {
+    notificadorViaje;
+    constructor(viajeRepository, notificadorViaje) {
         this.viajeRepository = viajeRepository;
+        this.notificadorViaje = notificadorViaje;
     }
     async ejecutar(id) {
         const viaje = await this.viajeRepository.obtenerPorId(id);
@@ -25,13 +28,16 @@ let IniciarViajeUseCase = class IniciarViajeUseCase {
             throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
         }
         viaje.iniciarViaje();
-        return await this.viajeRepository.guardar(viaje);
+        const guardado = await this.viajeRepository.guardar(viaje);
+        this.notificadorViaje.notificarViajeIniciado(guardado.id);
+        return guardado;
     }
 };
 IniciarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object])
+    __param(1, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object])
 ], IniciarViajeUseCase);
 export { IniciarViajeUseCase };
 //# sourceMappingURL=iniciar-viaje.use-case.js.map

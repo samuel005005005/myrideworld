@@ -87,6 +87,10 @@ export class Conductor {
             this._vehiculoPlaca = datos.vehiculoPlaca;
         this.validar();
     }
+    actualizarUbicacion(lat, lng) {
+        this._ultimaUbicacionLat = lat;
+        this._ultimaUbicacionLng = lng;
+    }
     validar() {
         if (!this._nombreCompleto?.trim())
             throw new DomainException(MENSAJES.EXCEPCIONES.COMUNES.NOMBRE_OBLIGATORIO);

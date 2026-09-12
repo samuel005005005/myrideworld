@@ -2,7 +2,8 @@ import { TimeoutViajesUseCase } from './timeout-viajes.use-case.js';
 import { IViajeRepository } from '../../../viajes/dominio/repositorios/viaje.repository.js';
 import { IEjecucionProcesoRepository } from '../../dominio/repositorios/ejecucion-proceso.repository.js';
 import { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
-import { ViajesGateway } from '../../../viajes/presentacion/gateways/viajes.gateway.js';
+import type { INotificadorViaje } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
+import { NOTIFICADOR_VIAJE } from '../../../viajes/aplicacion/puertos/notificador-viaje.port.js';
 import { RegistrarBitacoraUseCase } from '../../../bitacora/aplicacion/casos-uso/registrar-bitacora.use-case.js';
 import { EjecucionProceso } from '../../dominio/entidades/ejecucion-proceso.entity.js';
 import { DetalleEjecucionProceso } from '../../dominio/entidades/detalle-ejecucion.entity.js';
@@ -17,7 +18,7 @@ describe('TimeoutViajesUseCase', () => {
   let viajeRepoMock: Mocked<IViajeRepository>;
   let ejecucionRepoMock: Mocked<IEjecucionProcesoRepository>;
   let configRepoMock: Mocked<IConfiguracionRepository>;
-  let viajesGatewayMock: Mocked<ViajesGateway>;
+  let notificadorViajeMock: Mocked<INotificadorViaje>;
   let registrarBitacoraMock: Mocked<RegistrarBitacoraUseCase>;
 
   beforeEach(() => {
@@ -35,7 +36,7 @@ describe('TimeoutViajesUseCase', () => {
       obtenerValor: vi.fn().mockResolvedValue('5'),
     } as any;
 
-    viajesGatewayMock = {
+    notificadorViajeMock = {
       notificarViajeCancelado: vi.fn(),
     } as any;
 
@@ -47,7 +48,7 @@ describe('TimeoutViajesUseCase', () => {
       viajeRepoMock,
       ejecucionRepoMock,
       configRepoMock,
-      viajesGatewayMock,
+      notificadorViajeMock,
       registrarBitacoraMock,
     );
   });
@@ -101,7 +102,7 @@ describe('TimeoutViajesUseCase', () => {
     // Verify Viaje was cancelled
     expect(viajeMock.cancelar).toHaveBeenCalledWith(Roles.SISTEMA, 'Tiempo de espera agotado');
     expect(viajeRepoMock.guardar).toHaveBeenCalledWith(viajeMock);
-    expect(viajesGatewayMock.notificarViajeCancelado).toHaveBeenCalledWith('viaje-1', 'SISTEMA', 'Tiempo de espera agotado');
+    expect(notificadorViajeMock.notificarViajeCancelado).toHaveBeenCalledWith('viaje-1', 'SISTEMA', 'Tiempo de espera agotado');
 
     // Verify Bitacora
     expect(registrarBitacoraMock.ejecutar).toHaveBeenCalledWith({

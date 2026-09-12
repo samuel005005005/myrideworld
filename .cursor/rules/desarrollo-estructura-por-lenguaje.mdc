@@ -1,0 +1,34 @@
+---
+description: Activa convención correcta según lenguaje/archivo
+alwaysApply: false
+---
+# Estructura por Lenguaje / Tecnología
+
+Según el archivo que se esté editando, lee y aplica la convention correspondiente:
+
+## Lenguajes
+
+- .NET (C#): `.cursor/rules/convention-dotnet.mdc`
+- Java: `.cursor/rules/convention-java.mdc`
+- Kotlin: `.cursor/rules/convention-kotlin.mdc`
+- Python: `.cursor/rules/convention-python.mdc`
+- TypeScript/JS: `.cursor/rules/convention-typescript.mdc` (**prohibido `Record<>`**; **una clase/interfaz exportada por archivo**; request tipados `ReqConductor` / `CabecerasHttp`)
+- Dart: `.cursor/rules/convention-dart.mdc` (**una clase pública por archivo**; excepción Widget+State)
+- Kotlin: `.cursor/rules/convention-kotlin.mdc` (**una clase/interfaz por archivo**; excepción sealed raíz + variantes)
+- JavaScript: `.cursor/rules/convention-javascript.mdc`
+- Dart/Flutter: `.cursor/rules/convention-dart.mdc`
+
+## Frameworks
+
+- NestJS (`backend/`): `.cursor/rules/convention-nestjs.mdc`
+- FastAPI: `.cursor/rules/convention-fastapi.mdc`
+- Angular: `.cursor/rules/convention-angular.mdc`
+- React (`web-admin/`): `.cursor/rules/convention-react.mdc`
+
+## Infraestructura
+
+- AWS CDK: `.cursor/rules/convention-aws-cdk.mdc`
+- Kubernetes / EKS: `.cursor/rules/convention-kubernetes.mdc`
+- Pipelines CI/CD: `.cursor/rules/convention-pipelines.mdc`
+
+Las conventions también se activan automáticamente por `globs` al trabajar con archivos del lenguaje.

@@ -1,0 +1,15 @@
+{
+  "precommit-gate": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "command": ".cursor/hooks/precommit-gate.sh",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}

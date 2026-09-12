@@ -22,6 +22,7 @@ import { ViajesController } from './presentacion/controladores/viajes.controller
 import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';
 import { ViajesGateway } from './presentacion/gateways/viajes.gateway.js';
+import { NOTIFICADOR_VIAJE } from './aplicacion/puertos/notificador-viaje.port.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 let ViajesModule = class ViajesModule {
@@ -51,6 +52,10 @@ ViajesModule = __decorate([
             ListarViajesUseCase,
             RechazarViajeUseCase,
             ViajesGateway,
+            {
+                provide: NOTIFICADOR_VIAJE,
+                useExisting: ViajesGateway,
+            },
         ],
         exports: [
             VIAJE_REPOSITORY,
@@ -61,6 +66,7 @@ ViajesModule = __decorate([
             CompletarViajeUseCase,
             CancelarViajeUseCase,
             ViajesGateway,
+            NOTIFICADOR_VIAJE,
         ],
     })
 ], ViajesModule);

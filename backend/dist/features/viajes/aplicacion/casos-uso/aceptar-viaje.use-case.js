@@ -12,15 +12,15 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Inject, Injectable } from '@nestjs/common';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
-import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
+import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 let AceptarViajeUseCase = class AceptarViajeUseCase {
     viajeRepository;
-    viajesGateway;
-    constructor(viajeRepository, viajesGateway) {
+    notificadorViaje;
+    constructor(viajeRepository, notificadorViaje) {
         this.viajeRepository = viajeRepository;
-        this.viajesGateway = viajesGateway;
+        this.notificadorViaje = notificadorViaje;
     }
     async ejecutar(viajeId, dto) {
         const viaje = await this.viajeRepository.obtenerPorId(viajeId);
@@ -29,14 +29,15 @@ let AceptarViajeUseCase = class AceptarViajeUseCase {
         }
         viaje.asignarConductor(dto.conductorId);
         const guardado = await this.viajeRepository.guardar(viaje);
-        this.viajesGateway.notificarViajeAceptado(guardado.id, dto.conductorId);
+        this.notificadorViaje.notificarViajeAceptado(guardado.id, dto.conductorId);
         return guardado;
     }
 };
 AceptarViajeUseCase = __decorate([
     Injectable(),
     __param(0, Inject(VIAJE_REPOSITORY)),
-    __metadata("design:paramtypes", [Object, ViajesGateway])
+    __param(1, Inject(NOTIFICADOR_VIAJE)),
+    __metadata("design:paramtypes", [Object, Object])
 ], AceptarViajeUseCase);
 export { AceptarViajeUseCase };
 //# sourceMappingURL=aceptar-viaje.use-case.js.map
