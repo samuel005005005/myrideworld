@@ -7,7 +7,6 @@ class PerfilPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const textDark = Color(0xFF1E293B);
-    const textGrey = Color(0xFF64748B);
     const brandPrimary = Color(0xFFF59E0B);
     const bgGrey = Color(0xFFF8FAFC);
 

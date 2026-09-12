@@ -6,16 +6,21 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../domain/entities/metodo_pago.dart';
+import '../../domain/entities/tipo_vehiculo.dart';
 import '../controllers/home_controller.dart';
+import '../controllers/home_state.dart';
+import '../controllers/home_state_status.dart';
+import '../providers/viajes_provider.dart';
+import '../widgets/home_drawer.dart';
+import '../widgets/home_vehicle_tile.dart';
 
-const _vehiculoSedan = 'sedan';
-const _vehiculoMinivan = 'minivan';
-const _vehiculoSuv = 'suv';
-const _pagoEfectivo = 'cash';
-const _pagoTarjeta = 'card';
-
-final selectedVehicleProvider = StateProvider<String>((ref) => _vehiculoSedan);
-final selectedPaymentProvider = StateProvider<String>((ref) => _pagoEfectivo);
+final selectedVehicleProvider = StateProvider<TipoVehiculo>(
+  (ref) => TipoVehiculo.sedan,
+);
+final selectedPaymentProvider = StateProvider<MetodoPago>(
+  (ref) => MetodoPago.efectivo,
+);
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -41,6 +46,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final estado = ref.watch(homeControllerProvider);
     final selectedVehicle = ref.watch(selectedVehicleProvider);
     final selectedPayment = ref.watch(selectedPaymentProvider);
+    final calculadora = ref.watch(calculadoraTarifaProvider);
     final isRequesting = estado.status == HomeStateStatus.loading;
 
     ref.listen<HomeState>(homeControllerProvider, (anterior, siguiente) {
@@ -96,17 +102,20 @@ class _HomePageState extends ConsumerState<HomePage> {
     final etaMinivan = _formatEta(routeDurationMin + 2);
     final etaSuv = _formatEta(routeDurationMin + 5);
 
-    final sedanPrice = _calcularTarifaBase(_vehiculoSedan, routeDistanceKm);
-    final minivanPrice = _calcularTarifaBase(_vehiculoMinivan, routeDistanceKm);
-    final suvPrice = _calcularTarifaBase(_vehiculoSuv, routeDistanceKm);
-    final basePrice = switch (selectedVehicle) {
-      _vehiculoMinivan => minivanPrice,
-      _vehiculoSuv => suvPrice,
-      _ => sedanPrice,
-    };
-    final finalPrice = selectedPayment == _pagoTarjeta
-        ? basePrice * 1.075
-        : basePrice;
+    final sedanPrice = calculadora.calcularBase(
+      TipoVehiculo.sedan,
+      routeDistanceKm,
+    );
+    final minivanPrice = calculadora.calcularBase(
+      TipoVehiculo.minivan,
+      routeDistanceKm,
+    );
+    final suvPrice = calculadora.calcularBase(TipoVehiculo.suv, routeDistanceKm);
+    final finalPrice = calculadora.calcularTotal(
+      vehiculo: selectedVehicle,
+      metodoPago: selectedPayment,
+      distanciaKm: routeDistanceKm,
+    );
 
     final ubicacionActual =
         estado.currentLocation ?? const LatLng(18.5820, -68.3971);
@@ -114,7 +123,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: _buildDrawer(context),
+      drawer: const HomeDrawer(),
       body: Stack(
         children: [
           Positioned.fill(
@@ -227,16 +236,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.verified_user,
-                        color: brandPrimary,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
+                      Icon(Icons.verified_user, color: brandPrimary, size: 14),
+                      SizedBox(width: 4),
+                      Text(
                         AppStrings.homeOfficialRatesMitur,
                         style: TextStyle(
                           fontSize: 12,
@@ -288,7 +293,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           Expanded(
                             child: Column(
                               children: [
-                                _buildLocationTrigger(
+                                _LocationTrigger(
                                   value: estado.pickupLabel,
                                   onTap: () async {
                                     final result = await context.push<String>(
@@ -307,7 +312,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   },
                                 ),
                                 const SizedBox(height: 8),
-                                _buildLocationTrigger(
+                                _LocationTrigger(
                                   value: estado.dropoffLabel,
                                   onTap: () async {
                                     final result = await context.push<String>(
@@ -398,47 +403,47 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        _buildUberVehicleTile(
-                          id: _vehiculoSedan,
+                        HomeVehicleTile(
+                          id: TipoVehiculo.sedan.name,
                           name: AppStrings.homeVehicleSedan,
                           eta: etaSedan,
                           capacity: 4,
                           basePrice: sedanPrice,
                           icon: Icons.directions_car,
-                          selectedId: selectedVehicle,
-                          paymentMethod: selectedPayment,
+                          selectedId: selectedVehicle.name,
+                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
-                                  _vehiculoSedan,
+                                  TipoVehiculo.sedan,
                         ),
-                        _buildUberVehicleTile(
-                          id: _vehiculoMinivan,
+                        HomeVehicleTile(
+                          id: TipoVehiculo.minivan.name,
                           name: AppStrings.homeVehicleMinivan,
                           eta: etaMinivan,
                           capacity: 6,
                           basePrice: minivanPrice,
                           icon: Icons.airport_shuttle,
-                          selectedId: selectedVehicle,
-                          paymentMethod: selectedPayment,
+                          selectedId: selectedVehicle.name,
+                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
-                                  _vehiculoMinivan,
+                                  TipoVehiculo.minivan,
                         ),
-                        _buildUberVehicleTile(
-                          id: _vehiculoSuv,
+                        HomeVehicleTile(
+                          id: TipoVehiculo.suv.name,
                           name: AppStrings.homeVehicleSuv,
                           eta: etaSuv,
                           capacity: 6,
                           basePrice: suvPrice,
                           icon: Icons.time_to_leave,
-                          selectedId: selectedVehicle,
-                          paymentMethod: selectedPayment,
+                          selectedId: selectedVehicle.name,
+                          metodoPago: selectedPayment,
                           brandPrimary: brandPrimary,
                           onTap: () =>
                               ref.read(selectedVehicleProvider.notifier).state =
-                                  _vehiculoSuv,
+                                  TipoVehiculo.suv,
                         ),
                       ],
                     ),
@@ -457,9 +462,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           onTap: () =>
                               ref
                                   .read(selectedPaymentProvider.notifier)
-                                  .state = selectedPayment == _pagoEfectivo
-                              ? _pagoTarjeta
-                              : _pagoEfectivo,
+                                  .state = selectedPayment == MetodoPago.efectivo
+                              ? MetodoPago.tarjeta
+                              : MetodoPago.efectivo,
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -473,7 +478,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             child: Row(
                               children: [
                                 Icon(
-                                  selectedPayment == _pagoEfectivo
+                                  selectedPayment == MetodoPago.efectivo
                                       ? Icons.money
                                       : Icons.credit_card,
                                   size: 20,
@@ -481,7 +486,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  selectedPayment == _pagoEfectivo
+                                  selectedPayment == MetodoPago.efectivo
                                       ? AppStrings.homePaymentCashShort
                                       : AppStrings.homePaymentCardShort,
                                   style: const TextStyle(
@@ -525,9 +530,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   )
                                 : Text(
                                     AppStrings.homeSolicitarVehiculo(
-                                      _etiquetaVehiculoParaBoton(
-                                        selectedVehicle,
-                                      ),
+                                      _etiquetaVehiculo(selectedVehicle),
                                       finalPrice,
                                     ),
                                     style: const TextStyle(
@@ -563,34 +566,23 @@ class _HomePageState extends ConsumerState<HomePage> {
     return '$hour:$minute $ampm';
   }
 
-  double _calcularTarifaBase(String vehiculo, double distanciaKm) {
-    if (distanciaKm <= 0) {
-      return switch (vehiculo) {
-        _vehiculoMinivan => 55,
-        _vehiculoSuv => 65,
-        _ => 35,
-      };
-    }
-
+  String _etiquetaVehiculo(TipoVehiculo vehiculo) {
     return switch (vehiculo) {
-      _vehiculoMinivan => 15 + (distanciaKm * 2.5),
-      _vehiculoSuv => 25 + (distanciaKm * 3.0),
-      _ => 10 + (distanciaKm * 1.5),
+      TipoVehiculo.minivan => AppStrings.homeVehicleMinivanLabel,
+      TipoVehiculo.suv => AppStrings.homeVehicleSuvLabel,
+      TipoVehiculo.sedan => AppStrings.homeVehicleSedanLabel,
     };
   }
+}
 
-  String _etiquetaVehiculoParaBoton(String vehiculo) {
-    return switch (vehiculo) {
-      _vehiculoMinivan => AppStrings.homeVehicleMinivanLabel,
-      _vehiculoSuv => AppStrings.homeVehicleSuvLabel,
-      _ => AppStrings.homeVehicleSedanLabel,
-    };
-  }
+class _LocationTrigger extends StatelessWidget {
+  final String value;
+  final VoidCallback onTap;
 
-  Widget _buildLocationTrigger({
-    required String value,
-    required VoidCallback onTap,
-  }) {
+  const _LocationTrigger({required this.value, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -614,271 +606,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-    );
-  }
-
-  Widget _buildUberVehicleTile({
-    required String id,
-    required String name,
-    required String eta,
-    required int capacity,
-    required double basePrice,
-    required IconData icon,
-    required String selectedId,
-    required String paymentMethod,
-    required Color brandPrimary,
-    required VoidCallback onTap,
-  }) {
-    final selected = selectedId == id;
-    final borderColor = selected ? brandPrimary : Colors.transparent;
-    final bgColor = selected
-        ? brandPrimary.withOpacity(0.08)
-        : Colors.transparent;
-    final finalPrice = paymentMethod == _pagoTarjeta
-        ? basePrice * 1.075
-        : basePrice;
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: bgColor,
-          border: Border.all(color: borderColor, width: 2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 40, color: Colors.black87),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.person, size: 14, color: Colors.black54),
-                      Text(
-                        capacity.toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    eta,
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  AppStrings.homePrecioVehiculo(finalPrice),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (paymentMethod == _pagoTarjeta)
-                  const Text(
-                    AppStrings.homeCardFeeIncluded,
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    const textDark = Color(0xFF1E293B);
-    const brandPrimary = Color(0xFFF59E0B);
-
-    return Drawer(
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topRight: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            InkWell(
-              onTap: () {
-                context.pop();
-                context.push('/perfil');
-              },
-              child: Container(
-                padding: const EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 40,
-                  bottom: 24,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: brandPrimary, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: brandPrimary.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const CircleAvatar(
-                        radius: 32,
-                        backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(
-                          'https://randomuser.me/api/portraits/men/44.jpg',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            AppStrings.homeDrawerPassengerName,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: textDark,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: brandPrimary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: brandPrimary,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppStrings.homeDrawerPassengerCategory,
-                                  style: TextStyle(
-                                    color: brandPrimary.withOpacity(0.9),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildDrawerItem(
-              icon: Icons.history,
-              title: AppStrings.homeDrawerTrips,
-              onTap: () {
-                context.pop();
-                context.push('/history');
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.credit_card,
-              title: AppStrings.homeDrawerPaymentMethods,
-              onTap: () {
-                context.pop();
-                context.push('/pagos');
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.local_offer_outlined,
-              title: AppStrings.homeDrawerPromotions,
-              onTap: () => context.pop(),
-            ),
-            _buildDrawerItem(
-              icon: Icons.support_agent,
-              title: AppStrings.homeDrawerSupport,
-              onTap: () {
-                context.pop();
-                context.push('/ayuda');
-              },
-            ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: TextButton.icon(
-                onPressed: () => context.go('/welcome'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red.shade500,
-                  alignment: Alignment.centerLeft,
-                  padding: EdgeInsets.zero,
-                ),
-                icon: const Icon(Icons.logout, size: 22),
-                label: const Text(
-                  AppStrings.homeDrawerLogout,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
-      leading: Icon(icon, color: const Color(0xFF1E293B), size: 26),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF1E293B),
-        ),
-      ),
-      onTap: onTap,
     );
   }
 }

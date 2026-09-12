@@ -1,10 +1,11 @@
-import '../../../../core/storage/session_storage.dart';
+import 'package:dio/dio.dart';
+
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
-import '../models/viaje_model.dart';
+import '../../../../core/storage/session_storage.dart';
 import '../mappers/viaje_mapper.dart';
-import 'package:dio/dio.dart';
+import '../models/viaje_model.dart';
 
 abstract class ViajeRemoteDataSource {
   Future<ViajeModel> solicitarViaje({
@@ -62,10 +63,9 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
         );
       }
       throw ServerException(AppStrings.errorServerConnection);
+    } on ServerException {
+      rethrow;
     } catch (e) {
-      if (e is ServerException) {
-        rethrow;
-      }
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
