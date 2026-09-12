@@ -24,6 +24,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 
 @ApiTags('Conductores')
 @Controller('api/conductores')
@@ -83,6 +84,14 @@ export class ConductoresController {
         { name: 'seguro', maxCount: 1 },
       ],
       {
+        limits: { fileSize: 5 * 1024 * 1024 },
+        fileFilter: (_req, file, cb) => {
+          const permitidos = ['image/jpeg', 'image/png', 'application/pdf'];
+          if (!permitidos.includes(file.mimetype)) {
+            return cb(new Error('Tipo de archivo no permitido'), false);
+          }
+          cb(null, true);
+        },
         storage: diskStorage({
           destination: './uploads/documentos',
           filename: (req, file, cb) => {
@@ -96,8 +105,16 @@ export class ConductoresController {
   )
   async subirDocumentosEndpoint(
     @Param('id') id: string,
+    @Req() req: { user: { sub: string; rol: string } },
     @UploadedFiles() files: { fotoPerfil?: Express.Multer.File[]; licencia?: Express.Multer.File[]; seguro?: Express.Multer.File[] },
   ) {
+    if (req.user.rol !== Roles.ADMIN && req.user.sub !== id) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES.DOCUMENTOS_SOLO_PROPIOS,
+        403,
+      );
+    }
+
     const rutas = {
       fotoPerfil: files.fotoPerfil?.[0]?.path,
       licencia: files.licencia?.[0]?.path,

@@ -59,10 +59,11 @@ export class LoginUseCase {
 
       id = conductor.id;
     } else if (dto.rol === Roles.ADMIN) {
-      const adminEmail =
-        this.configService.get<string>('ADMIN_EMAIL') || 'admin@myride.com';
-      const adminPassword =
-        this.configService.get<string>('ADMIN_PASSWORD') || 'admin123';
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+      const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
+      if (!adminEmail || !adminPassword) {
+        throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);
+      }
 
       if (dto.email !== adminEmail || dto.password !== adminPassword) {
         throw new DomainException(E.CREDENCIALES_INVALIDAS, 401);

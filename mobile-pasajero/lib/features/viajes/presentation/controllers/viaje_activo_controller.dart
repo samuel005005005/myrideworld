@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/services/socket_service.dart';
-import '../../data/mappers/recibo_viaje_mapper.dart';
+import '../../domain/repositories/viaje_realtime_gateway.dart';
+import '../providers/viajes_provider.dart';
 import 'viaje_activo_state.dart';
 
 final viajeActivoControllerProvider =
@@ -24,6 +24,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
     );
   }
 
+  ViajeRealtimeGateway get _gateway => ref.read(viajeRealtimeGatewayProvider);
+
   Future<void> iniciarSeguimiento(String? viajeId) async {
     if (_seguimientoIniciado) {
       return;
@@ -31,55 +33,40 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
     _seguimientoIniciado = true;
 
-    final socketService = ref.read(socketServiceProvider);
-    await socketService.conectar();
+    final gateway = _gateway;
+    await gateway.conectar();
 
     if (viajeId != null && viajeId.isNotEmpty) {
-      socketService.unirseAViaje(viajeId);
+      gateway.unirseAViaje(viajeId);
     }
 
-    socketService.escucharUbicacionActualizada((payload) {
-      final lat = payload['lat'] as num?;
-      final lng = payload['lng'] as num?;
-
-      if (lat == null || lng == null) {
-        return;
-      }
-
-      state = state.copyWith(
-        ubicacionConductor: LatLng(lat.toDouble(), lng.toDouble()),
-      );
+    gateway.escucharUbicacionActualizada((lat, lng) {
+      state = state.copyWith(ubicacionConductor: LatLng(lat, lng));
     });
 
-    socketService.escucharViajeAceptado(() {
+    gateway.escucharViajeAceptado(() {
       state = state.copyWith(
         estadoViaje: AppStrings.trackingConductorEnCamino,
         infoEta: AppStrings.trackingLlegandoEnCincoMinutos,
       );
     });
 
-    socketService.escucharConductorLlego(() {
+    gateway.escucharConductorLlego(() {
       state = state.copyWith(
         estadoViaje: AppStrings.trackingConductorHaLlegado,
         infoEta: null,
       );
     });
 
-    socketService.escucharViajeIniciado(() {
+    gateway.escucharViajeIniciado(() {
       state = state.copyWith(
         estadoViaje: AppStrings.trackingViajeEnCursoDestino,
         infoEta: null,
       );
     });
 
-    socketService.escucharViajeCompletado((payload) {
-      final data = payload is Map<String, dynamic>
-          ? payload
-          : Map<String, dynamic>.from(payload as Map);
-
-      state = state.copyWith(
-        reciboPendiente: ReciboViajeMapper.fromEventoCompletado(data),
-      );
+    gateway.escucharViajeCompletado((recibo) {
+      state = state.copyWith(reciboPendiente: recibo);
     });
   }
 
@@ -93,6 +80,6 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
     }
 
     _seguimientoIniciado = false;
-    ref.read(socketServiceProvider).desconectar();
+    _gateway.desconectar();
   }
 }

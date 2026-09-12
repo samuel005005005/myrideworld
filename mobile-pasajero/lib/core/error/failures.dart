@@ -15,3 +15,11 @@ class CacheFailure extends Failure {
 class ValidationFailure extends Failure {
   const ValidationFailure(super.mensaje);
 }
+
+class NetworkFailure extends Failure {
+  const NetworkFailure([super.mensaje = 'Sin conexión a internet']);
+}
+
+class AuthFailure extends Failure {
+  const AuthFailure([super.mensaje = 'Sesión no válida']);
+}

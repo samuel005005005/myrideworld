@@ -8,44 +8,68 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UseGuards } from '@nestjs/common';
+import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { WsJwtGuard } from '../../../../compartidos/middlewares/ws-jwt.guard.js';
 import type { INotificadorViaje } from '../../aplicacion/puertos/notificador-viaje.port.js';
 import type { ViajeDisponibleNotificacion } from '../../aplicacion/puertos/viaje-disponible-notificacion.js';
+import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
+import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
+
+type SocketAutenticado = Socket & {
+  user?: { sub: string; rol: string };
+};
+
+const INTERVALO_GPS_MS = 3000;
 
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (process.env.CORS_ORIGINS ?? '*').split(',').map((o) => o.trim()),
   },
 })
 @UseGuards(WsJwtGuard)
-export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect, INotificadorViaje {
+export class ViajesGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, INotificadorViaje
+{
   private readonly logger = new Logger(ViajesGateway.name);
+  private readonly ultimaPersistenciaGps = new Map<string, number>();
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Inject(CONDUCTOR_REPOSITORY)
+    private readonly conductorRepository: IConductorRepository,
+    @Inject(VIAJE_REPOSITORY)
+    private readonly viajeRepository: IViajeRepository,
   ) {}
 
   @WebSocketServer()
   server: Server;
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: SocketAutenticado) {
     try {
-      const secret = this.configService.get<string>('JWT_SECRET', 'super-secret-key');
-      const token = client.handshake.auth?.token || client.handshake.headers.authorization?.split(' ')[1];
-      
+      const secret = this.configService.getOrThrow<string>('JWT_SECRET');
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
+
       if (!token) throw new Error(MENSAJES.EXCEPCIONES.AUTH.TOKEN_AUSENTE);
-      
+
       const payload = await this.jwtService.verifyAsync(token, { secret });
-      (client as any).user = payload;
-      this.logger.log(`Cliente autenticado y conectado a Sockets: ${client.id} (Rol: ${payload.rol})`);
-    } catch (err) {
-      this.logger.warn(`Cliente rechazado en Sockets (Sin token / Inválido): ${client.id}`);
+      client.user = payload;
+      this.logger.log(
+        `Cliente autenticado y conectado a Sockets: ${client.id} (Rol: ${payload.rol})`,
+      );
+    } catch {
+      this.logger.warn(
+        `Cliente rechazado en Sockets (Sin token / Inválido): ${client.id}`,
+      );
       client.disconnect(true);
     }
   }
@@ -54,46 +78,92 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     this.logger.log(`Cliente desconectado de Sockets: ${client.id}`);
   }
 
-  // El frontend llama a este evento para suscribirse a un viaje específico
   @SubscribeMessage('unirseAViaje')
-  handleUnirseAViaje(
-    @ConnectedSocket() client: Socket,
+  async handleUnirseAViaje(
+    @ConnectedSocket() client: SocketAutenticado,
     @MessageBody() data: { viajeId: string },
   ) {
+    const user = client.user;
+    if (!user?.sub || !data?.viajeId) {
+      return;
+    }
+
+    const viaje = await this.viajeRepository.obtenerPorId(data.viajeId);
+    if (!viaje) {
+      return;
+    }
+
+    const esParticipante =
+      viaje.pasajeroId === user.sub ||
+      viaje.conductorId === user.sub ||
+      user.rol === Roles.ADMIN;
+
+    if (!esParticipante) {
+      this.logger.warn(
+        `${MENSAJES.EXCEPCIONES.VIAJES.SALA_NO_AUTORIZADA} user=${user.sub} viaje=${data.viajeId}`,
+      );
+      return;
+    }
+
     const room = `viaje_${data.viajeId}`;
     client.join(room);
     this.logger.log(`Cliente ${client.id} se unió a la sala ${room}`);
   }
 
-  // El conductor llama a este evento para recibir alertas directas
   @SubscribeMessage('identificarConductor')
-  handleIdentificarConductor(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conductorId: string },
-  ) {
-    const room = `conductor_${data.conductorId}`;
+  handleIdentificarConductor(@ConnectedSocket() client: SocketAutenticado) {
+    const user = client.user;
+    if (!user?.sub || user.rol !== Roles.CONDUCTOR) {
+      return;
+    }
+
+    const room = `conductor_${user.sub}`;
     client.join(room);
-    this.logger.log(`Conductor ${data.conductorId} (Socket ${client.id}) se unió a su sala privada ${room}`);
+    this.logger.log(
+      `Conductor ${user.sub} (Socket ${client.id}) se unió a su sala privada ${room}`,
+    );
   }
 
-  // El conductor llama a este evento cada segundo transmitiendo su lat/lng
   @SubscribeMessage('actualizarUbicacion')
-  handleActualizarUbicacion(
-    @ConnectedSocket() client: Socket,
+  async handleActualizarUbicacion(
+    @ConnectedSocket() client: SocketAutenticado,
     @MessageBody() data: { viajeId: string; lat: number; lng: number },
   ) {
+    const user = client.user;
+    if (!user?.sub || user.rol !== Roles.CONDUCTOR) {
+      return;
+    }
+    if (
+      typeof data?.lat !== 'number' ||
+      typeof data?.lng !== 'number' ||
+      !data?.viajeId
+    ) {
+      return;
+    }
+
+    const viaje = await this.viajeRepository.obtenerPorId(data.viajeId);
+    if (!viaje || viaje.conductorId !== user.sub) {
+      return;
+    }
+
+    const ahora = Date.now();
+    const ultimo = this.ultimaPersistenciaGps.get(user.sub) ?? 0;
+    if (ahora - ultimo >= INTERVALO_GPS_MS) {
+      this.ultimaPersistenciaGps.set(user.sub, ahora);
+      const conductor = await this.conductorRepository.obtenerPorId(user.sub);
+      if (conductor) {
+        conductor.actualizarUbicacion(data.lat, data.lng);
+        await this.conductorRepository.guardar(conductor);
+      }
+    }
+
     const room = `viaje_${data.viajeId}`;
-    // Retransmite la ubicación a la sala (donde está el pasajero), excluyendo al conductor
     client.to(room).emit('ubicacionActualizada', {
       lat: data.lat,
       lng: data.lng,
       timestamp: new Date().toISOString(),
     });
   }
-
-  // ==========================================
-  // Métodos expuestos para inyectar en Casos de Uso
-  // ==========================================
 
   notificarNuevoViaje(
     conductorId: string,
@@ -105,7 +175,6 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect, 
   }
 
   notificarViajeAceptado(viajeId: string, conductorId: string) {
-    // Alerta al pasajero que está en la sala del viaje
     const room = `viaje_${viajeId}`;
     this.server.to(room).emit('viajeAceptado', { viajeId, conductorId });
   }
@@ -115,7 +184,11 @@ export class ViajesGateway implements OnGatewayConnection, OnGatewayDisconnect, 
     this.server.to(room).emit('conductorLlego', { viajeId });
   }
 
-  notificarViajeCancelado(viajeId: string, actor: string, motivo: string | undefined) {
+  notificarViajeCancelado(
+    viajeId: string,
+    actor: string,
+    motivo: string | undefined,
+  ) {
     const room = `viaje_${viajeId}`;
     this.server.to(room).emit('viajeCancelado', { viajeId, actor, motivo });
   }

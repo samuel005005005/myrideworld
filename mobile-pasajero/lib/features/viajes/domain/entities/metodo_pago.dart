@@ -1,0 +1,1 @@
+enum MetodoPago { efectivo, tarjeta }

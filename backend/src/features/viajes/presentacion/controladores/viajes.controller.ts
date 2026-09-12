@@ -1,11 +1,24 @@
-import { Controller, Post, Get, Param, Body, HttpCode, HttpStatus, UseGuards, Req, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
 import { RolesGuard } from '../../../../compartidos/middlewares/roles.guard.js';
 import { Roles } from '../../../../compartidos/decoradores/roles.decorator.js';
 import { SolicitarViajeUseCase } from '../../aplicacion/casos-uso/solicitar-viaje.use-case.js';
-import { solicitarViajeSchema } from '../../aplicacion/dto/solicitar-viaje.dto.js';
-import { SolicitarViajeDto } from '../../aplicacion/dto/solicitar-viaje.dto.js';
+import {
+  solicitarViajeSchema,
+  SolicitarViajeDto,
+} from '../../aplicacion/dto/solicitar-viaje.dto.js';
 import { AceptarViajeUseCase } from '../../aplicacion/casos-uso/aceptar-viaje.use-case.js';
 import { MarcarLlegadaUseCase } from '../../aplicacion/casos-uso/marcar-llegada.use-case.js';
 import { IniciarViajeUseCase } from '../../aplicacion/casos-uso/iniciar-viaje.use-case.js';
@@ -14,10 +27,17 @@ import { CancelarViajeUseCase } from '../../aplicacion/casos-uso/cancelar-viaje.
 import { ListarViajesUseCase } from '../../aplicacion/casos-uso/listar-viajes.use-case.js';
 import { RechazarViajeUseCase } from '../../aplicacion/casos-uso/rechazar-viaje.use-case.js';
 import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
-import { AceptarViajeDto } from '../../aplicacion/dto/aceptar-viaje.dto.js';
-import { CancelarViajeDto } from '../../aplicacion/dto/cancelar-viaje.dto.js';
+import {
+  AceptarViajeDto,
+  aceptarViajeSchema,
+} from '../../aplicacion/dto/aceptar-viaje.dto.js';
+import {
+  CancelarViajeDto,
+  cancelarViajeSchema,
+} from '../../aplicacion/dto/cancelar-viaje.dto.js';
 import { Roles as RolesEnum } from '../../../../compartidos/constantes/roles.enum.js';
 import { IdempotenciaInterceptor } from '../../../idempotencia/presentacion/interceptores/idempotencia.interceptor.js';
+import { ZodValidationPipe } from '../../../../compartidos/utilidades/pipes/zod-validation.pipe.js';
 
 @ApiTags('Viajes')
 @ApiBearerAuth()
@@ -38,18 +58,24 @@ export class ViajesController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.ADMIN)
   @ApiOperation({ summary: 'Listar todos los viajes (Solo Admin)' })
-  async listarTodos(@Req() req: any) {
-    const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol as RolesEnum);
-    return viajes.map(v => ViajeMapper.toResponse(v));
+  async listarTodos(@Req() req: { user: { sub: string; rol: string } }) {
+    const viajes = await this.listarViajes.ejecutar(
+      req.user.sub,
+      req.user.rol as RolesEnum,
+    );
+    return viajes.map((v) => ViajeMapper.toResponse(v));
   }
 
   @Get('mis-viajes')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR)
   @ApiOperation({ summary: 'Historial de viajes del usuario actual' })
-  async misViajes(@Req() req: any) {
-    const viajes = await this.listarViajes.ejecutar(req.user.sub, req.user.rol as RolesEnum);
-    return viajes.map(v => ViajeMapper.toResponse(v));
+  async misViajes(@Req() req: { user: { sub: string; rol: string } }) {
+    const viajes = await this.listarViajes.ejecutar(
+      req.user.sub,
+      req.user.rol as RolesEnum,
+    );
+    return viajes.map((v) => ViajeMapper.toResponse(v));
   }
 
   @Post()
@@ -59,11 +85,10 @@ export class ViajesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Solicitar un nuevo viaje (Solo Pasajeros)' })
   async solicitar(
-    @Body() dto: SolicitarViajeDto,
-    @Req() req: any,
+    @Body(new ZodValidationPipe(solicitarViajeSchema)) dto: SolicitarViajeDto,
+    @Req() req: { user: { sub: string } },
   ) {
-    // Para mayor seguridad podríamos forzar que el pasajeroId sea el del token
-    // dto.pasajeroId = req.user.sub;
+    dto.pasajeroId = req.user.sub;
     const viaje = await this.solicitarViaje.ejecutar(dto);
     return ViajeMapper.toResponse(viaje);
   }
@@ -75,10 +100,9 @@ export class ViajesController {
   @ApiOperation({ summary: 'Aceptar un viaje disponible (Solo Conductores)' })
   async aceptar(
     @Param('id') id: string,
-    @Body() dto: AceptarViajeDto,
-    @Req() req: any,
+    @Body(new ZodValidationPipe(aceptarViajeSchema)) dto: AceptarViajeDto,
+    @Req() req: { user: { sub: string } },
   ) {
-    // Garantizamos que el conductor que acepta es el autenticado
     dto.conductorId = req.user.sub;
     const viaje = await this.aceptarViaje.ejecutar(id, dto);
     return ViajeMapper.toResponse(viaje);
@@ -88,13 +112,14 @@ export class ViajesController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Notificar que el conductor ha llegado al punto de recogida' })
+  @ApiOperation({
+    summary: 'Notificar que el conductor ha llegado al punto de recogida',
+  })
   async llegada(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: { user: { sub: string } },
   ) {
-    const conductorId = req.user.sub;
-    const viaje = await this.marcarLlegada.ejecutar(id, conductorId);
+    const viaje = await this.marcarLlegada.ejecutar(id, req.user.sub);
     return ViajeMapper.toResponse(viaje);
   }
 
@@ -105,8 +130,9 @@ export class ViajesController {
   @ApiOperation({ summary: 'Iniciar un viaje (Solo Conductores)' })
   async iniciar(
     @Param('id') id: string,
+    @Req() req: { user: { sub: string } },
   ) {
-    const viaje = await this.iniciarViaje.ejecutar(id);
+    const viaje = await this.iniciarViaje.ejecutar(id, req.user.sub);
     return ViajeMapper.toResponse(viaje);
   }
 
@@ -114,11 +140,14 @@ export class ViajesController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Completar el viaje y generar cobro (Solo Conductores)' })
+  @ApiOperation({
+    summary: 'Completar el viaje y generar cobro (Solo Conductores)',
+  })
   async completar(
     @Param('id') id: string,
+    @Req() req: { user: { sub: string } },
   ) {
-    const viaje = await this.completarViaje.ejecutar(id);
+    const viaje = await this.completarViaje.ejecutar(id, req.user.sub);
     return ViajeMapper.toResponse(viaje);
   }
 
@@ -129,12 +158,15 @@ export class ViajesController {
   @ApiOperation({ summary: 'Cancelar un viaje' })
   async cancelar(
     @Param('id') id: string,
-    @Body() dto: CancelarViajeDto,
-    @Req() req: any,
+    @Body(new ZodValidationPipe(cancelarViajeSchema)) dto: CancelarViajeDto,
+    @Req() req: { user: { sub: string; rol: string } },
   ) {
-    const actorId = req.user.sub;
-    const rol = req.user.rol;
-    const viaje = await this.cancelarViaje.ejecutar(id, actorId, rol, dto.motivo);
+    const viaje = await this.cancelarViaje.ejecutar(
+      id,
+      req.user.sub,
+      req.user.rol,
+      dto.motivo,
+    );
     return ViajeMapper.toResponse(viaje);
   }
 
@@ -142,13 +174,14 @@ export class ViajesController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.CONDUCTOR)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rechazar un viaje sugerido (asigna al siguiente conductor)' })
+  @ApiOperation({
+    summary: 'Rechazar un viaje sugerido (asigna al siguiente conductor)',
+  })
   async rechazar(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: { user: { sub: string } },
   ) {
-    const conductorId = req.user.sub;
-    const viaje = await this.rechazarViaje.ejecutar(id, conductorId);
+    const viaje = await this.rechazarViaje.ejecutar(id, req.user.sub);
     return ViajeMapper.toResponse(viaje);
   }
 }

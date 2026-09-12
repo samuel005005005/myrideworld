@@ -85,6 +85,7 @@ export const MENSAJES = {
       PLACA_OBLIGATORIA: 'La placa del vehículo es obligatoria.',
       NO_ENCONTRADO: 'Conductor no encontrado',
       EMAIL_REGISTRADO: 'El email ya está registrado.',
+      DOCUMENTOS_SOLO_PROPIOS: 'Solo puedes subir documentos de tu propio perfil.',
     },
     CONFIGURACION: {
       VALOR_VACIO: 'El valor no puede estar vacío.',
@@ -112,10 +113,13 @@ export const MENSAJES = {
       CANCELACION_NO_SOLICITADO: 'No puedes cancelar un viaje que no solicitaste.',
       CANCELACION_NO_ASIGNADO: 'No puedes cancelar un viaje que no tienes asignado.',
       LLEGADA_SOLO_CONDUCTOR: 'Solo el conductor asignado puede marcar la llegada.',
+      ACCION_SOLO_CONDUCTOR_ASIGNADO: 'Solo el conductor asignado puede realizar esta acción.',
+      YA_ASIGNADO: 'El viaje ya fue tomado por otro conductor.',
       SIN_CONDUCTORES: 'No hay conductores disponibles',
       SIN_CONDUCTORES_ZONA: 'No hay conductores disponibles en tu zona',
       COMPLETADO_EXITOSO: 'Viaje completado exitosamente',
       TIMEOUT_AGOTADO: 'Tiempo de espera agotado',
+      SALA_NO_AUTORIZADA: 'No autorizado para unirse a esta sala.',
     },
     CALIFICACIONES: {
       RANGO_PUNTUACION: 'La puntuación debe estar entre 1 y 5.',
@@ -144,11 +148,15 @@ export const MENSAJES = {
       EJECUCION_ID_OBLIGATORIO: 'ID de ejecución padre es obligatorio.',
       VALOR_CLAVE_OBLIGATORIO: 'El valor clave (identificador legible) es obligatorio.',
       DISPARADO_OK: 'Proceso de timeout de viajes disparado correctamente',
+      SECRETO_INVALIDO: 'Secreto de proceso batch inválido o ausente.',
     },
     IDEMPOTENCIA: {
       LLAVE_REQUERIDA: 'La llave de idempotencia es requerida.',
       PAYLOAD_DIFERENTE: 'Idempotency-Key está siendo usada con un payload diferente.',
       EN_PROGRESO: 'La solicitud está en progreso. Intente nuevamente en unos segundos.',
+    },
+    CONFIG: {
+      JWT_SECRET_REQUERIDO: 'JWT_SECRET es obligatorio. Defínelo en el entorno.',
     },
     BITACORA: {
       DETALLE_OBLIGATORIO: 'El detalle de la bitácora es obligatorio.',

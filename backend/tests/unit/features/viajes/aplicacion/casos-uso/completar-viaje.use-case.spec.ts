@@ -67,7 +67,7 @@ describe('CompletarViajeUseCase', () => {
     viajeRepositoryMock.obtenerPorId.mockResolvedValue(viaje);
     viajeRepositoryMock.guardar.mockImplementation(async (v) => v);
 
-    const resultado = await useCase.ejecutar(viaje.id);
+    const resultado = await useCase.ejecutar(viaje.id, 'c-1');
 
     expect(resultado.estado).toBe(EstadosViaje.COMPLETADO);
     expect(viajeRepositoryMock.guardar).toHaveBeenCalledWith(viaje);
@@ -83,7 +83,7 @@ describe('CompletarViajeUseCase', () => {
   it('debería lanzar DomainException si el viaje no existe', async () => {
     viajeRepositoryMock.obtenerPorId.mockResolvedValue(null);
 
-    await expect(useCase.ejecutar('id-invalido')).rejects.toThrow(DomainException);
-    await expect(useCase.ejecutar('id-invalido')).rejects.toThrow(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+    await expect(useCase.ejecutar('id-invalido', 'c-1')).rejects.toThrow(DomainException);
+    await expect(useCase.ejecutar('id-invalido', 'c-1')).rejects.toThrow(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
   });
 });

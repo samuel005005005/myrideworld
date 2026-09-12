@@ -7,4 +7,8 @@ abstract class AuthRepository {
     String password,
     String rol,
   );
+
+  Future<Resultado<Usuario?>> obtenerSesion();
+
+  Future<Resultado<void>> logout();
 }

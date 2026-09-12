@@ -19,6 +19,7 @@ import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js'
 import { ViajesGateway } from './presentacion/gateways/viajes.gateway.js';
 import { NOTIFICADOR_VIAJE } from './aplicacion/puertos/notificador-viaje.port.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
+import { AsignadorConductorService } from './aplicacion/servicios/asignador-conductor.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
@@ -36,6 +37,7 @@ import { AuthModule } from '../auth/auth.module.js';
       provide: VIAJE_REPOSITORY,
       useClass: ViajeRepositoryImpl,
     },
+    AsignadorConductorService,
     SolicitarViajeUseCase,
     AceptarViajeUseCase,
     MarcarLlegadaUseCase,

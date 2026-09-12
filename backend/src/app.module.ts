@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -17,38 +18,52 @@ import { CalificacionesModule } from './features/calificaciones/calificaciones.m
 import { BitacoraModule } from './features/bitacora/bitacora.module.js';
 import { ProcesosBatchModule } from './features/procesos-batch/procesos-batch.module.js';
 import { IdempotenciaModule } from './features/idempotencia/idempotencia.module.js';
+import { MENSAJES } from './compartidos/constantes/mensajes.const.js';
+
+function obtenerJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(MENSAJES.EXCEPCIONES.CONFIG.JWT_SECRET_REQUERIDO);
+  }
+  return secret;
+}
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Disponible en toda la aplicación
+      isGlobal: true,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 60 segundos
-      limit: 100, // 100 peticiones por minuto por IP
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     JwtModule.registerAsync({
       global: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'super-secret-key'),
+      useFactory: () => ({
+        secret: obtenerJwtSecret(),
         signOptions: { expiresIn: '1d' },
       }),
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USER', 'postgres'),
-        password: configService.get<string>('DB_PASS', 'password'),
-        database: configService.get<string>('DB_NAME', 'myride_mvp'),
-        autoLoadEntities: true,
-        synchronize: true, // Auto-crea tablas en desarrollo (¡no usar en prod!)
-      }),
+      useFactory: (configService: ConfigService) => {
+        const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+        return {
+          type: 'postgres' as const,
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: configService.get<number>('DB_PORT', 5432),
+          username: configService.get<string>('DB_USER', 'postgres'),
+          password: configService.get<string>('DB_PASS', 'password'),
+          database: configService.get<string>('DB_NAME', 'myride_mvp'),
+          autoLoadEntities: true,
+          synchronize: nodeEnv !== 'production',
+        };
+      },
     }),
     PasajerosModule,
     ConductoresModule,
@@ -63,6 +78,12 @@ import { IdempotenciaModule } from './features/idempotencia/idempotencia.module.
     IdempotenciaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

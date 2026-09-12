@@ -3,11 +3,11 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
-import '../models/usuario_model.dart';
+import '../models/credenciales_auth_model.dart';
 import '../mappers/usuario_mapper.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<UsuarioModel> login(String email, String password, String rol);
+  Future<CredencialesAuthModel> login(String email, String password, String rol);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -16,7 +16,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<UsuarioModel> login(String email, String password, String rol) async {
+  Future<CredencialesAuthModel> login(
+    String email,
+    String password,
+    String rol,
+  ) async {
     try {
       final response = await dio.post(
         ApiEndpoints.login,

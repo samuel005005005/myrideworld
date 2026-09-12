@@ -6,10 +6,10 @@ const V = MENSAJES.VALIDACION.VIAJES;
 const S = MENSAJES.SWAGGER.VIAJES;
 
 export const aceptarViajeSchema = z.object({
-  conductorId: z.string().uuid(V.CONDUCTOR_ID_UUID),
+  conductorId: z.string().uuid(V.CONDUCTOR_ID_UUID).optional(),
 });
 
 export class AceptarViajeDto {
-  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID_2, description: S.DESC_CONDUCTOR_ID })
-  conductorId: string;
+  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID_2, description: S.DESC_CONDUCTOR_ID, required: false })
+  conductorId!: string;
 }

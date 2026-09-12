@@ -25,7 +25,7 @@ describe('EstimarTarifaUseCase', () => {
     useCase = new EstimarTarifaUseCase(tarifaRepositoryMock, configRepoMock);
   });
 
-  it('DebeEstimarTarifaYGuardar_CuandoCoordenadasSonValidas', async () => {
+  it('DebeEstimarTarifaSinPersistir_CuandoCoordenadasSonValidas', async () => {
     // Arrange
     const dto: EstimarTarifaDto = {
       origenLat: 0,
@@ -33,17 +33,16 @@ describe('EstimarTarifaUseCase', () => {
       destinoLat: 1, // approx 111km distance
       destinoLng: 0,
     };
-    // Expected distance = 111 km
-    // Expected price = 30 + (111 * 15) = 30 + 1665 = 1695
+    // Expected distance ≈ 111.19 km (haversine)
+    // Expected price = 30 + (111.1949 * 15) ≈ 1697.92
 
     // Act
     const resultado = await useCase.ejecutar(dto);
 
     // Assert
     expect(resultado).toBeDefined();
-    expect(resultado.precio).toBe(1695);
-    expect(tarifaRepositoryMock.guardar).toHaveBeenCalledTimes(1);
-    expect(tarifaRepositoryMock.guardar).toHaveBeenCalledWith(resultado);
+    expect(resultado.precio).toBe(1697.92);
+    expect(tarifaRepositoryMock.guardar).not.toHaveBeenCalled();
   });
 
   it('DebeAsignarTarifaMinima_CuandoDistanciaEsCorta', async () => {

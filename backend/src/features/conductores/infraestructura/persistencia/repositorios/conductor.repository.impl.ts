@@ -26,9 +26,40 @@ export class ConductorRepositoryImpl implements IConductorRepository {
 
   async obtenerDisponibles(): Promise<Conductor[]> {
     const entities = await this.ormRepo.find({
-      where: { estadoAprobacion: 'Aprobado', estadoDisponibilidad: 'Conectado' }
+      where: { estadoAprobacion: 'Aprobado', estadoDisponibilidad: 'Conectado' },
     });
-    return entities.map(e => ConductorOrmMapper.toDomain(e));
+    return entities.map((e) => ConductorOrmMapper.toDomain(e));
+  }
+
+  async obtenerDisponiblesCercanos(
+    lat: number,
+    lng: number,
+    radioKm: number,
+  ): Promise<Conductor[]> {
+    const deltaLat = radioKm / 111;
+    const cosLat = Math.cos((lat * Math.PI) / 180);
+    const deltaLng = radioKm / (111 * Math.max(cosLat, 0.01));
+
+    const entities = await this.ormRepo
+      .createQueryBuilder('c')
+      .where('c.estadoAprobacion = :aprobacion', { aprobacion: 'Aprobado' })
+      .andWhere('c.estadoDisponibilidad = :disponibilidad', {
+        disponibilidad: 'Conectado',
+      })
+      .andWhere('c.ultimaUbicacionLat IS NOT NULL')
+      .andWhere('c.ultimaUbicacionLng IS NOT NULL')
+      .andWhere('c.ultimaUbicacionLat BETWEEN :latMin AND :latMax', {
+        latMin: lat - deltaLat,
+        latMax: lat + deltaLat,
+      })
+      .andWhere('c.ultimaUbicacionLng BETWEEN :lngMin AND :lngMax', {
+        lngMin: lng - deltaLng,
+        lngMax: lng + deltaLng,
+      })
+      .take(100)
+      .getMany();
+
+    return entities.map((e) => ConductorOrmMapper.toDomain(e));
   }
 
   async guardar(conductor: Conductor): Promise<Conductor> {

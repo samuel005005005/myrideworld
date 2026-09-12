@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { EstadosConductor } from '../../../../../compartidos/constantes/estados-conductor.enum.js';
 import { EstadosDisponibilidadConductor } from '../../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 
 @Entity('conductores')
+@Index(['estadoAprobacion', 'estadoDisponibilidad'])
 export class ConductorOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/usuario.dart';
-import '../../domain/usecases/login_usecase.dart';
+import '../../domain/usecases/login_params.dart';
 import '../providers/auth_provider.dart';
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, Usuario?>(
@@ -11,8 +12,10 @@ final authControllerProvider = AsyncNotifierProvider<AuthController, Usuario?>(
 class AuthController extends AsyncNotifier<Usuario?> {
   @override
   Future<Usuario?> build() async {
-    // Al arrancar, podríamos verificar si hay token en caché
-    return null;
+    final obtenerSesion = ref.read(obtenerSesionUseCaseProvider);
+    final resultado = await obtenerSesion(NoParams());
+
+    return resultado.fold((_) => null, (usuario) => usuario);
   }
 
   Future<bool> login({
@@ -37,5 +40,11 @@ class AuthController extends AsyncNotifier<Usuario?> {
         return true;
       },
     );
+  }
+
+  Future<void> logout() async {
+    final logoutUseCase = ref.read(logoutUseCaseProvider);
+    await logoutUseCase(NoParams());
+    state = const AsyncData(null);
   }
 }

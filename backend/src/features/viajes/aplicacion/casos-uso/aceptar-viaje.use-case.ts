@@ -15,23 +15,22 @@ export class AceptarViajeUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(NOTIFICADOR_VIAJE)
     private readonly notificadorViaje: INotificadorViaje,
-  ) { }
+  ) {}
 
   async ejecutar(viajeId: string, dto: AceptarViajeDto): Promise<Viaje> {
-    const viaje = await this.viajeRepository.obtenerPorId(viajeId);
+    const guardado = await this.viajeRepository.aceptarSiDisponible(
+      viajeId,
+      dto.conductorId,
+    );
 
-    if (!viaje) {
-      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+    if (!guardado) {
+      const existente = await this.viajeRepository.obtenerPorId(viajeId);
+      if (!existente) {
+        throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+      }
+      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.YA_ASIGNADO, 409);
     }
 
-    // TODO: En un escenario completo se validaría aquí en IConductorRepository si el conductor existe y está disponible
-
-    // Cambiamos el estado del viaje
-    viaje.asignarConductor(dto.conductorId);
-
-    const guardado = await this.viajeRepository.guardar(viaje);
-
-    // Emitir notificación por WebSockets a la sala del viaje
     this.notificadorViaje.notificarViajeAceptado(guardado.id, dto.conductorId);
 
     return guardado;

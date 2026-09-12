@@ -1,9 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { PasajeroOrmEntity } from '../../../../pasajeros/infraestructura/persistencia/entidades/pasajero.orm-entity.js';
 import { ConductorOrmEntity } from '../../../../conductores/infraestructura/persistencia/entidades/conductor.orm-entity.js';
 import { EstadosViaje } from '../../../../../compartidos/constantes/estados-viaje.enum.js';
 
 @Entity('viajes')
+@Index(['estado', 'fechaSolicitud'])
+@Index(['pasajeroId'])
+@Index(['conductorId'])
 export class ViajeOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -16,19 +16,26 @@ export class IniciarViajeUseCase {
     private readonly notificadorViaje: INotificadorViaje,
   ) {}
 
-  async ejecutar(id: string): Promise<Viaje> {
+  async ejecutar(id: string, conductorId: string): Promise<Viaje> {
     const viaje = await this.viajeRepository.obtenerPorId(id);
-    
+
     if (!viaje) {
       throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
+    }
+
+    if (viaje.conductorId !== conductorId) {
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.VIAJES.ACCION_SOLO_CONDUCTOR_ASIGNADO,
+        403,
+      );
     }
 
     viaje.iniciarViaje();
 
     const guardado = await this.viajeRepository.guardar(viaje);
-    
+
     this.notificadorViaje.notificarViajeIniciado(guardado.id);
-    
+
     return guardado;
   }
 }

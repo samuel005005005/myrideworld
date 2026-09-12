@@ -7,6 +7,5 @@ class UsuarioModel extends Usuario {
     required super.email,
     super.telefono,
     required super.rol,
-    required super.token,
   });
 }

@@ -1,6 +1,13 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, ConflictException, Inject } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  ConflictException,
+  Inject,
+} from '@nestjs/common';
+import { Observable, from, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { IDEMPOTENCIA_REPOSITORY } from '../../dominio/repositorios/idempotencia.repository.js';
 import type { IIdempotenciaRepository } from '../../dominio/repositorios/idempotencia.repository.js';
 import { Idempotencia } from '../../dominio/entidades/idempotencia.entity.js';
@@ -16,31 +23,37 @@ export class IdempotenciaInterceptor implements NestInterceptor {
     private readonly idempotenciaRepository: IIdempotenciaRepository,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<unknown>> {
     const ctx = context.switchToHttp();
-    const request = ctx.getRequest<Request>();
-    
-    // Solo aplicar a POST, PUT, PATCH, DELETE
+    const request = ctx.getRequest<Request & { user?: { sub?: string } }>();
+
     if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       return next.handle();
     }
 
-    const idempotencyKey = request.headers['idempotency-key'] as string;
-    
-    // Si no mandan llave, dejamos que siga (o podríamos forzarlo lanzando error)
-    if (!idempotencyKey) {
+    const rawKey = request.headers['idempotency-key'] as string | undefined;
+    if (!rawKey) {
       return next.handle();
     }
 
+    const userId = request.user?.sub ?? 'anon';
+    const idempotencyKey = `${userId}:${rawKey}`;
     const requestHash = this.generarHash(request.body);
-    
-    // Verificar si ya existe en la base de datos
-    let registro = await this.idempotenciaRepository.obtenerPorLlave(idempotencyKey);
+
+    let registro =
+      await this.idempotenciaRepository.obtenerPorLlave(idempotencyKey);
 
     if (registro) {
-      // Validar si el cuerpo cambió (opcional pero recomendado)
-      if (registro.cuerpoPeticionHash && registro.cuerpoPeticionHash !== requestHash) {
-        throw new ConflictException(MENSAJES.EXCEPCIONES.IDEMPOTENCIA.PAYLOAD_DIFERENTE);
+      if (
+        registro.cuerpoPeticionHash &&
+        registro.cuerpoPeticionHash !== requestHash
+      ) {
+        throw new ConflictException(
+          MENSAJES.EXCEPCIONES.IDEMPOTENCIA.PAYLOAD_DIFERENTE,
+        );
       }
 
       if (registro.estado === EstadoIdempotencia.COMPLETADO) {
@@ -50,47 +63,49 @@ export class IdempotenciaInterceptor implements NestInterceptor {
       }
 
       if (registro.estado === EstadoIdempotencia.EN_PROGRESO) {
-        throw new ConflictException(MENSAJES.EXCEPCIONES.IDEMPOTENCIA.EN_PROGRESO);
+        throw new ConflictException(
+          MENSAJES.EXCEPCIONES.IDEMPOTENCIA.EN_PROGRESO,
+        );
       }
 
-      // Si es ERROR, podríamos permitir reintentar o devolver el error
       if (registro.estado === EstadoIdempotencia.ERROR) {
-        // Para este interceptor simple, dejaremos que vuelva a procesarse actualizando el registro a EN_PROGRESO
-        registro = Idempotencia.iniciar(idempotencyKey, request.url, requestHash);
+        registro = Idempotencia.iniciar(
+          idempotencyKey,
+          request.url,
+          requestHash,
+        );
         await this.idempotenciaRepository.guardar(registro);
       }
     } else {
-      // Crear nuevo registro EN_PROGRESO
       registro = Idempotencia.iniciar(idempotencyKey, request.url, requestHash);
       await this.idempotenciaRepository.guardar(registro);
     }
 
     return next.handle().pipe(
-      tap({
-        next: async (data) => {
-          const res = ctx.getResponse<Response>();
-          // Obtener el registro fresco por si acaso
-          const actualizado = await this.idempotenciaRepository.obtenerPorLlave(idempotencyKey);
-          if (actualizado) {
-            actualizado.completar(res.statusCode, data);
-            await this.idempotenciaRepository.guardar(actualizado);
-          }
-        },
-        error: async (error) => {
-          const actualizado = await this.idempotenciaRepository.obtenerPorLlave(idempotencyKey);
-          if (actualizado) {
-            const status = error.status || 500;
-            const resBody = error.response || { message: error.message };
-            actualizado.fallar(status, resBody);
-            await this.idempotenciaRepository.guardar(actualizado);
-          }
-        },
-      }),
+      switchMap((data) =>
+        from(
+          (async () => {
+            const res = ctx.getResponse<Response>();
+            const actualizado =
+              await this.idempotenciaRepository.obtenerPorLlave(idempotencyKey);
+            if (actualizado) {
+              actualizado.completar(res.statusCode, data);
+              await this.idempotenciaRepository.guardar(actualizado);
+            }
+            return data;
+          })(),
+        ),
+      ),
     );
   }
 
-  private generarHash(body: any): string {
-    if (!body || Object.keys(body).length === 0) return '';
-    return crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
+  private generarHash(body: unknown): string {
+    if (!body || typeof body !== 'object' || Object.keys(body as object).length === 0) {
+      return '';
+    }
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(body))
+      .digest('hex');
   }
 }

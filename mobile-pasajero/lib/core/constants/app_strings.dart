@@ -40,6 +40,9 @@ class AppStrings {
   static const String errorTripRequest = 'Error al solicitar viaje';
   static const String errorUnexpected = 'Error inesperado: ';
   static const String errorObtenerRuta = 'No se pudo obtener la ruta del viaje';
+  static const String errorSinConexion = 'Sin conexión a internet';
+  static const String errorSesionExpirada =
+      'Tu sesión expiró. Inicia sesión nuevamente';
 
   // Registro / Bienvenida Turística
   static const String welcomeTitle = '¡Bienvenido al Paraíso!';

@@ -6,7 +6,7 @@ const V = MENSAJES.VALIDACION.VIAJES;
 const S = MENSAJES.SWAGGER.VIAJES;
 
 export const solicitarViajeSchema = z.object({
-  pasajeroId: z.string().uuid(V.PASAJERO_ID_UUID),
+  pasajeroId: z.string().uuid(V.PASAJERO_ID_UUID).optional(),
   origenLat: z.number().min(-90, V.LATITUD_INVALIDA).max(90, V.LATITUD_INVALIDA),
   origenLng: z.number().min(-180, V.LONGITUD_INVALIDA).max(180, V.LONGITUD_INVALIDA),
   destinoLat: z.number().min(-90, V.LATITUD_INVALIDA).max(90, V.LATITUD_INVALIDA),
@@ -14,8 +14,8 @@ export const solicitarViajeSchema = z.object({
 });
 
 export class SolicitarViajeDto {
-  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID, description: S.DESC_PASAJERO_ID })
-  pasajeroId: string;
+  @ApiProperty({ example: MENSAJES.SWAGGER.COMUNES.EJEMPLO_UUID, description: S.DESC_PASAJERO_ID, required: false })
+  pasajeroId!: string;
 
   @ApiProperty({ example: S.EJEMPLO_LATITUD_ORIGEN, description: S.DESC_LATITUD_ORIGEN })
   origenLat: number;

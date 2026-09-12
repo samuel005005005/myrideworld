@@ -1,11 +1,10 @@
-import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../../../core/storage/session_storage.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../models/viaje_model.dart';
 import '../mappers/viaje_mapper.dart';
+import 'package:dio/dio.dart';
 
 abstract class ViajeRemoteDataSource {
   Future<ViajeModel> solicitarViaje({
@@ -19,8 +18,12 @@ abstract class ViajeRemoteDataSource {
 
 class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
   final Dio dio;
+  final SessionStorage sessionStorage;
 
-  ViajeRemoteDataSourceImpl({required this.dio});
+  ViajeRemoteDataSourceImpl({
+    required this.dio,
+    required this.sessionStorage,
+  });
 
   @override
   Future<ViajeModel> solicitarViaje({
@@ -31,8 +34,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
     required String idempotencyKey,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final pasajeroId = prefs.getString('user_id');
+      final pasajeroId = await sessionStorage.obtenerUsuarioId();
 
       if (pasajeroId == null) {
         throw ServerException(AppStrings.errorNoSession);
@@ -61,6 +63,9 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       }
       throw ServerException(AppStrings.errorServerConnection);
     } catch (e) {
+      if (e is ServerException) {
+        rethrow;
+      }
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
