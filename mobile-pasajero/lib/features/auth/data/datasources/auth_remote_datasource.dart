@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../models/credenciales_auth_model.dart';
 import '../mappers/usuario_mapper.dart';
 
@@ -39,9 +39,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         rolSolicitado: rol,
       );
     } on DioException catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[MyRide Auth] DioException en login: $e\n$stack');
-      }
+      AppLogger.error('AuthRemoteDataSourceImpl.login', e, stack);
       if (e.response != null && e.response?.data != null) {
         final message =
             e.response?.data['message'] ?? AppStrings.errorLoginInvalid;
@@ -53,9 +51,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on ServerException {
       rethrow;
     } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[MyRide Auth] Error parseando login: $e\n$stack');
-      }
+      AppLogger.error('AuthRemoteDataSourceImpl.login', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

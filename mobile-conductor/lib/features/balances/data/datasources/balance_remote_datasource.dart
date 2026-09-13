@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/pago_balance.dart';
 import '../mappers/pago_balance_mapper.dart';
 
@@ -28,7 +29,10 @@ class BalanceRemoteDataSource {
           .toList();
     } on DioException catch (e) {
       throw _mapear(e, AppStrings.errorBalances);
-    } catch (_) {
+    } on AppException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('BalanceRemoteDataSource.listarMisBalances', e, stack);
       throw const AppException(AppStrings.errorBalances);
     }
   }
@@ -41,7 +45,10 @@ class BalanceRemoteDataSource {
       );
     } on DioException catch (e) {
       throw _mapear(e, AppStrings.errorBalances);
-    } catch (_) {
+    } on AppException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('BalanceRemoteDataSource.obtenerPorViaje', e, stack);
       throw const AppException(AppStrings.errorBalances);
     }
   }

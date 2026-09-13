@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/logging/resultado_logging.dart';
 import '../../domain/entities/conductor_asignado.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
 import '../../domain/usecases/cancelar_viaje_params.dart';
@@ -68,7 +69,8 @@ class BusquedaConductorController extends Notifier<BusquedaConductorState> {
       CancelarViajeParams(viajeId: viajeId),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'BusquedaConductorController.cancelarSolicitud',
       (failure) {
         state = state.copyWith(cancelando: false, error: failure.mensaje);
         return false;

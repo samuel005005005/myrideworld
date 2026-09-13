@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/contacto_soporte.dart';
 import '../mappers/contacto_soporte_mapper.dart';
 
@@ -30,7 +31,8 @@ class SoporteRemoteDataSource {
       throw ServerException(AppStrings.errorServerConnection);
     } on ServerException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('SoporteRemoteDataSource.obtenerContacto', e, stack);
       throw ServerException(AppStrings.errorSoporteContacto);
     }
   }

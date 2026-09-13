@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/perfil_conductor.dart';
 import '../mappers/perfil_conductor_mapper.dart';
 
@@ -19,7 +20,10 @@ class PerfilRemoteDataSource {
       );
     } on DioException catch (e) {
       throw _mapear(e);
-    } catch (_) {
+    } on AppException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('PerfilRemoteDataSource.obtenerPerfil', e, stack);
       throw const AppException(AppStrings.errorPerfilObtener);
     }
   }
@@ -49,7 +53,10 @@ class PerfilRemoteDataSource {
       );
     } on DioException catch (e) {
       throw _mapear(e);
-    } catch (_) {
+    } on AppException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('PerfilRemoteDataSource.actualizarPerfil', e, stack);
       throw const AppException(AppStrings.errorPerfilActualizar);
     }
   }

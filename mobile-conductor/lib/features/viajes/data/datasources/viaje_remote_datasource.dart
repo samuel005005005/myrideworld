@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../mappers/viaje_mapper.dart';
 import '../models/viaje_model.dart';
 
@@ -74,7 +75,8 @@ class ViajeRemoteDataSource {
       throw const AppException(AppStrings.errorViajeActivo);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSource.obtenerViajeActivo', e, stack);
       throw const AppException(AppStrings.errorViajeActivo);
     }
   }
@@ -104,7 +106,8 @@ class ViajeRemoteDataSource {
       throw const AppException(AppStrings.errorHistorial);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSource.listarMisViajes', e, stack);
       throw const AppException(AppStrings.errorHistorial);
     }
   }
@@ -134,7 +137,12 @@ class ViajeRemoteDataSource {
       throw const AppException(AppStrings.errorDisponibilidad);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error(
+        'ViajeRemoteDataSource.actualizarDisponibilidad',
+        e,
+        stack,
+      );
       throw const AppException(AppStrings.errorDisponibilidad);
     }
   }
@@ -159,7 +167,12 @@ class ViajeRemoteDataSource {
       throw const AppException(AppStrings.errorGpsObtener);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error(
+        'ViajeRemoteDataSource.actualizarUbicacionConductor',
+        e,
+        stack,
+      );
       throw const AppException(AppStrings.errorGpsObtener);
     }
   }
@@ -185,7 +198,8 @@ class ViajeRemoteDataSource {
       throw AppException(mensajeError);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSource._ejecutarMutacion', e, stack);
       throw AppException(mensajeError);
     }
   }

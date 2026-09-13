@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../balances/domain/usecases/obtener_pago_por_viaje_params.dart';
 import '../../../balances/presentation/providers/balances_provider.dart';
 import '../../domain/entities/estado_viaje_activo.dart';
@@ -48,7 +49,11 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       (c) => c.longitud,
     );
 
-    final errorGps = ubicacionInicial.fold((f) => f.mensaje, (_) => null);
+    final errorGps = ubicacionInicial.foldLogged(
+      'ViajeActivoController.inicializar',
+      (f) => f.mensaje,
+      (_) => null,
+    );
 
     state = ViajeActivoState(
       viaje: viaje,
@@ -144,7 +149,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
   Future<void> _ejecutarLlegada(Viaje viaje) async {
     final resultado = await ref.read(marcarLlegadaProvider)(viaje.id);
-    resultado.fold(
+    resultado.foldLogged(
+      'ViajeActivoController._ejecutarLlegada',
       (failure) {
         state = state.copyWith(
           procesando: false,
@@ -165,7 +171,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
   Future<void> _ejecutarInicio(Viaje viaje) async {
     final resultado = await ref.read(iniciarViajeProvider)(viaje.id);
-    resultado.fold(
+    resultado.foldLogged(
+      'ViajeActivoController._ejecutarInicio',
       (failure) {
         state = state.copyWith(
           procesando: false,
@@ -185,7 +192,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
 
   Future<void> _ejecutarCompletado(Viaje viaje) async {
     final resultado = await ref.read(completarViajeProvider)(viaje.id);
-    await resultado.fold(
+    await resultado.foldLogged(
+      'ViajeActivoController._ejecutarCompletado',
       (failure) async {
         state = state.copyWith(
           procesando: false,
@@ -198,7 +206,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
           ObtenerPagoPorViajeParams(viaje.id),
         );
 
-        pagoResultado.fold(
+        pagoResultado.foldLogged(
+          'ViajeActivoController._ejecutarCompletado',
           (failure) {
             state = state.copyWith(
               viaje: viajeActualizado,

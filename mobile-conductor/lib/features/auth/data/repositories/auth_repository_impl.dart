@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/sesion_usuario.dart';
@@ -38,10 +39,20 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await localDataSource.guardarSesion(modelo);
       return Exito(SesionUsuarioMapper.toDomain(modelo));
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
-    } catch (_) {
-      return const Fallo(Failure(AppStrings.errorAutenticacion));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.iniciarSesion',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.iniciarSesion',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorAutenticacion),
+      );
     }
   }
 
@@ -50,8 +61,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final sesion = await localDataSource.obtenerSesion();
       return Exito(sesion);
-    } catch (_) {
-      return const Fallo(Failure(AppStrings.errorTokenInvalido));
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.obtenerSesion',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorTokenInvalido),
+      );
     }
   }
 
@@ -60,8 +76,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await localDataSource.limpiar();
       return const Exito(null);
-    } catch (_) {
-      return const Fallo(Failure(AppStrings.errorGenerico));
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.logout',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorGenerico),
+      );
     }
   }
 }

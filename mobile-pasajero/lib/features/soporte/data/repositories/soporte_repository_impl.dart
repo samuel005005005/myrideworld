@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/contacto_soporte.dart';
@@ -25,10 +26,20 @@ class SoporteRepositoryImpl implements SoporteRepository {
     try {
       final contacto = await remoteDataSource.obtenerContacto();
       return Exito(contacto);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'SoporteRepositoryImpl.obtenerContacto',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'SoporteRepositoryImpl.obtenerContacto',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 }

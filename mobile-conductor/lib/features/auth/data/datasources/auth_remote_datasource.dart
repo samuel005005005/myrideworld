@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../mappers/sesion_usuario_mapper.dart';
 import '../models/sesion_usuario_model.dart';
 
@@ -37,7 +38,8 @@ class AuthRemoteDataSource {
       throw const AppException(AppStrings.errorAutenticacion);
     } on AppException {
       rethrow;
-    } catch (_) {
+    } catch (e, stack) {
+      AppLogger.error('AuthRemoteDataSource.iniciarSesion', e, stack);
       throw const AppException(AppStrings.errorAutenticacion);
     }
   }

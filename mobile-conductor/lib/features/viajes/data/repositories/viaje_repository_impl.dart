@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/viaje.dart';
@@ -63,8 +64,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
         return const Exito(null);
       }
       return Exito(ViajeMapper.toDomain(modelo));
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajeActivo',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajeActivo',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorViajeActivo),
+      );
     }
   }
 
@@ -77,8 +90,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
     try {
       final modelos = await remoteDataSource.listarMisViajes();
       return Exito(modelos.map(ViajeMapper.toDomain).toList());
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.listarMisViajes',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.listarMisViajes',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorHistorial),
+      );
     }
   }
 
@@ -92,8 +117,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
     try {
       final modelo = await accion();
       return Exito(ViajeMapper.toDomain(modelo));
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl._resolver',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl._resolver',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorGenerico),
+      );
     }
   }
 }

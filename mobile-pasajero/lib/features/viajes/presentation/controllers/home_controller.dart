@@ -3,6 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/constants/ubicaciones_turisticas.dart';
 import '../../domain/usecases/estimar_tarifa_params.dart';
 import '../../domain/usecases/obtener_ruta_usecase.dart';
@@ -45,7 +46,8 @@ class HomeController extends Notifier<HomeState> {
     final ubicacionResultado = await ref.read(ubicacionGatewayProvider)
         .obtenerUbicacionActual();
 
-    final ok = ubicacionResultado.fold(
+    final ok = ubicacionResultado.foldLogged(
+      'HomeController.inicializar',
       (failure) {
         _yaInicializado = false;
         state = state.copyWith(
@@ -147,7 +149,8 @@ class HomeController extends Notifier<HomeState> {
       ),
     );
 
-    result.fold(
+    result.foldLogged(
+      'HomeController.requestTrip',
       (failure) {
         state = state.copyWith(
           status: HomeStateStatus.error,
@@ -208,7 +211,8 @@ class HomeController extends Notifier<HomeState> {
       ),
     );
 
-    resultadoRuta.fold(
+    resultadoRuta.foldLogged(
+      'HomeController._actualizarRuta',
       (failure) {
         state = state.copyWith(
           routePoints: const <LatLng>[],
@@ -239,7 +243,8 @@ class HomeController extends Notifier<HomeState> {
       ),
     );
 
-    resultadoTarifa.fold(
+    resultadoTarifa.foldLogged(
+      'HomeController._actualizarRuta',
       (failure) {
         state = state.copyWith(
           tarifaEstimada: null,

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../mappers/viaje_mapper.dart';
 import '../models/viaje_model.dart';
@@ -74,7 +75,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       throw ServerException(AppStrings.errorServerConnection);
     } on ServerException {
       rethrow;
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSourceImpl.solicitarViaje', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
@@ -105,7 +107,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       throw ServerException(AppStrings.errorServerConnection);
     } on ServerException {
       rethrow;
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSourceImpl.listarMisViajes', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
@@ -128,7 +131,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       throw ServerException(AppStrings.errorServerConnection);
     } on ServerException {
       rethrow;
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSourceImpl.obtenerViajePorId', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
@@ -157,7 +161,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       throw ServerException(AppStrings.errorServerConnection);
     } on ServerException {
       rethrow;
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSourceImpl.cancelarViaje', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

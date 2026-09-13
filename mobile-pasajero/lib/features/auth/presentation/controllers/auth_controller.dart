@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/usecases/login_params.dart';
@@ -30,7 +31,8 @@ class AuthController extends AsyncNotifier<Usuario?> {
       LoginParams(email: email, password: password, rol: rol),
     );
 
-    return result.fold(
+    return result.foldLogged(
+      'AuthController.login',
       (failure) {
         state = AsyncError(failure.mensaje, StackTrace.current);
         return false;

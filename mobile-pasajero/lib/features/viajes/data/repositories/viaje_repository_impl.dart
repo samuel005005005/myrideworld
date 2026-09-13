@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/viaje.dart';
@@ -38,10 +39,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
       );
 
       return Exito(viajeModel);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.solicitarViaje',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.solicitarViaje',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 
@@ -54,10 +65,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
     try {
       final modelos = await remoteDataSource.listarMisViajes();
       return Exito(List<Viaje>.from(modelos));
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.listarMisViajes',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.listarMisViajes',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 
@@ -70,10 +91,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
     try {
       final modelo = await remoteDataSource.obtenerViajePorId(viajeId);
       return Exito(modelo);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajePorId',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajePorId',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 
@@ -92,10 +123,20 @@ class ViajeRepositoryImpl implements ViajeRepository {
         motivo: motivo,
       );
       return Exito(modelo);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.cancelarViaje',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.cancelarViaje',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 }

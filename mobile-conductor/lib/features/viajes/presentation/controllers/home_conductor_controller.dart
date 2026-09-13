@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/sesion_usuario.dart';
@@ -71,7 +72,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         .read(ubicacionGatewayProvider)
         .obtenerUbicacionActual();
 
-    ubicacionResultado.fold(
+    ubicacionResultado.foldLogged(
+      'HomeConductorController.inicializar',
       (failure) {
         state = state.copyWith(errorMensaje: failure.mensaje);
       },
@@ -151,7 +153,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       ),
     );
 
-    final ok = await resultado.fold(
+    final ok = await resultado.foldLogged(
+      'HomeConductorController.cambiarDisponibilidad',
       (failure) async {
         state = state.copyWith(
           cambiandoDisponibilidad: false,
@@ -233,7 +236,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       AceptarViajeParams(viajeId: viaje.id, conductorId: sesion.userId),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'HomeConductorController.aceptarViaje',
       (failure) {
         state = state.copyWith(
           aceptandoViaje: false,
@@ -263,7 +267,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       RechazarViajeParams(viajeId: viaje.id),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'HomeConductorController.rechazarViaje',
       (failure) {
         state = state.copyWith(
           rechazandoViaje: false,

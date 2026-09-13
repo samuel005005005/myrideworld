@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../mappers/ruta_viaje_mapper.dart';
 import '../models/ruta_viaje_model.dart';
 
@@ -48,7 +49,10 @@ class RoutingRemoteDataSourceImpl implements RoutingRemoteDataSource {
       }
 
       throw ServerException(AppStrings.errorServerConnection);
-    } catch (e) {
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('RoutingRemoteDataSourceImpl.obtenerRuta', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

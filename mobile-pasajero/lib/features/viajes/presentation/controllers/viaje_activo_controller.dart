@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
 import '../../domain/usecases/cancelar_viaje_params.dart';
 import '../../domain/usecases/obtener_viaje_por_id_params.dart';
@@ -89,7 +90,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       CancelarViajeParams(viajeId: id),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'ViajeActivoController.cancelarViajeActivo',
       (failure) {
         state = state.copyWith(
           cancelando: false,

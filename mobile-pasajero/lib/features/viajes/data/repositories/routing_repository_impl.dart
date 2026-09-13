@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/entities/ruta_viaje.dart';
@@ -36,10 +37,20 @@ class RoutingRepositoryImpl implements RoutingRepository {
       );
 
       return Exito(ruta);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorObtenerRuta));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'RoutingRepositoryImpl.obtenerRuta',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'RoutingRepositoryImpl.obtenerRuta',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorObtenerRuta),
+      );
     }
   }
 }

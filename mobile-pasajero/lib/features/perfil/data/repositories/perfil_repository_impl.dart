@@ -2,6 +2,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/roles.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../../../core/tipos/resultado.dart';
@@ -31,10 +32,20 @@ class PerfilRepositoryImpl implements PerfilRepository {
       final perfil = await remoteDataSource.obtenerPerfil();
       await _sincronizarSesion(perfil);
       return Exito(perfil);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'PerfilRepositoryImpl.obtenerPerfil',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'PerfilRepositoryImpl.obtenerPerfil',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 
@@ -54,10 +65,20 @@ class PerfilRepositoryImpl implements PerfilRepository {
       );
       await _sincronizarSesion(perfil);
       return Exito(perfil);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'PerfilRepositoryImpl.actualizarPerfil',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'PerfilRepositoryImpl.actualizarPerfil',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 

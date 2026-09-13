@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../mappers/estimacion_tarifa_mapper.dart';
 import '../../domain/entities/estimacion_tarifa.dart';
 
@@ -49,8 +50,10 @@ class TarifaRemoteDataSourceImpl implements TarifaRemoteDataSource {
         );
       }
       throw ServerException(AppStrings.errorServerConnection);
-    } catch (e) {
-      if (e is ServerException) rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('TarifaRemoteDataSourceImpl.estimar', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

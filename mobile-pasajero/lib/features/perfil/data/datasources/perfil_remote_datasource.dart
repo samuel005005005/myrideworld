@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/perfil_pasajero.dart';
 import '../mappers/perfil_pasajero_mapper.dart';
 
@@ -29,8 +30,10 @@ class PerfilRemoteDataSourceImpl implements PerfilRemoteDataSource {
       );
     } on DioException catch (e) {
       throw _mapearError(e);
-    } catch (e) {
-      if (e is ServerException) rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('PerfilRemoteDataSourceImpl.obtenerPerfil', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }
@@ -53,8 +56,10 @@ class PerfilRemoteDataSourceImpl implements PerfilRemoteDataSource {
       );
     } on DioException catch (e) {
       throw _mapearError(e);
-    } catch (e) {
-      if (e is ServerException) rethrow;
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('PerfilRemoteDataSourceImpl.actualizarPerfil', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

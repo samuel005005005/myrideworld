@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/tipos/resultado.dart';
 import '../../domain/repositories/disponibilidad_repository.dart';
@@ -32,8 +33,20 @@ class DisponibilidadRepositoryImpl implements DisponibilidadRepository {
         longitud: longitud,
       );
       return const Exito(null);
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'DisponibilidadRepositoryImpl.actualizarDisponibilidad',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'DisponibilidadRepositoryImpl.actualizarDisponibilidad',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorDisponibilidad),
+      );
     }
   }
 
@@ -51,8 +64,20 @@ class DisponibilidadRepositoryImpl implements DisponibilidadRepository {
         longitud: longitud,
       );
       return const Exito(null);
-    } on AppException catch (error) {
-      return Fallo(Failure(error.mensaje));
+    } on AppException catch (error, stack) {
+      return falloDesdeError(
+        contexto: 'DisponibilidadRepositoryImpl.actualizarUbicacion',
+        error: error,
+        stack: stack,
+        failure: Failure(error.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'DisponibilidadRepositoryImpl.actualizarUbicacion',
+        error: e,
+        stack: stack,
+        failure: const Failure(AppStrings.errorGpsObtener),
+      );
     }
   }
 }

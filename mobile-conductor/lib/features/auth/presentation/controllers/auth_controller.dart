@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/sesion_usuario.dart';
 import '../../domain/usecases/iniciar_sesion_params.dart';
@@ -25,7 +26,8 @@ class AuthController extends AsyncNotifier<SesionUsuario?> {
       IniciarSesionParams(email: email, password: password, rol: rol),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'AuthController.login',
       (failure) {
         state = AsyncError(failure.mensaje, StackTrace.current);
         return false;

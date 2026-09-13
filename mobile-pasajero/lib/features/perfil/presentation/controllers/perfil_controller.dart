@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/roles.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
@@ -23,7 +24,8 @@ class PerfilController extends Notifier<PerfilState> {
 
     final resultado = await ref.read(obtenerPerfilUseCaseProvider)(NoParams());
 
-    resultado.fold(
+    resultado.foldLogged(
+      'PerfilController.cargar',
       (failure) {
         state = state.copyWith(
           status: PerfilStateStatus.error,
@@ -63,7 +65,8 @@ class PerfilController extends Notifier<PerfilState> {
       ActualizarPerfilParams(nombreCompleto: nombre, telefono: tel),
     );
 
-    return resultado.fold(
+    return resultado.foldLogged(
+      'PerfilController.guardar',
       (failure) {
         state = state.copyWith(
           status: PerfilStateStatus.error,

@@ -1,6 +1,7 @@
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../../../core/tipos/resultado.dart';
@@ -36,10 +37,20 @@ class AuthRepositoryImpl implements AuthRepository {
         usuario: credenciales.usuario,
       );
       return Exito(credenciales.usuario);
-    } on ServerException catch (e) {
-      return Fallo(ServerFailure(e.mensaje));
-    } catch (_) {
-      return const Fallo(ServerFailure(AppStrings.errorUnexpected));
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.login',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.login',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
     }
   }
 
@@ -58,8 +69,13 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       return Exito(usuario);
-    } catch (_) {
-      return const Fallo(CacheFailure());
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.obtenerSesion',
+        error: e,
+        stack: stack,
+        failure: const CacheFailure(),
+      );
     }
   }
 
@@ -68,8 +84,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await sessionStorage.limpiar();
       return const Exito(null);
-    } catch (_) {
-      return const Fallo(CacheFailure());
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'AuthRepositoryImpl.logout',
+        error: e,
+        stack: stack,
+        failure: const CacheFailure(),
+      );
     }
   }
 }
