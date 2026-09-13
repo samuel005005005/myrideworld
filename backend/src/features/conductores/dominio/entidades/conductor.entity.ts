@@ -21,6 +21,7 @@ export class Conductor {
   private _estadoDisponibilidad: EstadosDisponibilidadConductor;
   private _ultimaUbicacionLat: number | null;
   private _ultimaUbicacionLng: number | null;
+  private _tokenPushFcm: string | null;
 
   private constructor(props: ConductorProps) {
     this._id = props.id ?? crypto.randomUUID();
@@ -39,6 +40,7 @@ export class Conductor {
     this._estadoDisponibilidad = props.estadoDisponibilidad ?? EstadosDisponibilidadConductor.DESCONECTADO;
     this._ultimaUbicacionLat = props.ultimaUbicacionLat ?? null;
     this._ultimaUbicacionLng = props.ultimaUbicacionLng ?? null;
+    this._tokenPushFcm = props.tokenPushFcm ?? null;
 
     this.validar();
   }
@@ -63,6 +65,12 @@ export class Conductor {
   get estadoDisponibilidad(): EstadosDisponibilidadConductor { return this._estadoDisponibilidad; }
   get ultimaUbicacionLat(): number | null { return this._ultimaUbicacionLat; }
   get ultimaUbicacionLng(): number | null { return this._ultimaUbicacionLng; }
+  get tokenPushFcm(): string | null { return this._tokenPushFcm; }
+
+  registrarTokenPush(token: string | null): void {
+    const normalizado = token?.trim() || null;
+    this._tokenPushFcm = normalizado;
+  }
 
   aprobar(): void {
     if (this._estadoAprobacion !== EstadosConductor.PENDIENTE) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ADMIN_ROLES, type AdminRol } from '../../../../core/auth/admin-rol';
 import { etiquetaRol } from '../../../../core/auth/rbac';
 import { ApiError } from '../../../../core/http/api-error';
@@ -9,6 +9,14 @@ import {
   listarAdministradores,
 } from '../../infrastructure/administradores-api';
 
+function badgeActivo(activo: boolean) {
+  return activo ? (
+    <span className="badge badge-ok">Activo</span>
+  ) : (
+    <span className="badge">Inactivo</span>
+  );
+}
+
 export function UsuariosAdminPage() {
   const [items, setItems] = useState<AdministradorItem[]>([]);
   const [nombreCompleto, setNombreCompleto] = useState('');
@@ -18,6 +26,7 @@ export function UsuariosAdminPage() {
   const [cargando, setCargando] = useState(true);
   const [procesando, setProcesando] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [okMsg, setOkMsg] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -39,10 +48,19 @@ export function UsuariosAdminPage() {
     void cargar();
   }, [cargar]);
 
+  const resumen = useMemo(() => {
+    let activos = 0;
+    for (const a of items) {
+      if (a.activo) activos += 1;
+    }
+    return { total: items.length, activos, inactivos: items.length - activos };
+  }, [items]);
+
   async function onCrear(event: FormEvent) {
     event.preventDefault();
     setProcesando('crear');
     setError(null);
+    setOkMsg(null);
     try {
       await crearAdministrador({
         nombreCompleto: nombreCompleto.trim(),
@@ -53,6 +71,7 @@ export function UsuariosAdminPage() {
       setNombreCompleto('');
       setEmail('');
       setPassword('');
+      setOkMsg('Usuario admin creado');
       await cargar();
     } catch (err) {
       setError(
@@ -68,6 +87,7 @@ export function UsuariosAdminPage() {
   async function toggleActivo(admin: AdministradorItem) {
     setProcesando(admin.id);
     setError(null);
+    setOkMsg(null);
     try {
       await actualizarAdministrador(admin.id, { activo: !admin.activo });
       await cargar();
@@ -88,6 +108,7 @@ export function UsuariosAdminPage() {
     }
     setProcesando(admin.id);
     setError(null);
+    setOkMsg(null);
     try {
       await actualizarAdministrador(admin.id, { rolAdmin: nuevoRol });
       await cargar();
@@ -114,47 +135,83 @@ export function UsuariosAdminPage() {
         </button>
       </header>
 
-      {error ? <p className="error-text">{error}</p> : null}
+      {!cargando && items.length > 0 ? (
+        <div className="stats-grid stats-grid-compact">
+          <article className="stat-card">
+            <span className="stat-label">Total</span>
+            <strong className="stat-value">{resumen.total}</strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Activos</span>
+            <strong className="stat-value">{resumen.activos}</strong>
+          </article>
+          <article className="stat-card">
+            <span className="stat-label">Inactivos</span>
+            <strong className="stat-value">{resumen.inactivos}</strong>
+          </article>
+        </div>
+      ) : null}
 
-      <form className="inline-form stacked" onSubmit={onCrear}>
-        <input
-          placeholder="Nombre completo"
-          value={nombreCompleto}
-          onChange={(e) => setNombreCompleto(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
-        <select
-          value={rolAdmin}
-          onChange={(e) => setRolAdmin(e.target.value as AdminRol)}
+      {error ? <p className="error-text">{error}</p> : null}
+      {okMsg ? <p className="ok-text">{okMsg}</p> : null}
+
+      <form className="tarifario-form" onSubmit={onCrear}>
+        <div className="alta-conductor-grid">
+          <label className="zona-field">
+            <span>Nombre completo</span>
+            <input
+              placeholder="Nombre y apellido"
+              value={nombreCompleto}
+              onChange={(e) => setNombreCompleto(e.target.value)}
+              required
+            />
+          </label>
+          <label className="zona-field">
+            <span>Correo</span>
+            <input
+              type="email"
+              placeholder="admin@ejemplo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label className="zona-field">
+            <span>Contraseña</span>
+            <input
+              type="password"
+              placeholder="Mín. 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </label>
+          <label className="zona-field">
+            <span>Rol</span>
+            <select
+              value={rolAdmin}
+              onChange={(e) => setRolAdmin(e.target.value as AdminRol)}
+            >
+              {ADMIN_ROLES.map((rol) => (
+                <option key={rol} value={rol}>
+                  {etiquetaRol(rol)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={procesando === 'crear'}
         >
-          {ADMIN_ROLES.map((rol) => (
-            <option key={rol} value={rol}>
-              {etiquetaRol(rol)}
-            </option>
-          ))}
-        </select>
-        <button type="submit" disabled={procesando === 'crear'}>
           {procesando === 'crear' ? '…' : 'Crear usuario'}
         </button>
       </form>
 
       {cargando ? (
-        <p>Cargando…</p>
+        <p className="muted">Cargando…</p>
       ) : (
         <div className="table-wrap">
           <table>
@@ -171,12 +228,16 @@ export function UsuariosAdminPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>Sin administradores</td>
+                  <td colSpan={6} className="table-empty">
+                    Sin administradores
+                  </td>
                 </tr>
               ) : (
                 items.map((a) => (
                   <tr key={a.id}>
-                    <td>{a.nombreCompleto}</td>
+                    <td>
+                      <strong>{a.nombreCompleto}</strong>
+                    </td>
                     <td>{a.email}</td>
                     <td>
                       <select
@@ -193,11 +254,14 @@ export function UsuariosAdminPage() {
                         ))}
                       </select>
                     </td>
-                    <td>{a.activo ? 'Activo' : 'Inactivo'}</td>
+                    <td>{badgeActivo(a.activo)}</td>
                     <td>{new Date(a.fechaRegistro).toLocaleDateString()}</td>
                     <td>
                       <button
                         type="button"
+                        className={
+                          a.activo ? 'btn-secondary' : 'btn-primary'
+                        }
                         disabled={procesando === a.id}
                         onClick={() => void toggleActivo(a)}
                       >

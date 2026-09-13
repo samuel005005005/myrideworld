@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { HttpThrottlerGuard } from './compartidos/middlewares/http-throttler.guard.js';
 
 import { PasajerosModule } from './features/pasajeros/pasajeros.module.js';
 import { ConductoresModule } from './features/conductores/conductores.module.js';
@@ -86,7 +87,7 @@ function obtenerJwtSecret(): string {
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: HttpThrottlerGuard,
     },
   ],
 })

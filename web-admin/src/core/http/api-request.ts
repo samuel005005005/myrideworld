@@ -23,8 +23,11 @@ export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
+  const esFormData =
+    typeof FormData !== 'undefined' && init.body instanceof FormData;
+
   const headers: CabecerasHttp = {
-    'Content-Type': 'application/json',
+    ...(esFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(init.headers as CabecerasHttp | undefined),
   };
 

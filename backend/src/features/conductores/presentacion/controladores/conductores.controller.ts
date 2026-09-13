@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { CrearConductorUseCase } from '../../aplicacion/casos-uso/crear-conductor.use-case.js';
 import { crearConductorSchema } from '../../aplicacion/dto/crear-conductor.dto.js';
 import type { CrearConductorDto } from '../../aplicacion/dto/crear-conductor.dto.js';
@@ -30,6 +30,16 @@ import {
   actualizarDisponibilidadSchema,
   ActualizarDisponibilidadDto,
 } from '../../aplicacion/dto/actualizar-disponibilidad.dto.js';
+import { RegistrarTokenPushUseCase } from '../../aplicacion/casos-uso/registrar-token-push.use-case.js';
+import {
+  registrarTokenPushSchema,
+  RegistrarTokenPushDto,
+} from '../../aplicacion/dto/registrar-token-push.dto.js';
+import { ActualizarUbicacionConductorUseCase } from '../../aplicacion/casos-uso/actualizar-ubicacion-conductor.use-case.js';
+import {
+  actualizarUbicacionConductorSchema,
+  ActualizarUbicacionConductorDto,
+} from '../../aplicacion/dto/actualizar-ubicacion-conductor.dto.js';
 import { ConductorMapper } from '../../aplicacion/mappers/conductor.mapper.js';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
@@ -51,16 +61,26 @@ export class ConductoresController {
     private readonly obtenerConductor: ObtenerConductorUseCase,
     private readonly actualizarConductor: ActualizarConductorUseCase,
     private readonly actualizarDisponibilidad: ActualizarDisponibilidadUseCase,
+    private readonly registrarTokenPush: RegistrarTokenPushUseCase,
+    private readonly actualizarUbicacion: ActualizarUbicacionConductorUseCase,
   ) {}
 
   @Post()
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @RolesDecorator(Roles.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.OPERACIONES)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Registrar un nuevo conductor' })
+  @ApiOperation({
+    summary: 'Alta de conductor por la asociación (admin flota)',
+  })
   @ApiResponse({ status: 201, description: H.CREADO_OK })
   @ApiResponse({ status: 400, description: H.DATOS_INVALIDOS })
-  async crear(@Body(new ZodValidationPipe(crearConductorSchema)) dto: CrearConductorDto) {
+  async crear(
+    @Body(new ZodValidationPipe(crearConductorSchema)) dto: CrearConductorDto,
+  ) {
     const conductor = await this.crearConductor.ejecutar(dto);
-    return ConductorMapper.toResponse(conductor);
+    return ConductorMapper.toResponseList(conductor);
   }
 
   @Get()
@@ -221,6 +241,45 @@ export class ConductoresController {
     const conductor = await this.actualizarDisponibilidad.ejecutar(
       req.user.sub,
       dto,
+    );
+    return ConductorMapper.toResponse(conductor);
+  }
+
+  @Put('me/token-push')
+  @UseGuards(AuthGuard, RolesGuard)
+  @RolesDecorator(Roles.CONDUCTOR)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Registrar token FCM para ofertas con app cerrada',
+  })
+  async registrarTokenPushEndpoint(
+    @Req() req: { user: { sub: string } },
+    @Body(new ZodValidationPipe(registrarTokenPushSchema))
+    dto: RegistrarTokenPushDto,
+  ) {
+    const conductor = await this.registrarTokenPush.ejecutar(
+      req.user.sub,
+      dto.token,
+    );
+    return { ok: true, id: conductor.id };
+  }
+
+  @Patch('me/ubicacion')
+  @UseGuards(AuthGuard, RolesGuard)
+  @RolesDecorator(Roles.CONDUCTOR)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Heartbeat GPS mientras está en línea' })
+  async actualizarUbicacionEndpoint(
+    @Req() req: { user: { sub: string } },
+    @Body(new ZodValidationPipe(actualizarUbicacionConductorSchema))
+    dto: ActualizarUbicacionConductorDto,
+  ) {
+    const conductor = await this.actualizarUbicacion.ejecutar(
+      req.user.sub,
+      dto.lat,
+      dto.lng,
     );
     return ConductorMapper.toResponse(conductor);
   }

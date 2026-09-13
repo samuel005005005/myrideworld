@@ -25,6 +25,7 @@ Backoffice usable por la asociación: usuarios admin en BD con roles fijos, mód
 - `PATCH /api/administradores/:id`
 
 ### Flota
+- `POST /api/conductores` — alta por asociación (`SUPER_ADMIN` | `OPERACIONES`); body incluye `password` y opcional `aprobarAlCrear`
 - `GET /api/conductores?estado=`
 - `PATCH /api/conductores/:id/aprobar|rechazar|suspender|reactivar`
 

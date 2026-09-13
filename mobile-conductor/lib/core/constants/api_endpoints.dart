@@ -25,6 +25,8 @@ class ApiEndpoints {
   static const String disponibilidadConductor =
       '/conductores/me/disponibilidad';
   static const String perfilConductor = '/conductores/me';
+  static const String tokenPushConductor = '/conductores/me/token-push';
+  static const String ubicacionConductor = '/conductores/me/ubicacion';
   static const String viajeActivo = '/viajes/activo';
   static const String misViajes = '/viajes/mis-viajes';
   static const String misBalances = '/pagos-balances/mis-balances';

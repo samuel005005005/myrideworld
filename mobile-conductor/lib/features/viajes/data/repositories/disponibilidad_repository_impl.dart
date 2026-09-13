@@ -18,13 +18,38 @@ class DisponibilidadRepositoryImpl implements DisponibilidadRepository {
   @override
   Future<Resultado<void>> actualizarDisponibilidad({
     required bool disponible,
+    double? latitud,
+    double? longitud,
   }) async {
     if (!await networkInfo.estaConectado) {
       return const Fallo(Failure(AppStrings.errorSinConexion));
     }
 
     try {
-      await remoteDataSource.actualizarDisponibilidad(disponible: disponible);
+      await remoteDataSource.actualizarDisponibilidad(
+        disponible: disponible,
+        latitud: latitud,
+        longitud: longitud,
+      );
+      return const Exito(null);
+    } on AppException catch (error) {
+      return Fallo(Failure(error.mensaje));
+    }
+  }
+
+  @override
+  Future<Resultado<void>> actualizarUbicacion({
+    required double latitud,
+    required double longitud,
+  }) async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(Failure(AppStrings.errorSinConexion));
+    }
+    try {
+      await remoteDataSource.actualizarUbicacionConductor(
+        latitud: latitud,
+        longitud: longitud,
+      );
       return const Exito(null);
     } on AppException catch (error) {
       return Fallo(Failure(error.mensaje));

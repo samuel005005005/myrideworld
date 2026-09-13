@@ -3,6 +3,33 @@ import { ApiError } from '../../../../core/http/api-error';
 import type { BitacoraItem } from '../../domain/bitacora-item';
 import { listarBitacora } from '../../infrastructure/bitacora-api';
 
+function badgeServicio(servicio: string) {
+  return <span className="badge badge-info">{servicio}</span>;
+}
+
+function badgeAccion(accion: string) {
+  const lower = accion.toLowerCase();
+  if (
+    lower.includes('crear') ||
+    lower.includes('completar') ||
+    lower.includes('aprobar')
+  ) {
+    return <span className="badge badge-ok">{accion}</span>;
+  }
+  if (
+    lower.includes('cancel') ||
+    lower.includes('rechaz') ||
+    lower.includes('suspend') ||
+    lower.includes('eliminar')
+  ) {
+    return <span className="badge badge-danger">{accion}</span>;
+  }
+  if (lower.includes('actualiz') || lower.includes('editar')) {
+    return <span className="badge badge-warn">{accion}</span>;
+  }
+  return <span className="badge">{accion}</span>;
+}
+
 export function BitacoraPage() {
   const [items, setItems] = useState<BitacoraItem[]>([]);
   const [desde, setDesde] = useState('');
@@ -42,14 +69,17 @@ export function BitacoraPage() {
       <header className="page-header">
         <div>
           <h1>Bitácora</h1>
-          <p className="muted">Auditoría de acciones del sistema</p>
+          <p className="muted">
+            Auditoría de acciones del sistema
+            {!cargando ? ` · ${items.length} evento${items.length === 1 ? '' : 's'}` : ''}
+          </p>
         </div>
         <button type="button" className="chip" onClick={() => void cargar()}>
           Actualizar
         </button>
       </header>
 
-      <div className="filters-panel">
+      <div className="filters filters-form">
         <label>
           Desde
           <input
@@ -82,14 +112,18 @@ export function BitacoraPage() {
             placeholder="Ej. completar"
           />
         </label>
-        <button type="button" className="chip active" onClick={() => void cargar()}>
+        <button
+          type="button"
+          className="chip active"
+          onClick={() => void cargar()}
+        >
           Filtrar
         </button>
       </div>
 
       {error ? <p className="error-text">{error}</p> : null}
       {cargando ? (
-        <p>Cargando…</p>
+        <p className="muted">Cargando…</p>
       ) : (
         <div className="table-wrap">
           <table>
@@ -106,21 +140,32 @@ export function BitacoraPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>Sin eventos</td>
+                  <td colSpan={6} className="table-empty">
+                    Sin eventos con esos filtros
+                  </td>
                 </tr>
               ) : (
                 items.map((b) => (
                   <tr key={b.id}>
                     <td>{new Date(b.fecha).toLocaleString()}</td>
-                    <td>{b.servicioSistema}</td>
-                    <td>{b.accion}</td>
-                    <td>{b.usuario}</td>
-                    <td className="detalle-cell">{b.detalle}</td>
+                    <td>{badgeServicio(b.servicioSistema)}</td>
+                    <td>{badgeAccion(b.accion)}</td>
+                    <td>
+                      <strong>{b.usuario}</strong>
+                      {b.ip ? (
+                        <div className="muted cell-sub">{b.ip}</div>
+                      ) : null}
+                    </td>
+                    <td className="detalle-cell" title={b.detalle}>
+                      {b.detalle || <span className="muted">—</span>}
+                    </td>
                     <td>
                       {b.entidadId ? (
-                        <code>{b.entidadId.slice(0, 8)}</code>
+                        <code title={b.entidadId}>
+                          {b.entidadId.slice(0, 8)}
+                        </code>
                       ) : (
-                        '—'
+                        <span className="muted">—</span>
                       )}
                     </td>
                   </tr>

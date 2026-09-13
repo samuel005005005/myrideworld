@@ -33,7 +33,7 @@ export function DashboardPage() {
       <header className="page-header">
         <div>
           <h1>Dashboard</h1>
-          <p className="muted">Resumen operativo en tiempo real</p>
+          <p className="muted">Pulso operativo de la flota en este momento</p>
         </div>
         <button type="button" className="chip" onClick={() => void cargar()}>
           Actualizar
@@ -41,7 +41,7 @@ export function DashboardPage() {
       </header>
       {error ? <p className="error-text">{error}</p> : null}
       {cargando ? (
-        <p>Cargando…</p>
+        <p className="muted">Cargando…</p>
       ) : stats ? (
         <div className="stats-grid">
           <article className="stat-card">

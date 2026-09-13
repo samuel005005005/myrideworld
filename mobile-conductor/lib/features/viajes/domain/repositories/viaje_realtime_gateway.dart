@@ -14,6 +14,8 @@ abstract class ViajeRealtimeGateway {
 
   void escucharNuevoViaje(void Function(Viaje viaje) callback);
 
+  void escucharOfertaCancelada(void Function(String viajeId) callback);
+
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,

@@ -79,10 +79,6 @@ export function ConfiguracionPage() {
     }
   }
 
-  if (cargando) {
-    return <p>Cargando configuración…</p>;
-  }
-
   return (
     <section>
       <header className="page-header">
@@ -93,67 +89,89 @@ export function ConfiguracionPage() {
             {!puedeEditarConfig ? ' (solo lectura)' : ''}
           </p>
         </div>
+        <button type="button" className="chip" onClick={() => void cargar()}>
+          Actualizar
+        </button>
       </header>
+
       {error ? <p className="error-text">{error}</p> : null}
       {ok ? <p className="ok-text">{ok}</p> : null}
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Clave</th>
-              <th>Descripción</th>
-              <th>Valor</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
+
+      {cargando ? (
+        <p className="muted">Cargando…</p>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={4}>Sin parámetros visibles para su rol</td>
+                <th>Clave</th>
+                <th>Descripción</th>
+                <th>Valor</th>
+                <th />
               </tr>
-            ) : (
-              items.map((item) => {
-                const editable =
-                  puedeEditarConfig &&
-                  puedeEditarClaveConfig(adminRol, item.clave);
-                return (
-                  <tr key={item.id}>
-                    <td>
-                      <code>{item.clave}</code>
-                    </td>
-                    <td>{item.descripcion}</td>
-                    <td>
-                      <input
-                        value={valores[item.clave] ?? ''}
-                        readOnly={!editable}
-                        onChange={(e) =>
-                          setValores((prev) => ({
-                            ...prev,
-                            [item.clave]: e.target.value,
-                          }))
-                        }
-                      />
-                    </td>
-                    <td>
-                      {editable ? (
-                        <button
-                          type="button"
-                          disabled={guardando === item.clave}
-                          onClick={() => void guardar(item.clave)}
-                        >
-                          {guardando === item.clave ? '…' : 'Guardar'}
-                        </button>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="table-empty">
+                    Sin parámetros visibles para su rol
+                  </td>
+                </tr>
+              ) : (
+                items.map((item) => {
+                  const editable =
+                    puedeEditarConfig &&
+                    puedeEditarClaveConfig(adminRol, item.clave);
+                  const dirty =
+                    (valores[item.clave] ?? '') !== item.valor;
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <code>{item.clave}</code>
+                        {!editable ? (
+                          <div className="muted cell-sub">Solo lectura</div>
+                        ) : null}
+                      </td>
+                      <td className="detalle-cell">
+                        {item.descripcion || (
+                          <span className="muted">Sin descripción</span>
+                        )}
+                      </td>
+                      <td>
+                        <input
+                          className="config-valor-input"
+                          value={valores[item.clave] ?? ''}
+                          readOnly={!editable}
+                          onChange={(e) =>
+                            setValores((prev) => ({
+                              ...prev,
+                              [item.clave]: e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        {editable ? (
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            disabled={guardando === item.clave || !dirty}
+                            onClick={() => void guardar(item.clave)}
+                          >
+                            {guardando === item.clave ? '…' : 'Guardar'}
+                          </button>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

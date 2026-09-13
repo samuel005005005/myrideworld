@@ -15,14 +15,14 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 - **US-1.1.7:** Como pasajero, quiero poder cancelar mi solicitud antes o después de la asignación, para desistir del servicio si cambian mis planes. (Prioridad: Must Have)
 
 ### 2.2 Conductor
-- **US-1.2.1:** Como conductor, quiero registrarme proporcionando mis datos personales, los del vehículo y documentación, para ser aprobado por la asociación. (Prioridad: Must Have)
-- **US-1.2.2:** Como conductor, quiero recibir notificaciones de solicitudes de viaje con el origen, destino, tarifa y tiempo límite de respuesta, para decidir si acepto o rechazo. (Prioridad: Must Have)
+- **US-1.2.1:** Como conductor, quiero iniciar sesión con las credenciales que me asignó la asociación, para operar en la app. (Prioridad: Must Have)
+- **US-1.2.2:** Como conductor, quiero recibir notificaciones (timbre) de solicitudes de viaje con origen, destino, tarifa y tiempo límite — aunque la app esté en segundo plano o cerrada — hasta aceptar o rechazar. (Prioridad: Must Have)
 - **US-1.2.3:** Como conductor, quiero marcar "Llegué", "Iniciar viaje" y "Finalizar viaje", para registrar el progreso del servicio y notificar al pasajero y al sistema. (Prioridad: Must Have)
 - **US-1.2.4:** Como conductor, quiero poder consultar mis balances (cantidad de viajes, completados, cancelados, monto generado), para llevar un control de mis ingresos. (Prioridad: Must Have)
 - **US-1.2.5:** Como conductor, quiero poder marcar "Pasajero no se presentó", para registrar la incidencia y quedar libre para otro viaje. (Prioridad: Must Have)
 
 ### 2.3 Administrador
-- **US-1.3.1:** Como administrador, quiero un panel para aprobar, activar/desactivar y ver la documentación de los conductores, para mantener el control de la flota. (Prioridad: Must Have)
+- **US-1.3.1:** Como administrador, quiero dar de alta conductores (datos, vehículo, credenciales), aprobar/activar/desactivar y ver documentación, para mantener el control de la flota de la asociación. (Prioridad: Must Have)
 - **US-1.3.2:** Como administrador, quiero poder crear, modificar, consultar y activar/desactivar tarifas basadas en origen/destino/zona/ruta, para mantener actualizado el tarifario de la asociación. (Prioridad: Must Have)
 - **US-1.3.3:** Como administrador, quiero visualizar un dashboard general de la operación (conductores disponibles/ocupados, viajes activos/completados), para monitorear el negocio en tiempo real. (Prioridad: Must Have)
 - **US-1.3.4:** Como administrador, quiero poder ver el registro histórico de viajes, pagos, balances por conductor y auditoría de cancelaciones, para gestionar las finanzas y resolver disputas. (Prioridad: Must Have)

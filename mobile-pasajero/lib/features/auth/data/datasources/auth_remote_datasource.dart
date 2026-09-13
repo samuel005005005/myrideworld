@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/constants/app_strings.dart';
@@ -27,17 +28,34 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         data: {'email': email, 'password': password, 'rol': rol},
       );
 
-      return UsuarioMapper.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
+      final data = response.data;
+      if (data is! Map) {
+        throw ServerException(AppStrings.errorRespuestaLogin);
+      }
+
+      return UsuarioMapper.fromApiResponse(
+        Map<String, dynamic>.from(data),
+        email: email,
+        rolSolicitado: rol,
+      );
+    } on DioException catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('[MyRide Auth] DioException en login: $e\n$stack');
+      }
       if (e.response != null && e.response?.data != null) {
         final message =
             e.response?.data['message'] ?? AppStrings.errorLoginInvalid;
         throw ServerException(
-          message is List ? message.first : message.toString(),
+          message is List ? message.first.toString() : message.toString(),
         );
       }
       throw ServerException(AppStrings.errorServerConnection);
-    } catch (e) {
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('[MyRide Auth] Error parseando login: $e\n$stack');
+      }
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

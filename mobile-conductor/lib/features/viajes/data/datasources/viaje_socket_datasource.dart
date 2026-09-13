@@ -120,6 +120,20 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }
 
   @override
+  void escucharOfertaCancelada(void Function(String viajeId) callback) {
+    _socket?.off('ofertaViajeCancelada');
+    _socket?.on('ofertaViajeCancelada', (data) {
+      if (data is! Map) {
+        return;
+      }
+      final viajeId = data['viajeId'];
+      if (viajeId is String && viajeId.isNotEmpty) {
+        callback(viajeId);
+      }
+    });
+  }
+
+  @override
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,
@@ -137,6 +151,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     _conductorPendienteId = null;
     _viajePendienteId = null;
     _socket?.off('nuevoViajeDisponible');
+    _socket?.off('ofertaViajeCancelada');
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;

@@ -20,6 +20,11 @@ import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';
 import { ViajesGateway } from './presentacion/gateways/viajes.gateway.js';
 import { NOTIFICADOR_VIAJE } from './aplicacion/puertos/notificador-viaje.port.js';
+import { PUSH_CONDUCTOR } from './aplicacion/puertos/push-conductor.port.js';
+import { FirebasePushConductorAdapter } from './infraestructura/push/firebase-push-conductor.adapter.js';
+import { NotificadorViajeCompuesto } from './aplicacion/servicios/notificador-viaje.compuesto.js';
+import { OfertasViajeActivasRegistry } from './aplicacion/servicios/ofertas-viaje-activas.registry.js';
+import { ProgramadorTimeoutOfertaService } from './aplicacion/servicios/programador-timeout-oferta.service.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
 import { AsignadorConductorService } from './aplicacion/servicios/asignador-conductor.service.js';
 import { ValidadorProximidadViajeService } from './aplicacion/servicios/validador-proximidad-viaje.service.js';
@@ -42,6 +47,8 @@ import { AuthModule } from '../auth/auth.module.js';
     },
     AsignadorConductorService,
     ValidadorProximidadViajeService,
+    OfertasViajeActivasRegistry,
+    ProgramadorTimeoutOfertaService,
     SolicitarViajeUseCase,
     AceptarViajeUseCase,
     MarcarLlegadaUseCase,
@@ -53,9 +60,15 @@ import { AuthModule } from '../auth/auth.module.js';
     ObtenerViajeActivoUseCase,
     ObtenerViajePorIdUseCase,
     ViajesGateway,
+    FirebasePushConductorAdapter,
+    {
+      provide: PUSH_CONDUCTOR,
+      useExisting: FirebasePushConductorAdapter,
+    },
+    NotificadorViajeCompuesto,
     {
       provide: NOTIFICADOR_VIAJE,
-      useExisting: ViajesGateway,
+      useExisting: NotificadorViajeCompuesto,
     },
   ],
   exports: [
@@ -70,4 +83,5 @@ import { AuthModule } from '../auth/auth.module.js';
     NOTIFICADOR_VIAJE,
   ],
 })
-export class ViajesModule { }
+export class ViajesModule {}
+

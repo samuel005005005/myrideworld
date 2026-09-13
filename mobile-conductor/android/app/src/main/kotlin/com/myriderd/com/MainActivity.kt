@@ -1,4 +1,4 @@
-package com.example.mobile_conductor
+package com.myriderd.com
 
 import io.flutter.embedding.android.FlutterActivity
 

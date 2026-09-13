@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/roles.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -37,7 +38,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     final exito = await ref
         .read(authControllerProvider.notifier)
-        .login(email: email, password: password, rol: 'pasajero');
+        .login(email: email, password: password, rol: Roles.pasajero.codigo);
 
     if (exito && mounted) {
       context.go('/home');

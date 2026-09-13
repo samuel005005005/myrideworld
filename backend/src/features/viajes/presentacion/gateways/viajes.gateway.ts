@@ -20,7 +20,6 @@ import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
-import { EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 import type { ViajeAceptadoNotificacion } from '../../aplicacion/puertos/viaje-aceptado-notificacion.js';
 
 type SocketAutenticado = Socket & {
@@ -78,30 +77,8 @@ export class ViajesGateway
 
   async handleDisconnect(client: SocketAutenticado) {
     this.logger.log(`Cliente desconectado de Sockets: ${client.id}`);
-    const user = client.user;
-    if (!user?.sub || user.rol !== Roles.CONDUCTOR) {
-      return;
-    }
-
-    try {
-      const conductor = await this.conductorRepository.obtenerPorId(user.sub);
-      if (!conductor) {
-        return;
-      }
-      if (
-        conductor.estadoDisponibilidad ===
-        EstadosDisponibilidadConductor.CONECTADO
-      ) {
-        conductor.actualizarDisponibilidad(
-          EstadosDisponibilidadConductor.DESCONECTADO,
-        );
-        await this.conductorRepository.guardar(conductor);
-      }
-    } catch (error) {
-      this.logger.warn(
-        `No se pudo marcar conductor ${user.sub} como desconectado: ${String(error)}`,
-      );
-    }
+    // No marcar DESCONECTADO: el conductor puede seguir en línea con FCM
+    // (app cerrada / sin socket). Solo sale con PATCH disponibilidad.
   }
 
   @SubscribeMessage('unirseAViaje')
@@ -198,6 +175,12 @@ export class ViajesGateway
     const room = `conductor_${conductorId}`;
     this.server.to(room).emit('nuevoViajeDisponible', viaje);
     this.logger.log(`Notificado viaje ${viaje.id} al conductor ${conductorId}`);
+  }
+
+  cancelarOfertaViaje(conductorId: string, viajeId: string) {
+    const room = `conductor_${conductorId}`;
+    this.server.to(room).emit('ofertaViajeCancelada', { viajeId });
+    this.logger.log(`Oferta cancelada viaje ${viajeId} → ${conductorId}`);
   }
 
   notificarViajeAceptado(notificacion: ViajeAceptadoNotificacion) {

@@ -15,6 +15,8 @@ import { SubirDocumentosUseCase } from './aplicacion/casos-uso/subir-documentos.
 import { ObtenerConductorUseCase } from './aplicacion/casos-uso/obtener-conductor.use-case.js';
 import { ActualizarConductorUseCase } from './aplicacion/casos-uso/actualizar-conductor.use-case.js';
 import { ActualizarDisponibilidadUseCase } from './aplicacion/casos-uso/actualizar-disponibilidad.use-case.js';
+import { RegistrarTokenPushUseCase } from './aplicacion/casos-uso/registrar-token-push.use-case.js';
+import { ActualizarUbicacionConductorUseCase } from './aplicacion/casos-uso/actualizar-ubicacion-conductor.use-case.js';
 import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 
 @Module({
@@ -35,6 +37,8 @@ import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js
     ObtenerConductorUseCase,
     ActualizarConductorUseCase,
     ActualizarDisponibilidadUseCase,
+    RegistrarTokenPushUseCase,
+    ActualizarUbicacionConductorUseCase,
   ],
   exports: [
     CONDUCTOR_REPOSITORY,

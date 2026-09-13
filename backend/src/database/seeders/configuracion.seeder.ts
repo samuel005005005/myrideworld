@@ -28,6 +28,11 @@ export class ConfiguracionSeeder {
         descripcion: C.TIMEOUT_VIAJE_MINUTOS_DESC,
       },
       {
+        clave: C.CLAVE_TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS,
+        valor: '30',
+        descripcion: C.TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS_DESC,
+      },
+      {
         clave: C.CLAVE_TARIFA_BASE,
         valor: '30.0',
         descripcion: C.TARIFA_BASE_DESC,

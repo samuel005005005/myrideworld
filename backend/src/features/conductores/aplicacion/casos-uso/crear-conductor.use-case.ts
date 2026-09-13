@@ -18,14 +18,16 @@ export class CrearConductorUseCase {
   ) {}
 
   async ejecutar(dto: CrearConductorDto): Promise<Conductor> {
-    const conductorExistente = await this.conductorRepository.obtenerPorEmail(dto.email);
+    const conductorExistente = await this.conductorRepository.obtenerPorEmail(
+      dto.email,
+    );
     if (conductorExistente) {
-      throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO);
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.CONDUCTORES.EMAIL_REGISTRADO,
+      );
     }
 
-    const passwordHash = await this.hasheadorPassword.hashear(
-      dto.password ?? '123456',
-    );
+    const passwordHash = await this.hasheadorPassword.hashear(dto.password);
 
     const conductor = Conductor.crear({
       nombreCompleto: dto.nombreCompleto,
@@ -38,6 +40,10 @@ export class CrearConductorUseCase {
       passwordHash,
     });
 
-    return await this.conductorRepository.guardar(conductor);
+    if (dto.aprobarAlCrear) {
+      conductor.aprobar();
+    }
+
+    return this.conductorRepository.guardar(conductor);
   }
 }

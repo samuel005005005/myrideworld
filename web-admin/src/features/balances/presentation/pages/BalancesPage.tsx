@@ -9,6 +9,17 @@ import {
   obtenerLiquidacion,
 } from '../../infrastructure/balances-api';
 
+function badgeMetodo(metodo: string) {
+  const lower = metodo.toLowerCase();
+  if (lower.includes('efectivo') || lower.includes('cash')) {
+    return <span className="badge badge-warn">{metodo}</span>;
+  }
+  if (lower.includes('tarjeta') || lower.includes('card')) {
+    return <span className="badge badge-info">{metodo}</span>;
+  }
+  return <span className="badge">{metodo}</span>;
+}
+
 export function BalancesPage() {
   const { puedeEscribir } = useAuth();
   const soloLectura = !puedeEscribir('balances');
@@ -81,10 +92,11 @@ export function BalancesPage() {
         <div>
           <h1>Balances</h1>
           <p className="muted">
-            Pagos y liquidación{soloLectura ? ' (solo lectura)' : ''}
+            Pagos y liquidación de conductores
+            {soloLectura ? ' (solo lectura)' : ''}
           </p>
         </div>
-        <div className="filters">
+        <div className="row-actions">
           <button type="button" className="chip" onClick={() => void cargar()}>
             Actualizar
           </button>
@@ -99,7 +111,7 @@ export function BalancesPage() {
         </div>
       </header>
 
-      <div className="filters-panel">
+      <div className="filters filters-form">
         <label>
           Conductor ID
           <input
@@ -124,7 +136,11 @@ export function BalancesPage() {
             onChange={(e) => setHasta(e.target.value)}
           />
         </label>
-        <button type="button" className="chip active" onClick={() => void cargar()}>
+        <button
+          type="button"
+          className="chip active"
+          onClick={() => void cargar()}
+        >
           Filtrar
         </button>
       </div>
@@ -133,19 +149,19 @@ export function BalancesPage() {
         <div className="stats-grid stats-grid-compact">
           <article className="stat-card">
             <span className="stat-label">Total bruto</span>
-            <strong className="stat-value">
+            <strong className="stat-value money-lg">
               US${resumen.totalBruto.toFixed(2)}
             </strong>
           </article>
           <article className="stat-card">
             <span className="stat-label">Total fee</span>
-            <strong className="stat-value">
+            <strong className="stat-value money-lg">
               US${resumen.totalFee.toFixed(2)}
             </strong>
           </article>
           <article className="stat-card">
             <span className="stat-label">Total neto</span>
-            <strong className="stat-value">
+            <strong className="stat-value money-lg">
               US${resumen.totalNeto.toFixed(2)}
             </strong>
           </article>
@@ -158,7 +174,7 @@ export function BalancesPage() {
 
       {error ? <p className="error-text">{error}</p> : null}
       {cargando ? (
-        <p>Cargando…</p>
+        <p className="muted">Cargando…</p>
       ) : (
         <div className="table-wrap">
           <table>
@@ -176,22 +192,28 @@ export function BalancesPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>Sin registros</td>
+                  <td colSpan={7} className="table-empty">
+                    Sin registros de pago con esos filtros
+                  </td>
                 </tr>
               ) : (
                 items.map((p) => (
                   <tr key={p.id}>
                     <td>{new Date(p.fecha).toLocaleString()}</td>
                     <td>
-                      <code>{p.conductorId.slice(0, 8)}</code>
+                      <code title={p.conductorId}>
+                        {p.conductorId.slice(0, 8)}
+                      </code>
                     </td>
                     <td>
-                      <code>{p.viajeId.slice(0, 8)}</code>
+                      <code title={p.viajeId}>{p.viajeId.slice(0, 8)}</code>
                     </td>
-                    <td>US${p.montoBruto.toFixed(2)}</td>
-                    <td>US${p.feeProcesamiento.toFixed(2)}</td>
-                    <td>US${p.montoNeto.toFixed(2)}</td>
-                    <td>{p.metodo}</td>
+                    <td className="money">US${p.montoBruto.toFixed(2)}</td>
+                    <td className="money muted">
+                      US${p.feeProcesamiento.toFixed(2)}
+                    </td>
+                    <td className="money">US${p.montoNeto.toFixed(2)}</td>
+                    <td>{badgeMetodo(p.metodo)}</td>
                   </tr>
                 ))
               )}

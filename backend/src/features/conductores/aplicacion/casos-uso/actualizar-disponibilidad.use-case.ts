@@ -5,6 +5,7 @@ import { Conductor } from '../../dominio/entidades/conductor.entity.js';
 import { ActualizarDisponibilidadDto } from '../dto/actualizar-disponibilidad.dto.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 
 @Injectable()
 export class ActualizarDisponibilidadUseCase {
@@ -20,6 +21,14 @@ export class ActualizarDisponibilidadUseCase {
     const conductor = await this.conductorRepository.obtenerPorId(id);
     if (!conductor) {
       throw new DomainException(MENSAJES.EXCEPCIONES.CONDUCTORES.NO_ENCONTRADO);
+    }
+
+    if (
+      dto.estadoDisponibilidad === EstadosDisponibilidadConductor.CONECTADO &&
+      typeof dto.lat === 'number' &&
+      typeof dto.lng === 'number'
+    ) {
+      conductor.actualizarUbicacion(dto.lat, dto.lng);
     }
 
     conductor.actualizarDisponibilidad(dto.estadoDisponibilidad);

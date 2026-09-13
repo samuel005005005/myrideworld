@@ -47,6 +47,11 @@ export class ConductorMapper {
       licenciaUrl: conductor.licenciaUrl,
       seguroUrl: conductor.seguroUrl,
       vehiculoPlaca: conductor.vehiculoPlaca,
+      vehiculoMarca: conductor.vehiculoMarca,
+      vehiculoModelo: conductor.vehiculoModelo,
+      vehiculoColor: conductor.vehiculoColor,
+      ultimaUbicacionLat: conductor.ultimaUbicacionLat,
+      ultimaUbicacionLng: conductor.ultimaUbicacionLng,
     };
   }
 }

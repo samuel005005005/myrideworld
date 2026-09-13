@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/sesion_usuario.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../data/services/oferta_viaje_alerta_service.dart';
+import '../../data/services/push_oferta_viaje_service.dart';
 import '../../domain/entities/viaje.dart';
 import '../../domain/usecases/aceptar_viaje_params.dart';
 import '../../domain/usecases/actualizar_disponibilidad_params.dart';
@@ -20,10 +25,18 @@ final homeConductorControllerProvider =
 class HomeConductorController extends Notifier<HomeConductorState> {
   SesionUsuario? _sesionUsuario;
   bool _estaInicializado = false;
+  StreamSubscription<Viaje>? _subOfertasPush;
+  StreamSubscription<String>? _subCancelPush;
+  PushOfertaViajeService? _push;
+  Timer? _heartbeatGps;
 
   @override
   HomeConductorState build() {
     ref.onDispose(() {
+      _heartbeatGps?.cancel();
+      unawaited(_subOfertasPush?.cancel());
+      unawaited(_subCancelPush?.cancel());
+      unawaited(OfertaViajeAlertaService.instancia.detener());
       ref.read(viajeRealtimeGatewayProvider).desconectar();
     });
     return const HomeConductorState();
@@ -48,6 +61,11 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     }
 
     _sesionUsuario = sesion;
+
+    await OfertaViajeAlertaService.instancia.inicializar();
+    _push = PushOfertaViajeService(dio: ref.read(dioProvider));
+    await _push!.iniciar();
+    _escucharAlertasPush();
 
     final ubicacionResultado = await ref
         .read(ubicacionGatewayProvider)
@@ -79,6 +97,24 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     state = state.copyWith(inicializando: false, enLinea: false);
   }
 
+  void _escucharAlertasPush() {
+    final alerta = OfertaViajeAlertaService.instancia;
+    _subOfertasPush?.cancel();
+    _subCancelPush?.cancel();
+    _subOfertasPush = alerta.ofertas.listen((viaje) {
+      if (!state.enLinea) {
+        return;
+      }
+      state = state.copyWith(viajePendiente: viaje, errorMensaje: null);
+    });
+    _subCancelPush = alerta.cancelaciones.listen((viajeId) {
+      final pendiente = state.viajePendiente;
+      if (pendiente?.id == viajeId) {
+        state = state.copyWith(viajePendiente: null);
+      }
+    });
+  }
+
   void consumirViajeActivoRestaurado() {
     state = state.copyWith(viajeActivoParaRestaurar: null);
   }
@@ -106,8 +142,13 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       errorMensaje: null,
     );
 
+    final ubicacion = state.ubicacionActual;
     final resultado = await ref.read(actualizarDisponibilidadProvider)(
-      ActualizarDisponibilidadParams(disponible: disponible),
+      ActualizarDisponibilidadParams(
+        disponible: disponible,
+        latitud: disponible ? ubicacion?.latitude : null,
+        longitud: disponible ? ubicacion?.longitude : null,
+      ),
     );
 
     final ok = await resultado.fold(
@@ -127,6 +168,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
 
     if (disponible) {
       await _configurarSocket(sesion);
+      await _push?.iniciar();
+      _iniciarHeartbeatGps();
       state = state.copyWith(
         cambiandoDisponibilidad: false,
         enLinea: true,
@@ -135,12 +178,44 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       return;
     }
 
+    _heartbeatGps?.cancel();
+    _heartbeatGps = null;
+    await OfertaViajeAlertaService.instancia.detener();
     ref.read(viajeRealtimeGatewayProvider).desconectar();
     state = state.copyWith(
       cambiandoDisponibilidad: false,
       enLinea: false,
       viajePendiente: null,
       errorMensaje: null,
+    );
+  }
+
+  void _iniciarHeartbeatGps() {
+    _heartbeatGps?.cancel();
+    _heartbeatGps = Timer.periodic(const Duration(seconds: 20), (_) {
+      unawaited(_enviarHeartbeatGps());
+    });
+    unawaited(_enviarHeartbeatGps());
+  }
+
+  Future<void> _enviarHeartbeatGps() async {
+    if (!state.enLinea) {
+      return;
+    }
+    final resultado = await ref
+        .read(ubicacionGatewayProvider)
+        .obtenerUbicacionActual();
+    await resultado.fold(
+      (_) async {},
+      (coordenada) async {
+        state = state.copyWith(
+          ubicacionActual: LatLng(coordenada.latitud, coordenada.longitud),
+        );
+        await ref.read(disponibilidadRepositoryProvider).actualizarUbicacion(
+              latitud: coordenada.latitud,
+              longitud: coordenada.longitud,
+            );
+      },
     );
   }
 
@@ -167,6 +242,9 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         return null;
       },
       (viajeAceptado) {
+        unawaited(
+          OfertaViajeAlertaService.instancia.detener(viajeId: viaje.id),
+        );
         ref.read(viajeRealtimeGatewayProvider).unirseAViaje(viajeAceptado.id);
         state = state.copyWith(
           aceptandoViaje: false,
@@ -194,6 +272,9 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         return false;
       },
       (_) {
+        unawaited(
+          OfertaViajeAlertaService.instancia.detener(viajeId: viaje.id),
+        );
         state = state.copyWith(
           rechazandoViaje: false,
           viajePendiente: null,
@@ -210,6 +291,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         const ActualizarDisponibilidadParams(disponible: false),
       );
     }
+    await OfertaViajeAlertaService.instancia.detener();
     ref.read(viajeRealtimeGatewayProvider).desconectar();
     _estaInicializado = false;
     _sesionUsuario = null;
@@ -229,19 +311,25 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         gateway.identificarConductor(sesion.userId);
       },
       onDisconnect: () {
-        if (state.enLinea) {
-          state = state.copyWith(enLinea: false);
-        }
+        // Sigue en línea: FCM cubre app cerrada / sin socket.
       },
     );
     gateway.escucharNuevoViaje((viaje) {
       if (!state.enLinea) {
         return;
       }
+      unawaited(OfertaViajeAlertaService.instancia.iniciarAlerta(viaje));
       state = state.copyWith(
         viajePendiente: viaje,
         errorMensaje: null,
       );
+    });
+    gateway.escucharOfertaCancelada((viajeId) {
+      OfertaViajeAlertaService.instancia.avisarCancelacion(viajeId);
+      final pendiente = state.viajePendiente;
+      if (pendiente?.id == viajeId) {
+        state = state.copyWith(viajePendiente: null);
+      }
     });
     gateway.identificarConductor(sesion.userId);
   }

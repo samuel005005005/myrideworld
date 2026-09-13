@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/roles.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/sesion_usuario.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
@@ -95,7 +96,7 @@ class PerfilController extends Notifier<PerfilState> {
     ref.read(authControllerProvider.notifier).actualizarSesionLocal(
           SesionUsuario(
             userId: id,
-            rol: actual?.rol ?? 'CONDUCTOR',
+            rol: actual?.rol ?? Roles.conductor.codigo,
             email: email,
             nombreCompleto: nombre,
           ),

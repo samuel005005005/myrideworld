@@ -109,14 +109,20 @@ class ViajeRemoteDataSource {
     }
   }
 
-  Future<void> actualizarDisponibilidad({required bool disponible}) async {
+  Future<void> actualizarDisponibilidad({
+    required bool disponible,
+    double? latitud,
+    double? longitud,
+  }) async {
     try {
-      await dio.patch(
-        ApiEndpoints.disponibilidadConductor,
-        data: {
-          'estadoDisponibilidad': disponible ? 'Conectado' : 'Desconectado',
-        },
-      );
+      final data = <String, dynamic>{
+        'estadoDisponibilidad': disponible ? 'Conectado' : 'Desconectado',
+      };
+      if (disponible && latitud != null && longitud != null) {
+        data['lat'] = latitud;
+        data['lng'] = longitud;
+      }
+      await dio.patch(ApiEndpoints.disponibilidadConductor, data: data);
     } on DioException catch (error) {
       final data = error.response?.data;
       if (data is Map && data['message'] != null) {
@@ -130,6 +136,31 @@ class ViajeRemoteDataSource {
       rethrow;
     } catch (_) {
       throw const AppException(AppStrings.errorDisponibilidad);
+    }
+  }
+
+  Future<void> actualizarUbicacionConductor({
+    required double latitud,
+    required double longitud,
+  }) async {
+    try {
+      await dio.patch(
+        ApiEndpoints.ubicacionConductor,
+        data: {'lat': latitud, 'lng': longitud},
+      );
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) {
+        final mensaje = data['message'];
+        throw AppException(
+          mensaje is List ? mensaje.first.toString() : mensaje.toString(),
+        );
+      }
+      throw const AppException(AppStrings.errorGpsObtener);
+    } on AppException {
+      rethrow;
+    } catch (_) {
+      throw const AppException(AppStrings.errorGpsObtener);
     }
   }
 

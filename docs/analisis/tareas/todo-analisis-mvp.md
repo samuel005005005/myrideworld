@@ -9,7 +9,8 @@
 - [x] **API dashboard:** `GET /api/admin/dashboard`.
 - [x] **API pasajeros:** `GET /api/pasajeros` admin.
 - [x] **API tarifario OD:** CRUD tarifas + estimar prioriza OD activa.
-- [x] **Web-admin:** dashboard, flota, tarifario, viajes, balances, bitácora, usuarios admin, config + RBAC UI.
+- [x] **Web-admin:** dashboard, flota (alta + gestión), tarifario, viajes, balances, bitácora, usuarios admin, config + RBAC UI.
+- [x] **Alta conductor asociación:** `POST /api/conductores` solo admin; formulario en Flota; sin auto-registro público.
 - [x] **Apps polish:** tracking pasajero (llamar real / sin botones muertos); mensajes proximidad conductor.
 
 ### Checklist smoke asociación
@@ -21,10 +22,12 @@
    - `finanzas@myride.com` → FINANZAS
    - `auditor@myride.com` → AUDITOR
 4. Verificar nav por rol (ops sin tarifario/usuarios; auditor solo lectura).
-5. Flota: aprobar / rechazar / suspender / reactivar; “Ver docs” abre `/uploads/...`.
+5. Flota: **Nuevo conductor** (alta admin); aprobar / rechazar / suspender / reactivar; “Ver docs” abre `/uploads/...`.
 6. Tarifario: OD sembradas (Aeropuerto↔Bávaro, etc.); alta/edición; estimar con nombres OD.
 7. Completar un viaje (apps) → Balances + Bitácora.
 8. Dashboard: contadores con conductores conectados / viaje activo.
+9. Conductor: oferta con timbre (socket + FCM). Requiere `FIREBASE_*` dart-defines en la app y `FIREBASE_SERVICE_ACCOUNT_JSON` (o `GOOGLE_APPLICATION_CREDENTIALS`) en el backend + `google-services.json` en Android.
+10. Conductor en línea: envía GPS al conectarse + heartbeat 20s; timeout oferta `TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS` (seed 30s) rota al siguiente.
 
 ## Infraestructura y base
 

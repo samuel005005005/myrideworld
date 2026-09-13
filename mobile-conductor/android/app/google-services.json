@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "373085225730",
+    "firebase_url": "https://myride-1e31b-default-rtdb.firebaseio.com",
+    "project_id": "myride-1e31b",
+    "storage_bucket": "myride-1e31b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373085225730:android:bcd11149535f84549a381b",
+        "android_client_info": {
+          "package_name": "com.myriderd.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKFTNrpLnkW5mnvJlGCMTsjUKgu2ufWjk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

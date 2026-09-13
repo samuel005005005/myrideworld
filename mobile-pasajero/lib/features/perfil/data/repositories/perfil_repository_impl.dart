@@ -1,4 +1,5 @@
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/roles.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -68,7 +69,7 @@ class PerfilRepositoryImpl implements PerfilRepository {
         nombreCompleto: perfil.nombreCompleto,
         email: perfil.email,
         telefono: perfil.telefono,
-        rol: actual?.rol ?? 'PASAJERO',
+        rol: actual?.rol ?? Roles.pasajero.codigo,
       ),
     );
   }

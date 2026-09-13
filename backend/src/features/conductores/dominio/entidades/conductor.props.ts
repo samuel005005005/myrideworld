@@ -18,4 +18,5 @@ export interface ConductorProps {
   estadoDisponibilidad?: EstadosDisponibilidadConductor;
   ultimaUbicacionLat?: number | null;
   ultimaUbicacionLng?: number;
+  tokenPushFcm?: string | null;
 }

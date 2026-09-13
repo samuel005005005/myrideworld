@@ -101,6 +101,8 @@ export const MENSAJES = {
         `La configuración "${clave}" no tiene un valor numérico válido.`,
       FEE_PLATAFORMA_DESC: 'Porcentaje de comisión de la plataforma',
       TIMEOUT_VIAJE_MINUTOS_DESC: 'Minutos antes de cancelar un viaje sin aceptar',
+      TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS_DESC:
+        'Segundos que un conductor tiene para aceptar o rechazar una oferta',
       TARIFA_BASE_DESC: 'Tarifa base (USD) definida por la asociación',
       TARIFA_KM_DESC: 'Precio por kilómetro (USD) definido por la asociación',
       TARIFA_MINIMA_DESC: 'Tarifa mínima (USD) definida por la asociación',
@@ -108,6 +110,7 @@ export const MENSAJES = {
       SOPORTE_WHATSAPP_DESC: 'WhatsApp oficial (solo dígitos con código país)',
       CLAVE_FEE_PLATAFORMA: 'FEE_PLATAFORMA',
       CLAVE_TIMEOUT_VIAJE_MINUTOS: 'TIMEOUT_VIAJE_MINUTOS',
+      CLAVE_TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS: 'TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS',
       CLAVE_TARIFA_BASE: 'TARIFA_BASE',
       CLAVE_TARIFA_KM: 'TARIFA_KM',
       CLAVE_TARIFA_MINIMA: 'TARIFA_MINIMA',
@@ -124,6 +127,9 @@ export const MENSAJES = {
       PRECIO_MAYOR_CERO: 'El precio debe ser mayor a cero.',
       ORIGEN_DESTINO_OBLIGATORIOS: 'Origen y destino son obligatorios.',
       NO_ENCONTRADA: 'Tarifa no encontrada.',
+      ZONA_DUPLICADA: 'Ya existe una zona con ese nombre.',
+      ZONA_NO_ENCONTRADA: (nombre: string) =>
+        `La zona "${nombre}" no está en el catálogo. Créala antes en Tarifario.`,
     },
     VIAJES: {
       NO_DISPONIBLE_ASIGNACION: 'El viaje no está disponible para asignación.',

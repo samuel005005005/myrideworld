@@ -24,6 +24,8 @@ import { EstimarTarifaUseCase } from '../../aplicacion/casos-uso/estimar-tarifa.
 import { CrearTarifaUseCase } from '../../aplicacion/casos-uso/crear-tarifa.use-case.js';
 import { ListarTarifasUseCase } from '../../aplicacion/casos-uso/listar-tarifas.use-case.js';
 import { ActualizarTarifaUseCase } from '../../aplicacion/casos-uso/actualizar-tarifa.use-case.js';
+import { ListarZonasTarifaUseCase } from '../../aplicacion/casos-uso/listar-zonas-tarifa.use-case.js';
+import { CrearZonaTarifaUseCase } from '../../aplicacion/casos-uso/crear-zona-tarifa.use-case.js';
 import {
   EstimarTarifaDto,
   estimarTarifaSchema,
@@ -34,6 +36,10 @@ import {
   ActualizarTarifaDto,
   actualizarTarifaSchema,
 } from '../../aplicacion/dto/crear-actualizar-tarifa.dto.js';
+import {
+  CrearZonaTarifaDto,
+  crearZonaTarifaSchema,
+} from '../../aplicacion/dto/crear-zona-tarifa.dto.js';
 import { TarifaMapper } from '../../aplicacion/mappers/tarifa.mapper.js';
 
 @ApiTags('Tarifas')
@@ -45,6 +51,8 @@ export class TarifasController {
     private readonly crearTarifa: CrearTarifaUseCase,
     private readonly listarTarifas: ListarTarifasUseCase,
     private readonly actualizarTarifa: ActualizarTarifaUseCase,
+    private readonly listarZonas: ListarZonasTarifaUseCase,
+    private readonly crearZona: CrearZonaTarifaUseCase,
   ) {}
 
   @Post('estimar')
@@ -60,6 +68,44 @@ export class TarifasController {
   ) {
     const resultado = await this.estimarTarifa.ejecutar(dto, false);
     return TarifaMapper.toEstimacionResponse(resultado);
+  }
+
+  @Get('zonas')
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @AdminRoles(
+    RolesAdmin.SUPER_ADMIN,
+    RolesAdmin.FINANZAS,
+    RolesAdmin.AUDITOR,
+  )
+  @ApiOperation({ summary: 'Listar zonas del catálogo tarifario (BD)' })
+  @ApiQuery({ name: 'todas', required: false, description: 'Incluir inactivas' })
+  async listarZonasEndpoint(@Query('todas') todas?: string) {
+    const zonas = await this.listarZonas.ejecutar(todas !== 'true');
+    return zonas.map((z) => ({
+      id: z.id,
+      nombre: z.nombre,
+      activa: z.activa,
+      fechaRegistro: z.fechaRegistro,
+    }));
+  }
+
+  @Post('zonas')
+  @UseGuards(AuthGuard, RolesGuard, AdminRolesGuard)
+  @Roles(RolesEnum.ADMIN)
+  @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.FINANZAS)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Alta de zona en catálogo (BD)' })
+  async crearZonaEndpoint(
+    @Body(new ZodValidationPipe(crearZonaTarifaSchema)) dto: CrearZonaTarifaDto,
+  ) {
+    const zona = await this.crearZona.ejecutar(dto.nombre);
+    return {
+      id: zona.id,
+      nombre: zona.nombre,
+      activa: zona.activa,
+      fechaRegistro: zona.fechaRegistro,
+    };
   }
 
   @Get()
@@ -82,7 +128,7 @@ export class TarifasController {
   @Roles(RolesEnum.ADMIN)
   @AdminRoles(RolesAdmin.SUPER_ADMIN, RolesAdmin.FINANZAS)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear tarifa OD' })
+  @ApiOperation({ summary: 'Crear tarifa OD (zonas deben existir en catálogo)' })
   async crear(
     @Body(new ZodValidationPipe(crearTarifaSchema)) dto: CrearTarifaDto,
   ) {

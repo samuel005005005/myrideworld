@@ -52,4 +52,7 @@ export class ConductorOrmEntity {
 
   @Column({ type: 'float', nullable: true })
   ultimaUbicacionLng: number;
+
+  @Column({ name: 'token_push_fcm', type: 'varchar', length: 512, nullable: true })
+  tokenPushFcm: string | null;
 }

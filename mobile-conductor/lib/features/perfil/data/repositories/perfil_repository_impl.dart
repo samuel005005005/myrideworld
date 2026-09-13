@@ -1,4 +1,5 @@
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/roles.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
@@ -59,7 +60,7 @@ class PerfilRepositoryImpl implements PerfilRepository {
       await sessionStorage.actualizarSesion(
         SesionUsuario(
           userId: perfil.id,
-          rol: actual?.rol ?? 'CONDUCTOR',
+          rol: actual?.rol ?? Roles.conductor.codigo,
           email: perfil.email,
           nombreCompleto: perfil.nombreCompleto,
         ),

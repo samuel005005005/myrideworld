@@ -9,4 +9,9 @@ export interface ConductorListItem {
   licenciaUrl?: string | null;
   seguroUrl?: string | null;
   vehiculoPlaca?: string;
+  vehiculoMarca?: string;
+  vehiculoModelo?: string;
+  vehiculoColor?: string;
+  ultimaUbicacionLat?: number | null;
+  ultimaUbicacionLng?: number | null;
 }

@@ -13,6 +13,8 @@ class ActualizarDisponibilidad
   Future<Resultado<void>> call(ActualizarDisponibilidadParams params) {
     return repository.actualizarDisponibilidad(
       disponible: params.disponible,
+      latitud: params.latitud,
+      longitud: params.longitud,
     );
   }
 }

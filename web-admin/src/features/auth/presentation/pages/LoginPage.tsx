@@ -33,36 +33,47 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={onSubmit}>
-        <h1>MyRide Admin</h1>
-        <p className="muted">
-          SuperAdmin del seed (`ADMIN_EMAIL`) o demos ops/finanzas/auditor@myride.com
-        </p>
-        <label>
-          Correo
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="username"
-          />
-        </label>
-        <label>
-          Contraseña
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </label>
-        {error ? <p className="error-text">{error}</p> : null}
-        <button type="submit" disabled={cargando}>
-          {cargando ? 'Entrando…' : 'Iniciar sesión'}
-        </button>
-      </form>
+      <aside className="login-hero">
+        <div className="login-hero-inner">
+          <h1>
+            My<span>Ride</span>
+          </h1>
+          <p>
+            Operá flota, tarifario y viajes en Punta Cana desde un solo panel.
+          </p>
+        </div>
+      </aside>
+      <div className="login-panel">
+        <form className="login-card" onSubmit={onSubmit}>
+          <h2>Ingresar</h2>
+          <p className="muted">Acceso para personal autorizado de la asociación.</p>
+          <label>
+            Correo
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="username"
+              placeholder="vos@asociacion.com"
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </label>
+          {error ? <p className="error-text">{error}</p> : null}
+          <button type="submit" disabled={cargando}>
+            {cargando ? 'Entrando…' : 'Entrar al panel'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

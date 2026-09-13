@@ -9,19 +9,24 @@ const OD_SEED: ReadonlyArray<{
   precio: number;
 }> = [
   {
-    origen: 'Aeropuerto Punta Cana',
+    origen: 'Aeropuerto Internacional de Punta Cana (PUJ)',
     destino: 'Bávaro',
     precio: 45,
   },
   {
-    origen: 'Aeropuerto Punta Cana',
-    destino: 'Cap Cana',
+    origen: 'Aeropuerto Internacional de Punta Cana (PUJ)',
+    destino: 'Cap Cana Marina',
     precio: 55,
   },
   {
     origen: 'Bávaro',
-    destino: 'Uvero Alto',
+    destino: 'Uvero Alto Plaza',
     precio: 35,
+  },
+  {
+    origen: 'Aeropuerto Internacional de Punta Cana (PUJ)',
+    destino: 'Hard Rock Hotel & Casino Punta Cana',
+    precio: 50,
   },
 ];
 

@@ -4,6 +4,7 @@ import { AppModule } from '../../app.module.js';
 import { ConfiguracionSeeder } from './configuracion.seeder.js';
 import { UsuariosSeeder } from './usuarios.seeder.js';
 import { AdministradoresSeeder } from './administradores.seeder.js';
+import { ZonasTarifaSeeder } from './zonas-tarifa.seeder.js';
 import { TarifasOdSeeder } from './tarifas-od.seeder.js';
 import { CrearPasajeroUseCase } from '../../features/pasajeros/aplicacion/casos-uso/crear-pasajero.use-case.js';
 import { CrearConductorUseCase } from '../../features/conductores/aplicacion/casos-uso/crear-conductor.use-case.js';
@@ -11,38 +12,34 @@ import { CONFIGURACION_REPOSITORY } from '../../features/configuracion/dominio/r
 import { CONDUCTOR_REPOSITORY } from '../../features/conductores/dominio/repositorios/conductor.repository.js';
 import { ADMINISTRADOR_REPOSITORY } from '../../features/administradores/dominio/repositorios/administrador.repository.js';
 import { TARIFA_REPOSITORY } from '../../features/tarifas/dominio/repositorios/tarifa.repository.js';
+import { ZONA_TARIFA_REPOSITORY } from '../../features/tarifas/dominio/repositorios/zona-tarifa.repository.js';
 import { HASHEADOR_PASSWORD } from '../../compartidos/seguridad/hasheador-password.port.js';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   const configRepo = app.get(CONFIGURACION_REPOSITORY);
-  const configSeeder = new ConfiguracionSeeder(configRepo);
-  await configSeeder.seed();
+  await new ConfiguracionSeeder(configRepo).seed();
 
   const adminRepo = app.get(ADMINISTRADOR_REPOSITORY);
   const hasheador = app.get(HASHEADOR_PASSWORD);
   const configService = app.get(ConfigService);
-  const adminSeeder = new AdministradoresSeeder(
-    adminRepo,
-    hasheador,
-    configService,
-  );
-  await adminSeeder.seed();
+  await new AdministradoresSeeder(adminRepo, hasheador, configService).seed();
+
+  const zonaRepo = app.get(ZONA_TARIFA_REPOSITORY);
+  await new ZonasTarifaSeeder(zonaRepo).seed();
 
   const tarifaRepo = app.get(TARIFA_REPOSITORY);
-  const tarifasOdSeeder = new TarifasOdSeeder(tarifaRepo);
-  await tarifasOdSeeder.seed();
+  await new TarifasOdSeeder(tarifaRepo).seed();
 
   const crearPasajero = app.get(CrearPasajeroUseCase);
   const crearConductor = app.get(CrearConductorUseCase);
   const conductorRepository = app.get(CONDUCTOR_REPOSITORY);
-  const usuariosSeeder = new UsuariosSeeder(
+  await new UsuariosSeeder(
     crearPasajero,
     crearConductor,
     conductorRepository,
-  );
-  await usuariosSeeder.seed();
+  ).seed();
 
   await app.close();
 }

@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../core/http/api-request';
 import type { EstadoTarifa, TarifaItem } from '../domain/tarifa-item';
+import type { ZonaTarifaItem } from '../domain/zona-tarifa-item';
 
 export interface CrearTarifaPayload {
   origen: string;
@@ -16,6 +17,17 @@ export interface ActualizarTarifaPayload {
 
 export async function listarTarifas(): Promise<TarifaItem[]> {
   return apiRequest<TarifaItem[]>('/api/tarifas');
+}
+
+export async function listarZonasTarifa(): Promise<ZonaTarifaItem[]> {
+  return apiRequest<ZonaTarifaItem[]>('/api/tarifas/zonas');
+}
+
+export async function crearZonaTarifa(nombre: string): Promise<ZonaTarifaItem> {
+  return apiRequest<ZonaTarifaItem>('/api/tarifas/zonas', {
+    method: 'POST',
+    body: JSON.stringify({ nombre }),
+  });
 }
 
 export async function crearTarifa(

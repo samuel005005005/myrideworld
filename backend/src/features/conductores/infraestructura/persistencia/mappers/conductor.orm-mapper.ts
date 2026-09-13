@@ -22,6 +22,7 @@ export class ConductorOrmMapper {
       estadoDisponibilidad: entity.estadoDisponibilidad as EstadosDisponibilidadConductor,
       ultimaUbicacionLat: entity.ultimaUbicacionLat ? Number(entity.ultimaUbicacionLat) : undefined,
       ultimaUbicacionLng: entity.ultimaUbicacionLng ?? undefined,
+      tokenPushFcm: entity.tokenPushFcm ?? null,
     });
   }
 
@@ -43,6 +44,7 @@ export class ConductorOrmMapper {
       estadoDisponibilidad: conductor.estadoDisponibilidad,
       ultimaUbicacionLat: conductor.ultimaUbicacionLat ?? undefined,
       ultimaUbicacionLng: conductor.ultimaUbicacionLng ?? undefined,
+      tokenPushFcm: conductor.tokenPushFcm,
     };
   }
 }

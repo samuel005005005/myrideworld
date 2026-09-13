@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/roles.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
@@ -101,7 +102,7 @@ class PerfilController extends Notifier<PerfilState> {
             nombreCompleto: nombreCompleto,
             email: email,
             telefono: telefono,
-            rol: actual?.rol ?? 'PASAJERO',
+            rol: actual?.rol ?? Roles.pasajero.codigo,
           ),
         );
   }

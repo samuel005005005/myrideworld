@@ -14,30 +14,41 @@ export const crearConductorSchema = z.object({
   vehiculoColor: z.string().min(1, V.CONDUCTORES.COLOR_OBLIGATORIO),
   vehiculoPlaca: z.string().min(1, V.CONDUCTORES.PLACA_OBLIGATORIA),
   password: z.string().min(6, V.COMUNES.PASSWORD_MIN),
+  aprobarAlCrear: z.boolean().optional().default(false),
 });
 
 export class CrearConductorDto {
   @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_NOMBRE, description: S.CONDUCTORES.DESC_NOMBRE })
-  nombreCompleto: string;
+  nombreCompleto!: string;
 
   @ApiProperty({ example: S.COMUNES.EJEMPLO_EMAIL, description: S.COMUNES.DESC_EMAIL })
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: S.COMUNES.EJEMPLO_TELEFONO, description: S.COMUNES.DESC_TELEFONO })
-  telefono: string;
+  telefono!: string;
 
   @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_MARCA })
-  vehiculoMarca: string;
+  vehiculoMarca!: string;
 
   @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_MODELO })
-  vehiculoModelo: string;
+  vehiculoModelo!: string;
 
   @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_COLOR })
-  vehiculoColor: string;
+  vehiculoColor!: string;
 
   @ApiProperty({ example: S.CONDUCTORES.EJEMPLO_PLACA })
-  vehiculoPlaca: string;
+  vehiculoPlaca!: string;
 
-  @ApiProperty({ example: S.COMUNES.EJEMPLO_PASSWORD, description: S.COMUNES.DESC_PASSWORD, required: false })
-  password?: string;
+  @ApiProperty({
+    example: S.COMUNES.EJEMPLO_PASSWORD,
+    description: 'Contraseña inicial para la app conductor',
+  })
+  password!: string;
+
+  @ApiProperty({
+    required: false,
+    default: false,
+    description: 'Si true, queda Aprobado al crear (alta asociación)',
+  })
+  aprobarAlCrear?: boolean;
 }

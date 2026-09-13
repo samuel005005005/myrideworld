@@ -37,6 +37,9 @@ class AppStrings {
       'Error de conexión con el servidor';
   static const String errorLoginInvalid =
       'Credenciales inválidas o error en login';
+  static const String errorRespuestaLogin =
+      'La respuesta de login no incluye un token válido';
+  static const String errorTokenInvalido = 'Token de sesión inválido';
   static const String errorTripRequest = 'Error al solicitar viaje';
   static const String errorUnexpected = 'Error inesperado: ';
   static const String errorObtenerRuta = 'No se pudo obtener la ruta del viaje';
