@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { ApiProperty } from '@nestjs/swagger';
 
 export const actualizarUbicacionConductorSchema = z.object({
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.coerce.number().min(-90).max(90),
+  lng: z.coerce.number().min(-180).max(180),
 });
 
 export class ActualizarUbicacionConductorDto {

@@ -1,21 +1,29 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
 import '../../domain/entities/viaje.dart';
 
 /// Timbre + notificación de oferta hasta aceptar/rechazar/cancelar.
+///
+/// En Android el ringtone del sistema hace loop nativo.
+/// En iOS SystemSound no loopea: usamos asset WAV con [AudioPlayer].
 class OfertaViajeAlertaService {
   OfertaViajeAlertaService._();
 
   static final OfertaViajeAlertaService instancia = OfertaViajeAlertaService._();
+
+  static const String _assetAlertaIos = 'sounds/alerta_oferta.wav';
 
   final FlutterLocalNotificationsPlugin _notificaciones =
       FlutterLocalNotificationsPlugin();
   final StreamController<Viaje> _ofertas = StreamController<Viaje>.broadcast();
   final StreamController<String> _cancelaciones =
       StreamController<String>.broadcast();
+  final AudioPlayer _playerIos = AudioPlayer();
 
   bool _inicializado = false;
   String? _viajeSonandoId;
@@ -52,6 +60,19 @@ class OfertaViajeAlertaService {
     );
     await androidPlugin?.requestNotificationsPermission();
 
+    if (Platform.isIOS) {
+      await _playerIos.setReleaseMode(ReleaseMode.loop);
+      await _playerIos.setVolume(1);
+      await _playerIos.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: {AVAudioSessionOptions.duckOthers},
+          ),
+        ),
+      );
+    }
+
     _inicializado = true;
   }
 
@@ -62,13 +83,7 @@ class OfertaViajeAlertaService {
       _ofertas.add(viaje);
     }
 
-    await FlutterRingtonePlayer().play(
-      android: AndroidSounds.ringtone,
-      ios: IosSounds.alarm,
-      looping: true,
-      volume: 1,
-      asAlarm: true,
-    );
+    await _iniciarSonido();
 
     await _notificaciones.show(
       id: 91001,
@@ -98,6 +113,22 @@ class OfertaViajeAlertaService {
     );
   }
 
+  Future<void> _iniciarSonido() async {
+    if (Platform.isIOS) {
+      await _playerIos.stop();
+      await _playerIos.play(AssetSource(_assetAlertaIos));
+      return;
+    }
+
+    await FlutterRingtonePlayer().play(
+      android: AndroidSounds.ringtone,
+      ios: IosSounds.alarm,
+      looping: true,
+      volume: 1,
+      asAlarm: true,
+    );
+  }
+
   Future<void> detener({String? viajeId}) async {
     if (viajeId != null &&
         _viajeSonandoId != null &&
@@ -105,7 +136,11 @@ class OfertaViajeAlertaService {
       return;
     }
     _viajeSonandoId = null;
-    await FlutterRingtonePlayer().stop();
+    if (Platform.isIOS) {
+      await _playerIos.stop();
+    } else {
+      await FlutterRingtonePlayer().stop();
+    }
     await _notificaciones.cancel(id: 91001);
   }
 
@@ -142,8 +177,18 @@ class OfertaViajeAlertaService {
       origenLng: origenLng,
       destinoLat: destinoLat,
       destinoLng: destinoLng,
+      origenDireccion: _textoPayload(data['origenDireccion']),
+      destinoDireccion: _textoPayload(data['destinoDireccion']),
       tarifaEstimada: tarifa,
       fechaCreacion: DateTime.now(),
     );
+  }
+
+  String? _textoPayload(Object? valor) {
+    if (valor is! String) {
+      return null;
+    }
+    final texto = valor.trim();
+    return texto.isEmpty ? null : texto;
   }
 }

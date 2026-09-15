@@ -1,5 +1,11 @@
 export const envConfig = {
-  apiBaseUrl:
-    import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-    'http://127.0.0.1:3000',
+  apiBaseUrl: (() => {
+    const url = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '');
+    if (!url) {
+      throw new Error(
+        'Falta VITE_API_BASE_URL. Definila en web-admin/.env',
+      );
+    }
+    return url;
+  })(),
 };

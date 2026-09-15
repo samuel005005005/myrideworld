@@ -44,8 +44,11 @@ class AppStrings {
   static const String errorUnexpected = 'Error inesperado: ';
   static const String errorObtenerRuta = 'No se pudo obtener la ruta del viaje';
   static const String errorSinConexion = 'Sin conexión a internet';
+  static const String errorConductoresCercanos =
+      'No se pudieron cargar conductores cercanos';
   static const String errorSesionExpirada =
       'Tu sesión expiró. Inicia sesión nuevamente';
+  static const String marcadorConductorFlota = 'Conductor';
 
   // Registro / Bienvenida Turística
   static const String welcomeTitle = '¡Bienvenido al Paraíso!';
@@ -143,15 +146,15 @@ class AppStrings {
     return 'US\$${valor.toStringAsFixed(2)}';
   }
 
-  static String formatoRutaCoords(
-    double origenLat,
-    double origenLng,
-    double destinoLat,
-    double destinoLng,
-  ) {
-    return '${origenLat.toStringAsFixed(3)}, ${origenLng.toStringAsFixed(3)} → '
-        '${destinoLat.toStringAsFixed(3)}, ${destinoLng.toStringAsFixed(3)}';
+  static String formatoRutaTexto(String origen, String destino) {
+    return '$origen → $destino';
   }
+
+  static const String historyOrigenGenerico = 'Punto de recogida';
+  static const String historyDestinoGenerico = 'Destino';
+  static const String homePuntoEnMapa = 'Punto seleccionado en el mapa';
+  static const String errorObtenerDireccion =
+      'No se pudo obtener la dirección del punto';
   // Solicitud y Tarifario Fijo
   static const String homeOfficialRateTitle = 'Tarifa Fija Regulada';
   static const String homeOfficialRateBadge = 'Asociación Oficial';
@@ -243,6 +246,15 @@ class AppStrings {
   static const String trackingConductorHaLlegado = 'El conductor ha llegado';
   static const String trackingViajeEnCursoDestino = 'En viaje hacia tu destino';
   static const String trackingLlegandoEnCincoMinutos = 'Llegando en ~ 5 min';
+  static const String trackingMuyCerca = 'El conductor esta muy cerca';
+  static const String trackingMarcadorTu = 'Tu ubicacion';
+  static const String trackingMarcadorRecogida = 'Recogida';
+  static const String trackingMarcadorDestino = 'Destino';
+  static const String trackingMarcadorConductor = 'Conductor';
+  static const String trackingDetalleConductor = 'Ubicacion del conductor';
+  static const String trackingDetalleRecogida = 'Tu punto de recogida';
+  static const String trackingDetalleDestino = 'Destino del viaje';
+  static const String trackingMarcadorCerrar = 'Cerrar';
   static const String trackingConductorPendiente = 'Buscando conductor...';
   static const String trackingVehiculoPendiente = 'Vehiculo por confirmar';
   static const String trackingPlacaPendiente = '---';
@@ -321,5 +333,10 @@ class AppStrings {
   static const String errorSoporteContacto =
       'No se pudieron cargar los contactos de soporte';
   static const String errorCancelarViaje = 'No se pudo cancelar el viaje';
+  static const String errorViajeActivo = 'No se pudo consultar el viaje activo';
   static const String radarCancelando = 'Cancelando solicitud...';
+
+  static String formatoEtaTracking(double kilometros, int minutos) {
+    return '${kilometros.toStringAsFixed(1)} km | ~ $minutos min';
+  }
 }

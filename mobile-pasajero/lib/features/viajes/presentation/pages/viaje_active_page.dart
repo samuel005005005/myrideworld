@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../controllers/viaje_activo_controller.dart';
 import '../controllers/viaje_activo_state.dart';
+import '../widgets/marcador_mapa_viaje.dart';
 
 class ViajeActivePage extends ConsumerStatefulWidget {
   final String? viajeId;
@@ -18,21 +22,71 @@ class ViajeActivePage extends ConsumerStatefulWidget {
 
 class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
   final MapController _mapController = MapController();
+  late final ViajeActivoController _viajeActivoController =
+      ref.read(viajeActivoControllerProvider.notifier);
+  String? _ultimaClaveCamara;
+  bool _mapaListo = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(viajeActivoControllerProvider.notifier)
-          .iniciarSeguimiento(widget.viajeId);
+      if (!mounted) {
+        return;
+      }
+      unawaited(_viajeActivoController.iniciarSeguimiento(widget.viajeId));
     });
   }
 
   @override
   void dispose() {
-    ref.read(viajeActivoControllerProvider.notifier).detenerSeguimiento();
+    Future<void>(() => _viajeActivoController.detenerSeguimiento());
     super.dispose();
+  }
+
+  void _ajustarCamara(ViajeActivoState estado) {
+    if (!_mapaListo) {
+      return;
+    }
+
+    final puntos = <LatLng>[
+      if (estado.ubicacionConductor != null) estado.ubicacionConductor!,
+      if (estado.origen != null && !estado.haciaDestino) estado.origen!,
+      if (estado.destino != null) estado.destino!,
+      ...estado.puntosRuta,
+    ];
+    if (puntos.isEmpty) {
+      return;
+    }
+    final clave =
+        '${estado.viajeId}|${estado.haciaDestino}|${estado.puntosRuta.length}|'
+        '${estado.ubicacionConductor?.latitude.toStringAsFixed(4)}|'
+        '${estado.origen?.latitude.toStringAsFixed(4)}';
+    if (_ultimaClaveCamara == clave) {
+      return;
+    }
+    _ultimaClaveCamara = clave;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_mapaListo) {
+        return;
+      }
+      try {
+        if (puntos.length == 1) {
+          _mapController.move(puntos.first, 15);
+          return;
+        }
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: LatLngBounds.fromPoints(puntos),
+            padding: const EdgeInsets.fromLTRB(48, 120, 48, 280),
+          ),
+        );
+      } catch (_) {
+        // Mapa aún no listo o sin tamaño: se reintenta en el próximo update.
+        _ultimaClaveCamara = null;
+      }
+    });
   }
 
   @override
@@ -43,12 +97,12 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
       anterior,
       siguiente,
     ) {
-      if (anterior?.ubicacionConductor != siguiente.ubicacionConductor) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _mapController.move(siguiente.ubicacionConductor, 16.0);
-          }
-        });
+      if (anterior?.ubicacionConductor != siguiente.ubicacionConductor ||
+          anterior?.puntosRuta != siguiente.puntosRuta ||
+          anterior?.haciaDestino != siguiente.haciaDestino ||
+          anterior?.origen != siguiente.origen ||
+          anterior?.destino != siguiente.destino) {
+        _ajustarCamara(siguiente);
       }
 
       final reciboPendiente = siguiente.reciboPendiente;
@@ -62,68 +116,112 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
       }
     });
 
+    const brandPrimary = Color(0xFFF59E0B);
     const textDark = Color(0xFF1E293B);
     const textGrey = Color(0xFF64748B);
     const borderGrey = Color(0xFFE2E8F0);
     const dangerColor = Color(0xFFDC2626);
+    final centroInicial =
+        estado.ubicacionConductor ??
+        estado.origen ??
+        const LatLng(18.5820, -68.3971);
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Full Screen Map
           Positioned.fill(
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                initialCenter: estado.ubicacionConductor,
-                initialZoom: 16.0,
+                initialCenter: centroInicial,
+                initialZoom: 14.0,
+                onMapReady: () {
+                  _mapaListo = true;
+                  _ajustarCamara(estado);
+                },
               ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.myride',
+                  userAgentPackageName: 'com.myride.mobile_pasajero',
                 ),
+                if (estado.puntosRuta.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: estado.puntosRuta,
+                        strokeWidth: 5,
+                        color: brandPrimary,
+                      ),
+                    ],
+                  ),
                 MarkerLayer(
                   markers: [
-                    Marker(
-                      point: estado.ubicacionConductor,
-                      width: 48,
-                      height: 48,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.directions_car,
-                            color: Colors.black87,
-                            size: 28,
+                    if (estado.ubicacionConductor != null)
+                      Marker(
+                        point: estado.ubicacionConductor!,
+                        width: 72,
+                        height: 68,
+                        alignment: Alignment.center,
+                        child: MarcadorMapaViaje(
+                          color: brandPrimary,
+                          icono: Icons.directions_car_filled_rounded,
+                          etiqueta: AppStrings.trackingMarcadorConductor,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleConductor,
+                            color: brandPrimary,
+                            icono: Icons.directions_car_filled_rounded,
                           ),
                         ),
                       ),
-                    ),
+                    if (estado.origen != null && !estado.haciaDestino)
+                      Marker(
+                        point: estado.origen!,
+                        width: 72,
+                        height: 78,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFF2563EB),
+                          icono: Icons.person_rounded,
+                          etiqueta: AppStrings.trackingMarcadorRecogida,
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleRecogida,
+                            color: const Color(0xFF2563EB),
+                            icono: Icons.person_rounded,
+                          ),
+                        ),
+                      ),
+                    if (estado.destino != null)
+                      Marker(
+                        point: estado.destino!,
+                        width: 72,
+                        height: 78,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFFDC2626),
+                          icono: Icons.place_rounded,
+                          etiqueta: AppStrings.trackingMarcadorDestino,
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleDestino,
+                            color: const Color(0xFFDC2626),
+                            icono: Icons.place_rounded,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
 
-          // Back
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             left: 16,
             child: CircleAvatar(
               backgroundColor: Colors.white,
               radius: 24,
-
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: textDark),
                 onPressed: () {
@@ -137,7 +235,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
             ),
           ),
 
-          // SOS → ayuda / central
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 16,
@@ -154,7 +251,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
             ),
           ),
 
-          // 3. Draggable Bottom Card
           DraggableScrollableSheet(
             initialChildSize: 0.45,
             minChildSize: 0.15,
@@ -186,7 +282,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Drag Handle
                       Container(
                         width: 40,
                         height: 4,
@@ -196,22 +291,25 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // ETA and Status
                       Text(
                         estado.estadoViaje,
                         style: const TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           color: textDark,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      if (estado.infoEta != null)
+                      if (estado.infoEta != null) ...[
+                        const SizedBox(height: 6),
                         Text(
                           estado.infoEta!,
-                          style: const TextStyle(fontSize: 14, color: textGrey),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: textGrey,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                      ],
                       const SizedBox(height: 16),
                       const Divider(color: borderGrey),
                       const SizedBox(height: 16),
@@ -223,7 +321,7 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                             nombre: estado.conductor?.nombreCompleto,
                             fotoUrl: estado.conductor?.fotoUrl,
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,6 +329,8 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                                 Text(
                                   estado.conductor?.nombreCompleto ??
                                       AppStrings.trackingConductorPendiente,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -243,6 +343,8 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                                           true
                                       ? estado.conductor!.vehiculoResumen
                                       : AppStrings.trackingVehiculoPendiente,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: textGrey,
@@ -251,25 +353,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: Text(
-                              (estado.conductor?.vehiculoPlaca.isNotEmpty ==
-                                      true)
-                                  ? estado.conductor!.vehiculoPlaca
-                                  : AppStrings.trackingPlacaPendiente,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.0,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                (estado.conductor?.vehiculoPlaca.isNotEmpty ==
+                                        true)
+                                    ? estado.conductor!.vehiculoPlaca
+                                    : AppStrings.trackingPlacaPendiente,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
                             ),
                           ),
@@ -352,6 +460,73 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _mostrarDetalleMarcador({
+    required String titulo,
+    required Color color,
+    required IconData icono,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icono, color: color, size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        titulo,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(AppStrings.trackingMarcadorCerrar),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

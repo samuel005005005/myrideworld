@@ -34,7 +34,12 @@ export class CancelarViajeUseCase {
 
     const guardado = await this.viajeRepository.guardar(viaje);
 
-    this.notificadorViaje.notificarViajeCancelado(guardado.id, rol, motivo);
+    this.notificadorViaje.notificarViajeCancelado(
+      guardado.id,
+      rol,
+      motivo,
+      guardado.conductorId,
+    );
 
     return guardado;
   }

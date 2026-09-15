@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/entities/viaje.dart';
 import '../controllers/historial_controller.dart';
+import '../utils/formato_ruta_viaje.dart';
 
 class ViajesHistoryPage extends ConsumerWidget {
   const ViajesHistoryPage({super.key});
@@ -109,7 +110,6 @@ class _ViajeHistorialTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 '${fecha.day}/${fecha.month}/${fecha.year}',
@@ -119,12 +119,18 @@ class _ViajeHistorialTile extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                AppStrings.formatoMoneda(viaje.tarifaEstimada),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: textDark,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppStrings.formatoMoneda(viaje.tarifaEstimada),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
                 ),
               ),
             ],
@@ -147,12 +153,7 @@ class _ViajeHistorialTile extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  AppStrings.formatoRutaCoords(
-                    viaje.origenLat,
-                    viaje.origenLng,
-                    viaje.destinoLat,
-                    viaje.destinoLng,
-                  ),
+                  FormatoRutaViaje.deViaje(viaje),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

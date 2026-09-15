@@ -1,49 +1,63 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
 
 import '../constants/env_keys.dart';
 
 /// Configuración de entorno sin empaquetar `.env` en el binario.
 ///
-/// Preferí `--dart-define` / `--dart-define-from-file=.env` en run/build.
-/// En debug, si no hay defines, usa defaults locales (emulador/simulador).
+/// Obligatorio: `--dart-define` / `--dart-define-from-file=.env` en run/build.
 class AppEnv {
   const AppEnv._();
 
   static String get apiBaseUrl {
     const defined = String.fromEnvironment(EnvKeys.apiBaseUrl);
-    if (defined.isNotEmpty) {
-      return defined;
-    }
-    if (kReleaseMode) {
+    if (defined.isEmpty) {
       throw StateError(
         'Falta ${EnvKeys.apiBaseUrl}. Usá --dart-define o --dart-define-from-file=.env',
       );
     }
-    return Platform.isAndroid
-        ? 'http://10.0.2.2:3000'
-        : 'http://127.0.0.1:3000';
+    return defined;
   }
 
   static String get socketUrl {
     const defined = String.fromEnvironment(EnvKeys.socketUrl);
-    if (defined.isNotEmpty) {
-      return defined;
-    }
-    if (kReleaseMode) {
+    if (defined.isEmpty) {
       throw StateError(
         'Falta ${EnvKeys.socketUrl}. Usá --dart-define o --dart-define-from-file=.env',
       );
     }
-    return apiBaseUrl;
+    return defined;
   }
 
   static String get osrmBaseUrl {
     const defined = String.fromEnvironment(EnvKeys.osrmBaseUrl);
-    if (defined.isNotEmpty) {
-      return defined;
+    if (defined.isEmpty) {
+      throw StateError(
+        'Falta ${EnvKeys.osrmBaseUrl}. Usá --dart-define o --dart-define-from-file=.env',
+      );
     }
-    return 'https://router.project-osrm.org';
+    return defined;
+  }
+
+  static String get nominatimBaseUrl {
+    const defined = String.fromEnvironment(EnvKeys.nominatimBaseUrl);
+    if (defined.isEmpty) {
+      return 'https://nominatim.openstreetmap.org';
+    }
+    return defined;
+  }
+
+  /// Solo `kDebugMode`. Si ambas vienen en `.env`, sustituyen al GPS del dispositivo.
+  static ({double latitud, double longitud})? get gpsOverrideDebug {
+    if (!kDebugMode) {
+      return null;
+    }
+    const latRaw = String.fromEnvironment(EnvKeys.gpsOverrideLat);
+    const lngRaw = String.fromEnvironment(EnvKeys.gpsOverrideLng);
+    final latitud = double.tryParse(latRaw);
+    final longitud = double.tryParse(lngRaw);
+    if (latitud == null || longitud == null) {
+      return null;
+    }
+    return (latitud: latitud, longitud: longitud);
   }
 }

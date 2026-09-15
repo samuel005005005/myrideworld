@@ -90,8 +90,12 @@ describe('CompletarViajeUseCase', () => {
     });
     expect(registrarBitacoraUseCaseMock.ejecutar).toHaveBeenCalled();
     expect(notificadorViajeMock.notificarViajeCompletado).toHaveBeenCalledWith(
-      viaje.id,
-      100,
+      expect.objectContaining({
+        viajeId: viaje.id,
+        tarifaEstimada: 100,
+        distanciaKm: expect.any(Number),
+        duracionMinutos: expect.any(Number),
+      }),
     );
   });
 

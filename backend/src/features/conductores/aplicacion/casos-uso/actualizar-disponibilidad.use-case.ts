@@ -1,4 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import type { IConductorRepository } from '../../dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../dominio/repositorios/conductor.repository.js';
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
@@ -9,9 +10,12 @@ import { EstadosDisponibilidadConductor } from '../../../../compartidos/constant
 
 @Injectable()
 export class ActualizarDisponibilidadUseCase {
+  private readonly logger = new Logger(ActualizarDisponibilidadUseCase.name);
+
   constructor(
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
+    private readonly moduleRef: ModuleRef,
   ) {}
 
   async ejecutar(
@@ -32,6 +36,32 @@ export class ActualizarDisponibilidadUseCase {
     }
 
     conductor.actualizarDisponibilidad(dto.estadoDisponibilidad);
-    return this.conductorRepository.guardar(conductor);
+    const guardado = await this.conductorRepository.guardar(conductor);
+
+    if (
+      dto.estadoDisponibilidad === EstadosDisponibilidadConductor.CONECTADO
+    ) {
+      await this._ofertarPendientesSiDisponible(guardado.id);
+    }
+
+    return guardado;
+  }
+
+  /** Import dinámico: evita ciclo ESM ConductoresModule ↔ ViajesModule. */
+  private async _ofertarPendientesSiDisponible(conductorId: string): Promise<void> {
+    try {
+      const { OfertarViajesPendientesConductorUseCase } = await import(
+        '../../../viajes/aplicacion/casos-uso/ofertar-viajes-pendientes-conductor.use-case.js'
+      );
+      const ofertarPendientes = this.moduleRef.get(
+        OfertarViajesPendientesConductorUseCase,
+        { strict: false },
+      );
+      await ofertarPendientes.ejecutar(conductorId);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo ofertar pendientes a ${conductorId}: ${String(error)}`,
+      );
+    }
   }
 }

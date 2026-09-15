@@ -1,5 +1,6 @@
 import { Conductor } from '../../dominio/entidades/conductor.entity.js';
 import { ConductorResumenPublicoDto } from '../dto/conductor-resumen-publico.dto.js';
+import { ConductorCercanoMapaDto } from '../dto/conductor-cercano-mapa.dto.js';
 
 export class ConductorMapper {
   static toResponse(conductor: Conductor) {
@@ -33,6 +34,15 @@ export class ConductorMapper {
     resumen.vehiculoColor = conductor.vehiculoColor;
     resumen.vehiculoPlaca = conductor.vehiculoPlaca;
     return resumen;
+  }
+
+  static toCercanoMapa(conductor: Conductor): ConductorCercanoMapaDto {
+    const dto = new ConductorCercanoMapaDto();
+    dto.id = conductor.id;
+    dto.lat = conductor.ultimaUbicacionLat ?? 0;
+    dto.lng = conductor.ultimaUbicacionLng ?? 0;
+    dto.vehiculoColor = conductor.vehiculoColor;
+    return dto;
   }
 
   static toResponseList(conductor: Conductor) {

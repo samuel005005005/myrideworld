@@ -4,6 +4,7 @@ import type { ViajeDisponibleNotificacion } from '../puertos/viaje-disponible-no
 import type { ViajeAceptadoNotificacion } from '../puertos/viaje-aceptado-notificacion.js';
 import type { IPushConductor } from '../puertos/push-conductor.port.js';
 import { PUSH_CONDUCTOR } from '../puertos/push-conductor.port.js';
+import type { ViajeCompletadoNotificacion } from '../puertos/viaje-completado-notificacion.js';
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
 import { OfertasViajeActivasRegistry } from '../servicios/ofertas-viaje-activas.registry.js';
 import { ProgramadorTimeoutOfertaService } from '../servicios/programador-timeout-oferta.service.js';
@@ -55,6 +56,7 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     viajeId: string,
     actor: string,
     motivo: string | undefined,
+    conductorId?: string | null,
   ): void {
     this.programadorTimeout.cancelar(viajeId);
     const ofertado = this.ofertas.liberar(viajeId);
@@ -62,14 +64,19 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
       this.gateway.cancelarOfertaViaje(ofertado, viajeId);
       void this.push.cancelarOfertaViaje(ofertado, viajeId);
     }
-    this.gateway.notificarViajeCancelado(viajeId, actor, motivo);
+    this.gateway.notificarViajeCancelado(
+      viajeId,
+      actor,
+      motivo,
+      conductorId ?? ofertado,
+    );
   }
 
   notificarViajeIniciado(viajeId: string): void {
     this.gateway.notificarViajeIniciado(viajeId);
   }
 
-  notificarViajeCompletado(viajeId: string, tarifaEstimada: number): void {
-    this.gateway.notificarViajeCompletado(viajeId, tarifaEstimada);
+  notificarViajeCompletado(notificacion: ViajeCompletadoNotificacion): void {
+    this.gateway.notificarViajeCompletado(notificacion);
   }
 }

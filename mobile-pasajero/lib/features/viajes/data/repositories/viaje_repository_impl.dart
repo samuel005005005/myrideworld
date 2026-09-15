@@ -23,6 +23,8 @@ class ViajeRepositoryImpl implements ViajeRepository {
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
+    required String origenDireccion,
+    required String destinoDireccion,
     required String idempotencyKey,
   }) async {
     if (!await networkInfo.estaConectado) {
@@ -35,6 +37,8 @@ class ViajeRepositoryImpl implements ViajeRepository {
         origenLng: origenLng,
         destinoLat: destinoLat,
         destinoLng: destinoLng,
+        origenDireccion: origenDireccion,
+        destinoDireccion: destinoDireccion,
         idempotencyKey: idempotencyKey,
       );
 
@@ -104,6 +108,32 @@ class ViajeRepositoryImpl implements ViajeRepository {
         error: e,
         stack: stack,
         failure: const ServerFailure(AppStrings.errorUnexpected),
+      );
+    }
+  }
+
+  @override
+  Future<Resultado<Viaje?>> obtenerViajeActivo() async {
+    if (!await networkInfo.estaConectado) {
+      return const Fallo(NetworkFailure(AppStrings.errorSinConexion));
+    }
+
+    try {
+      final modelo = await remoteDataSource.obtenerViajeActivo();
+      return Exito(modelo);
+    } on ServerException catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajeActivo',
+        error: e,
+        stack: stack,
+        failure: ServerFailure(e.mensaje),
+      );
+    } catch (e, stack) {
+      return falloDesdeError(
+        contexto: 'ViajeRepositoryImpl.obtenerViajeActivo',
+        error: e,
+        stack: stack,
+        failure: const ServerFailure(AppStrings.errorViajeActivo),
       );
     }
   }

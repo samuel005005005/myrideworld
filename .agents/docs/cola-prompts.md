@@ -2,14 +2,14 @@
 
 ## En curso
 
-_(Vacío)_
+- **Modo:** desarrollo
+- **Hecho:**
+  - Cancel post-aceptación: ya factible (US-1.1.7 + API hasta Completado)
+  - Origen oferta: direcciones en payload socket/FCM; pasajero geocodifica “Mi ubicación”; fallback coords
+- **Falta:** redeploy API + hot restart ambas apps
+- **Reanudar:** Pedir viaje con GPS → oferta debe mostrar calle real en Origen
 
 ## Histórico
 
-- 2026-09-12: Checkpoint tras migración `.agents`→`.cursor` + import QA/cola desde kiro-testing; WIP viaje/recibo.
-- 2026-09-12 `#retoma`: Cerrado cableado E2E core loop.
-  - Backend: `nuevoViajeDisponible` con payload completo; seed conductor aprobado+GPS; passwords `12345678`
-  - Pasajero: recibo con tarifa/distancia/duración; navega en `viajeCompletado`; socket join diferido + auth token
-  - Conductor: escucha `nuevoViajeDisponible`, `identificarConductor`, emite `actualizarUbicacion`, une sala del viaje
-  - Tests rechazar/completar OK
-  - Pendiente smoke manual: seed + apps + backend
+- 2026-09-15: Oferta al Conectado (socket race + !enLinea); flota; crash ESM.
+- 2026-09-12: Checkpoint tras migración `.agents`→`.cursor`.

@@ -7,5 +7,9 @@ class EnvKeys {
       'FIREBASE_MESSAGING_SENDER_ID';
   static const String firebaseProjectId = 'FIREBASE_PROJECT_ID';
   static const String firebaseStorageBucket = 'FIREBASE_STORAGE_BUCKET';
+  static const String osrmBaseUrl = 'OSRM_BASE_URL';
+  static const String nominatimBaseUrl = 'NOMINATIM_BASE_URL';
+  static const String gpsOverrideLat = 'GPS_OVERRIDE_LAT';
+  static const String gpsOverrideLng = 'GPS_OVERRIDE_LNG';
 }
 

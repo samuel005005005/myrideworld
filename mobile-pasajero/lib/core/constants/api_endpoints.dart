@@ -5,7 +5,9 @@ class ApiEndpoints {
   static const String estimarTarifa = '/api/tarifas/estimar';
   static const String perfilPasajero = '/api/pasajeros/me';
   static const String misViajes = '/api/viajes/mis-viajes';
+  static const String viajeActivo = '/api/viajes/activo';
   static const String configuracionPublica = '/api/configuracion/publica';
+  static const String conductoresCercanos = '/api/conductores/cercanos';
 
   static String viajePorId(String viajeId) => '/api/viajes/$viajeId';
 

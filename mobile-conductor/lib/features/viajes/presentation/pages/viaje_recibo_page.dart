@@ -86,9 +86,16 @@ class ViajeReciboPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textGrey)),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppTheme.textGrey),
+            ),
+          ),
+          const SizedBox(width: 8),
           Text(
             AppStrings.formatoMoneda(valor),
             style: const TextStyle(fontWeight: FontWeight.w700),
@@ -100,10 +107,25 @@ class ViajeReciboPage extends StatelessWidget {
 
   Widget _filaTexto(String label, String valor) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: AppTheme.textGrey)),
-        Text(valor, style: const TextStyle(fontWeight: FontWeight.w700)),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppTheme.textGrey),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            valor,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
       ],
     );
   }

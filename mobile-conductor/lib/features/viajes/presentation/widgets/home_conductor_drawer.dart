@@ -78,6 +78,8 @@ class HomeConductorDrawer extends ConsumerWidget {
                           Text(
                             sesion?.nombreCompleto ??
                                 AppStrings.homeDrawerTitulo,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
@@ -88,6 +90,8 @@ class HomeConductorDrawer extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             sesion?.email ?? AppStrings.homeDrawerSinEmail,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: AppTheme.textDark.withValues(alpha: 0.65),
                               fontWeight: FontWeight.w500,

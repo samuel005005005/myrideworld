@@ -58,11 +58,15 @@ class ViajeRemoteDataSource {
   Future<ViajeModel?> obtenerViajeActivo() async {
     try {
       final respuesta = await dio.get(ApiEndpoints.viajeActivo);
-      if (respuesta.data == null) {
+      final data = respuesta.data;
+      if (data == null || data == '' || data == 'null') {
+        return null;
+      }
+      if (data is! Map) {
         return null;
       }
       return ViajeMapper.fromApiData(
-        Map<String, dynamic>.from(respuesta.data as Map),
+        Map<String, dynamic>.from(data),
       );
     } on DioException catch (error) {
       final data = error.response?.data;
@@ -164,7 +168,12 @@ class ViajeRemoteDataSource {
           mensaje is List ? mensaje.first.toString() : mensaje.toString(),
         );
       }
-      throw const AppException(AppStrings.errorGpsObtener);
+      final status = error.response?.statusCode;
+      throw AppException(
+        status != null
+            ? AppStrings.formatoErrorApiUbicacion(status)
+            : AppStrings.errorApiUbicacion,
+      );
     } on AppException {
       rethrow;
     } catch (e, stack) {
@@ -173,7 +182,7 @@ class ViajeRemoteDataSource {
         e,
         stack,
       );
-      throw const AppException(AppStrings.errorGpsObtener);
+      throw const AppException(AppStrings.errorApiUbicacion);
     }
   }
 

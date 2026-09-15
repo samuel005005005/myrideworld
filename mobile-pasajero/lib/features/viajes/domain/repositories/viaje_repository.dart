@@ -7,12 +7,16 @@ abstract class ViajeRepository {
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
+    required String origenDireccion,
+    required String destinoDireccion,
     required String idempotencyKey,
   });
 
   Future<Resultado<List<Viaje>>> listarMisViajes();
 
   Future<Resultado<Viaje>> obtenerViajePorId(String viajeId);
+
+  Future<Resultado<Viaje?>> obtenerViajeActivo();
 
   Future<Resultado<Viaje>> cancelarViaje({
     required String viajeId,

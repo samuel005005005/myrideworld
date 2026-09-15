@@ -13,6 +13,8 @@ class HomeConductorState {
   final Viaje? viajePendiente;
   final Viaje? viajeActivoParaRestaurar;
   final LatLng? ubicacionActual;
+  final String? origenOfertaTexto;
+  final String? destinoOfertaTexto;
   final String? errorMensaje;
 
   const HomeConductorState({
@@ -24,6 +26,8 @@ class HomeConductorState {
     this.viajePendiente,
     this.viajeActivoParaRestaurar,
     this.ubicacionActual,
+    this.origenOfertaTexto,
+    this.destinoOfertaTexto,
     this.errorMensaje,
   });
 
@@ -36,6 +40,8 @@ class HomeConductorState {
     Object? viajePendiente = _sinCambio,
     Object? viajeActivoParaRestaurar = _sinCambio,
     Object? ubicacionActual = _sinCambio,
+    Object? origenOfertaTexto = _sinCambio,
+    Object? destinoOfertaTexto = _sinCambio,
     Object? errorMensaje = _sinCambio,
   }) {
     return HomeConductorState(
@@ -54,6 +60,12 @@ class HomeConductorState {
       ubicacionActual: identical(ubicacionActual, _sinCambio)
           ? this.ubicacionActual
           : ubicacionActual as LatLng?,
+      origenOfertaTexto: identical(origenOfertaTexto, _sinCambio)
+          ? this.origenOfertaTexto
+          : origenOfertaTexto as String?,
+      destinoOfertaTexto: identical(destinoOfertaTexto, _sinCambio)
+          ? this.destinoOfertaTexto
+          : destinoOfertaTexto as String?,
       errorMensaje: identical(errorMensaje, _sinCambio)
           ? this.errorMensaje
           : errorMensaje as String?,

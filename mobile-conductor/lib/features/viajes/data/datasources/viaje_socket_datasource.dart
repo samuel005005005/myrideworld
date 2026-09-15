@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
@@ -14,6 +16,8 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   io.Socket? _socket;
   String? _conductorPendienteId;
   String? _viajePendienteId;
+  ({double lat, double lng})? _flotaPendiente;
+  final List<void Function(String viajeId)> _listenersViajeCancelado = [];
 
   ViajeSocketDataSource({
     required this.sessionStorage,
@@ -35,6 +39,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     }
 
     _socket?.dispose();
+    final listo = Completer<void>();
     _socket = io.io(
       socketUrl,
       io.OptionBuilder()
@@ -55,6 +60,16 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
       if (_viajePendienteId != null) {
         _emitirUnirseAViaje(_viajePendienteId!);
       }
+      final flota = _flotaPendiente;
+      if (flota != null) {
+        _socket?.emit('publicarUbicacionFlota', {
+          'lat': flota.lat,
+          'lng': flota.lng,
+        });
+      }
+      if (!listo.isCompleted) {
+        listo.complete();
+      }
     });
 
     _socket?.onDisconnect((_) {
@@ -63,7 +78,18 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
       }
     });
 
+    _socket?.onConnectError((error) {
+      if (!listo.isCompleted) {
+        listo.completeError(error ?? 'connect_error');
+      }
+    });
+
     _socket?.connect();
+    try {
+      await listo.future.timeout(const Duration(seconds: 8));
+    } catch (_) {
+      // Continúa: el listener onConnect identificará al reconectar.
+    }
   }
 
   @override
@@ -82,6 +108,14 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     }
   }
 
+  @override
+  void salirDeViaje(String viajeId) {
+    if (_viajePendienteId == viajeId) {
+      _viajePendienteId = null;
+    }
+    _socket?.emit('salirDeViaje', {'viajeId': viajeId});
+  }
+
   void _emitirIdentificarConductor(String conductorId) {
     _socket?.emit('identificarConductor', {'conductorId': conductorId});
   }
@@ -97,7 +131,22 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }) {
     _socket?.off('connect');
     _socket?.off('disconnect');
-    _socket?.onConnect((_) => onConnect());
+    _socket?.onConnect((_) {
+      if (_conductorPendienteId != null) {
+        _emitirIdentificarConductor(_conductorPendienteId!);
+      }
+      if (_viajePendienteId != null) {
+        _emitirUnirseAViaje(_viajePendienteId!);
+      }
+      final flota = _flotaPendiente;
+      if (flota != null) {
+        _socket?.emit('publicarUbicacionFlota', {
+          'lat': flota.lat,
+          'lng': flota.lng,
+        });
+      }
+      onConnect();
+    });
     _socket?.onDisconnect((_) => onDisconnect());
   }
 
@@ -134,6 +183,26 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }
 
   @override
+  void escucharViajeCancelado(void Function(String viajeId) callback) {
+    _listenersViajeCancelado.add(callback);
+    _socket?.off('viajeCancelado');
+    _socket?.on('viajeCancelado', (data) {
+      if (data is! Map) {
+        return;
+      }
+      final viajeId = data['viajeId'];
+      if (viajeId is! String || viajeId.isEmpty) {
+        return;
+      }
+      for (final listener in List<void Function(String)>.from(
+        _listenersViajeCancelado,
+      )) {
+        listener(viajeId);
+      }
+    });
+  }
+
+  @override
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,
@@ -147,11 +216,35 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }
 
   @override
+  void publicarUbicacionFlota({
+    required double latitud,
+    required double longitud,
+  }) {
+    _flotaPendiente = (lat: latitud, lng: longitud);
+    if (_socket?.connected != true) {
+      return;
+    }
+    _socket?.emit('publicarUbicacionFlota', {
+      'lat': latitud,
+      'lng': longitud,
+    });
+  }
+
+  @override
+  void salirDeFlota() {
+    _flotaPendiente = null;
+    _socket?.emit('salirDeFlota');
+  }
+
+  @override
   void desconectar() {
     _conductorPendienteId = null;
     _viajePendienteId = null;
+    _flotaPendiente = null;
+    _listenersViajeCancelado.clear();
     _socket?.off('nuevoViajeDisponible');
     _socket?.off('ofertaViajeCancelada');
+    _socket?.off('viajeCancelado');
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;

@@ -64,20 +64,11 @@ class DisponibilidadRepositoryImpl implements DisponibilidadRepository {
         longitud: longitud,
       );
       return const Exito(null);
-    } on AppException catch (error, stack) {
-      return falloDesdeError(
-        contexto: 'DisponibilidadRepositoryImpl.actualizarUbicacion',
-        error: error,
-        stack: stack,
-        failure: Failure(error.mensaje),
-      );
-    } catch (e, stack) {
-      return falloDesdeError(
-        contexto: 'DisponibilidadRepositoryImpl.actualizarUbicacion',
-        error: e,
-        stack: stack,
-        failure: const Failure(AppStrings.errorGpsObtener),
-      );
+    } on AppException catch (error) {
+      // Heartbeat: no tirar stack de error; el socket ya publicó la flota.
+      return Fallo(Failure(error.mensaje));
+    } catch (_) {
+      return const Fallo(Failure(AppStrings.errorApiUbicacion));
     }
   }
 }

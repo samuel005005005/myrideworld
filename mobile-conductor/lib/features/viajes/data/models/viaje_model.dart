@@ -8,6 +8,8 @@ class ViajeModel {
   final double origenLng;
   final double destinoLat;
   final double destinoLng;
+  final String? origenDireccion;
+  final String? destinoDireccion;
   final DateTime fechaCreacion;
 
   const ViajeModel({
@@ -20,6 +22,8 @@ class ViajeModel {
     required this.origenLng,
     required this.destinoLat,
     required this.destinoLng,
+    this.origenDireccion,
+    this.destinoDireccion,
     required this.fechaCreacion,
   });
 }

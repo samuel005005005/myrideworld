@@ -37,6 +37,12 @@ export class ViajeOrmEntity {
   @Column({ type: 'float' })
   destinoLng: number;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  origenDireccion: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  destinoDireccion: string | null;
+
   @Column({ type: 'varchar', default: EstadosViaje.SOLICITADO })
   estado: string;
 

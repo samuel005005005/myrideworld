@@ -78,6 +78,12 @@ export class FirebasePushConductorAdapter
       destinoLat: String(viaje.destinoLat),
       destinoLng: String(viaje.destinoLng),
       tarifaEstimada: String(viaje.tarifaEstimada),
+      ...(viaje.origenDireccion
+        ? { origenDireccion: viaje.origenDireccion }
+        : {}),
+      ...(viaje.destinoDireccion
+        ? { destinoDireccion: viaje.destinoDireccion }
+        : {}),
     };
 
     try {

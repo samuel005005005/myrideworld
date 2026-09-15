@@ -25,7 +25,10 @@ export class RechazarViajeUseCase {
       throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
     }
 
-    viaje.rechazar(conductorId);
+    const sigueBuscando = viaje.rechazar(conductorId);
+    if (!sigueBuscando) {
+      return viaje;
+    }
 
     const guardado = await this.viajeRepository.guardar(viaje);
 
@@ -43,6 +46,8 @@ export class RechazarViajeUseCase {
         destinoLat: guardado.destinoLat,
         destinoLng: guardado.destinoLng,
         tarifaEstimada: Number(guardado.tarifaEstimada),
+        origenDireccion: guardado.origenDireccion,
+        destinoDireccion: guardado.destinoDireccion,
       });
     } else {
       guardado.cancelar(

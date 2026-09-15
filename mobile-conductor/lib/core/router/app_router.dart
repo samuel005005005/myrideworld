@@ -60,6 +60,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/viaje-active',
         builder: (context, state) {
           final viaje = resolverViajeNavegacion(state.extra);
+          if (viaje == null) {
+            return const HomePage();
+          }
           return ViajeActivePage(viaje: viaje);
         },
       ),

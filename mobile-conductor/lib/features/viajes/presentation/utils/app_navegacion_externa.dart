@@ -1,0 +1,1 @@
+enum AppNavegacionExterna { googleMaps, waze }

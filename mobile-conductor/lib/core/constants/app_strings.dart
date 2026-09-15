@@ -42,9 +42,25 @@ class AppStrings {
   static const String viajeBotonLlegada = 'LLEGUE AL PUNTO';
   static const String viajeBotonIniciar = 'INICIAR VIAJE';
   static const String viajeBotonCompletar = 'FINALIZAR VIAJE';
-  static const String viajeSinDatos = 'No se recibio un viaje valido';
   static const String viajeMuyCerca = 'Estas muy cerca';
   static const String viajeEsperandoInicio = 'Esperando accion del conductor';
+  static const String viajeMarcadorRecogida = 'Recogida';
+  static const String viajeMarcadorDestino = 'Destino';
+  static const String viajeMarcadorConductor = 'Tu auto';
+  static const String viajeMarcadorCerrar = 'Cerrar';
+  static const String viajeMarcadorCopiado = 'Coordenadas copiadas';
+  static const String viajeDetalleRecogida = 'Punto de recogida del pasajero';
+  static const String viajeDetalleDestino = 'Destino del viaje';
+  static const String viajeDetalleConductor = 'Tu ubicacion actual';
+  static const String viajeCanceladoPorPasajero =
+      'El pasajero cancelo el viaje';
+  static const String viajeDireccionCargando = 'Obteniendo nombre del lugar...';
+  static const String viajeDireccionNoDisponible = 'Nombre del lugar no disponible';
+  static const String viajeAbrirGoogleMaps = 'Google Maps';
+  static const String viajeAbrirWaze = 'Waze';
+  static const String viajeNavegarHacia = 'Navegar hacia el punto';
+  static const String errorAbrirNavegacion =
+      'No se pudo abrir la app de navegacion';
 
   static const String errorGenerico = 'Ocurrio un error inesperado';
   static const String errorConexionServidor =
@@ -79,6 +95,12 @@ class AppStrings {
   static const String errorGpsPermiso =
       'Se requiere permiso de ubicacion para operar';
   static const String errorGpsObtener = 'No se pudo obtener la ubicacion GPS';
+  static const String errorApiUbicacion =
+      'No se pudo enviar la ubicacion al servidor';
+
+  static String formatoErrorApiUbicacion(int status) =>
+      'No se pudo enviar la ubicacion al servidor (HTTP $status)';
+  static const String errorObtenerRuta = 'No se pudo obtener la ruta del viaje';
   static const String errorViajeActivo = 'No se pudo consultar el viaje activo';
   static const String errorPerfilObtener = 'No se pudo cargar el perfil';
   static const String errorPerfilActualizar = 'No se pudo actualizar el perfil';
@@ -112,21 +134,67 @@ class AppStrings {
   static const String historialVacio = 'Aun no tienes viajes registrados';
   static const String historialReintentar = 'Reintentar';
   static const String errorHistorial = 'No se pudo cargar el historial';
-
-  static String formatoMoneda(double valor) {
-    return 'US\$${valor.toStringAsFixed(2)}';
-  }
+  static const String errorObtenerDireccion =
+      'No se pudo obtener la direccion del punto';
+  static const String viajeOrigenCargando = 'Origen: obteniendo direccion...';
+  static const String viajeDestinoCargando = 'Destino: obteniendo direccion...';
+  static const String viajeOrigenSinDireccion = 'Origen: ubicacion del pasajero';
+  static const String viajeDestinoSinDireccion = 'Destino: ubicacion elegida';
 
   static String formatoOrigenCorto(double latitud, double longitud) {
     return '${latitud.toStringAsFixed(3)}, ${longitud.toStringAsFixed(3)}';
   }
 
-  static String formatoOrigen(double latitud, double longitud) {
-    return 'Origen: Lat ${latitud.toStringAsFixed(4)}, Lng ${longitud.toStringAsFixed(4)}';
+  static String formatoOrigenTexto(String direccion) {
+    return 'Origen: $direccion';
   }
 
-  static String formatoDestino(double latitud, double longitud) {
-    return 'Destino: Lat ${latitud.toStringAsFixed(4)}, Lng ${longitud.toStringAsFixed(4)}';
+  static String formatoDestinoTexto(String direccion) {
+    return 'Destino: $direccion';
+  }
+
+  static String formatoOrigenCoords(double latitud, double longitud) {
+    return 'Origen: ${formatoCoordenada(latitud, longitud)}';
+  }
+
+  static String formatoDestinoCoords(double latitud, double longitud) {
+    return 'Destino: ${formatoCoordenada(latitud, longitud)}';
+  }
+
+  /// Etiquetas genéricas del pasajero que no sirven como dirección real.
+  static bool esDireccionGenerica(String? texto) {
+    if (texto == null) {
+      return true;
+    }
+    final t = texto.trim().toLowerCase();
+    if (t.isEmpty) {
+      return true;
+    }
+    const genericas = <String>{
+      'mi ubicacion actual',
+      'mi ubicación actual',
+      'punto seleccionado en el mapa',
+      'punto de recogida',
+      'punto de destino',
+      'ubicacion del pasajero',
+      'ubicación del pasajero',
+    };
+    return genericas.contains(t);
+  }
+
+  static String formatoMarcadorConLugar(String rol, String? lugar) {
+    if (lugar == null || lugar.trim().isEmpty) {
+      return rol;
+    }
+    return '$rol · $lugar';
+  }
+
+  static String formatoMoneda(double valor) {
+    return 'US\$${valor.toStringAsFixed(2)}';
+  }
+
+  static String formatoCoordenada(double latitud, double longitud) {
+    return '${latitud.toStringAsFixed(5)}, ${longitud.toStringAsFixed(5)}';
   }
 
   static String formatoTarifa(double tarifa) {

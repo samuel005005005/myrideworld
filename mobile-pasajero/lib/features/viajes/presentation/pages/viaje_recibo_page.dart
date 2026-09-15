@@ -78,43 +78,52 @@ class ViajeReciboPage extends StatelessWidget {
                       child: Divider(),
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              AppStrings.receiptDistance,
-                              style: TextStyle(fontSize: 12, color: textGrey),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.receiptDistanciaValor(distancia),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textDark,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                AppStrings.receiptDistance,
+                                style: TextStyle(fontSize: 12, color: textGrey),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.receiptDistanciaValor(distancia),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textDark,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              AppStrings.receiptDuration,
-                              style: TextStyle(fontSize: 12, color: textGrey),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              AppStrings.receiptDuracionValor(duracionMinutos),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textDark,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text(
+                                AppStrings.receiptDuration,
+                                style: TextStyle(fontSize: 12, color: textGrey),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                AppStrings.receiptDuracionValor(duracionMinutos),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: textDark,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

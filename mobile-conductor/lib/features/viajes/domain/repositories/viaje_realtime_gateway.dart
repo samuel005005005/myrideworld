@@ -7,6 +7,8 @@ abstract class ViajeRealtimeGateway {
 
   void unirseAViaje(String viajeId);
 
+  void salirDeViaje(String viajeId);
+
   void escucharEstadoConexion({
     required void Function() onConnect,
     required void Function() onDisconnect,
@@ -16,11 +18,20 @@ abstract class ViajeRealtimeGateway {
 
   void escucharOfertaCancelada(void Function(String viajeId) callback);
 
+  void escucharViajeCancelado(void Function(String viajeId) callback);
+
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,
     required double longitud,
   });
+
+  void publicarUbicacionFlota({
+    required double latitud,
+    required double longitud,
+  });
+
+  void salirDeFlota();
 
   void desconectar();
 }

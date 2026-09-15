@@ -2,6 +2,7 @@ import '../../../../core/tipos/resultado.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../entities/viaje.dart';
 import '../repositories/viaje_repository.dart';
+import 'solicitar_viaje_params.dart';
 
 class SolicitarViajeUseCase implements UseCase<Viaje, SolicitarViajeParams> {
   final ViajeRepository repository;
@@ -15,23 +16,9 @@ class SolicitarViajeUseCase implements UseCase<Viaje, SolicitarViajeParams> {
       origenLng: params.origenLng,
       destinoLat: params.destinoLat,
       destinoLng: params.destinoLng,
+      origenDireccion: params.origenDireccion,
+      destinoDireccion: params.destinoDireccion,
       idempotencyKey: params.idempotencyKey,
     );
   }
-}
-
-class SolicitarViajeParams {
-  final double origenLat;
-  final double origenLng;
-  final double destinoLat;
-  final double destinoLng;
-  final String idempotencyKey;
-
-  const SolicitarViajeParams({
-    required this.origenLat,
-    required this.origenLng,
-    required this.destinoLat,
-    required this.destinoLng,
-    required this.idempotencyKey,
-  });
 }

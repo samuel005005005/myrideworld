@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
@@ -10,6 +10,8 @@ import { AsignadorConductorService } from '../servicios/asignador-conductor.serv
 
 @Injectable()
 export class SolicitarViajeUseCase {
+  private readonly logger = new Logger(SolicitarViajeUseCase.name);
+
   constructor(
     @Inject(VIAJE_REPOSITORY)
     private readonly viajeRepository: IViajeRepository,
@@ -33,6 +35,8 @@ export class SolicitarViajeUseCase {
       origenLng: dto.origenLng,
       destinoLat: dto.destinoLat,
       destinoLng: dto.destinoLng,
+      origenDireccion: dto.origenDireccion,
+      destinoDireccion: dto.destinoDireccion,
       tarifaEstimada: tarifa.precio,
     });
 
@@ -45,6 +49,11 @@ export class SolicitarViajeUseCase {
     });
 
     if (conductorSugerido) {
+      guardado.iniciarBusqueda();
+      await this.viajeRepository.guardar(guardado);
+      this.logger.log(
+        `Oferta viaje ${guardado.id} → conductor ${conductorSugerido.id}`,
+      );
       this.notificadorViaje.notificarNuevoViaje(conductorSugerido.id, {
         id: guardado.id,
         origenLat: guardado.origenLat,
@@ -52,7 +61,15 @@ export class SolicitarViajeUseCase {
         destinoLat: guardado.destinoLat,
         destinoLng: guardado.destinoLng,
         tarifaEstimada: Number(guardado.tarifaEstimada),
+        origenDireccion: guardado.origenDireccion,
+        destinoDireccion: guardado.destinoDireccion,
       });
+    } else {
+      this.logger.warn(
+        `Viaje ${guardado.id} sin conductor cercano ` +
+          `(origen ${guardado.origenLat},${guardado.origenLng}). ` +
+          'No se emitió socket/FCM.',
+      );
     }
 
     return guardado;

@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 import '../../domain/entities/estado_viaje_activo.dart';
 import '../../domain/entities/viaje.dart';
 import '../../../balances/domain/entities/pago_balance.dart';
@@ -14,6 +16,11 @@ class ViajeActivoState {
   final bool finalizado;
   final PagoBalance? recibo;
   final String? errorMensaje;
+  final List<LatLng> puntosRuta;
+  final String? direccionRecogida;
+  final String? direccionDestino;
+  final String? direccionConductor;
+  final bool canceladoRemotamente;
 
   const ViajeActivoState({
     this.viaje,
@@ -25,6 +32,11 @@ class ViajeActivoState {
     this.finalizado = false,
     this.recibo,
     this.errorMensaje,
+    this.puntosRuta = const <LatLng>[],
+    this.direccionRecogida,
+    this.direccionDestino,
+    this.direccionConductor,
+    this.canceladoRemotamente = false,
   });
 
   ViajeActivoState copyWith({
@@ -37,6 +49,11 @@ class ViajeActivoState {
     bool? finalizado,
     Object? recibo = _sinCambio,
     Object? errorMensaje = _sinCambio,
+    List<LatLng>? puntosRuta,
+    Object? direccionRecogida = _sinCambio,
+    Object? direccionDestino = _sinCambio,
+    Object? direccionConductor = _sinCambio,
+    bool? canceladoRemotamente,
   }) {
     return ViajeActivoState(
       viaje: identical(viaje, _sinCambio) ? this.viaje : viaje as Viaje?,
@@ -50,6 +67,18 @@ class ViajeActivoState {
       errorMensaje: identical(errorMensaje, _sinCambio)
           ? this.errorMensaje
           : errorMensaje as String?,
+      puntosRuta: puntosRuta ?? this.puntosRuta,
+      direccionRecogida: identical(direccionRecogida, _sinCambio)
+          ? this.direccionRecogida
+          : direccionRecogida as String?,
+      direccionDestino: identical(direccionDestino, _sinCambio)
+          ? this.direccionDestino
+          : direccionDestino as String?,
+      direccionConductor: identical(direccionConductor, _sinCambio)
+          ? this.direccionConductor
+          : direccionConductor as String?,
+      canceladoRemotamente:
+          canceladoRemotamente ?? this.canceladoRemotamente,
     );
   }
 }

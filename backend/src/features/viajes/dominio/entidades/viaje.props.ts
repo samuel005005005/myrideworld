@@ -9,6 +9,8 @@ export interface ViajeProps {
   origenLng: number;
   destinoLat: number;
   destinoLng: number;
+  origenDireccion?: string | null;
+  destinoDireccion?: string | null;
   estado?: EstadosViaje;
   tarifaEstimada: number;
   metodoPago?: string | null;

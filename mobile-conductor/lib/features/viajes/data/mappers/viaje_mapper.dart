@@ -11,11 +11,13 @@ class ViajeMapper {
         pasajeroId: data['pasajeroId'] as String? ?? '',
         conductorId: data['conductorId'] as String?,
         estado: data['estado'] as String? ?? '',
-        tarifaEstimada: (data['tarifaEstimada'] as num?)?.toDouble() ?? 0,
-        origenLat: (data['origenLat'] as num).toDouble(),
-        origenLng: (data['origenLng'] as num).toDouble(),
-        destinoLat: (data['destinoLat'] as num).toDouble(),
-        destinoLng: (data['destinoLng'] as num).toDouble(),
+        tarifaEstimada: _aDouble(data['tarifaEstimada']) ?? 0,
+        origenLat: _aDouble(data['origenLat'])!,
+        origenLng: _aDouble(data['origenLng'])!,
+        destinoLat: _aDouble(data['destinoLat'])!,
+        destinoLng: _aDouble(data['destinoLng'])!,
+        origenDireccion: _textoOpcional(data['origenDireccion']),
+        destinoDireccion: _textoOpcional(data['destinoDireccion']),
         fechaCreacion:
             DateTime.tryParse(
               data['fechaCreacion'] as String? ??
@@ -40,7 +42,30 @@ class ViajeMapper {
       origenLng: modelo.origenLng,
       destinoLat: modelo.destinoLat,
       destinoLng: modelo.destinoLng,
+      origenDireccion: modelo.origenDireccion,
+      destinoDireccion: modelo.destinoDireccion,
       fechaCreacion: modelo.fechaCreacion,
     );
+  }
+
+  static String? _textoOpcional(Object? valor) {
+    if (valor is! String) {
+      return null;
+    }
+    final texto = valor.trim();
+    return texto.isEmpty ? null : texto;
+  }
+
+  static double? _aDouble(Object? valor) {
+    if (valor == null) {
+      return null;
+    }
+    if (valor is num) {
+      return valor.toDouble();
+    }
+    if (valor is String) {
+      return double.tryParse(valor);
+    }
+    return null;
   }
 }

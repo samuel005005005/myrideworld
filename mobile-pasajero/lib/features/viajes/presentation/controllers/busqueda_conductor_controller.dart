@@ -72,6 +72,15 @@ class BusquedaConductorController extends Notifier<BusquedaConductorState> {
     return resultado.foldLogged(
       'BusquedaConductorController.cancelarSolicitud',
       (failure) {
+        // Ya cancelado (timeout/reintento) o no cancelable: salir de búsqueda.
+        final salirIgual = failure.mensaje.contains(
+          'no puede ser cancelado en su estado actual',
+        );
+        if (salirIgual) {
+          _detener(desconectarSocket: true);
+          state = state.copyWith(cancelando: false, error: null);
+          return true;
+        }
         state = state.copyWith(cancelando: false, error: failure.mensaje);
         return false;
       },

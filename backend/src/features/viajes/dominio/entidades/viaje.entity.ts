@@ -12,6 +12,8 @@ export class Viaje {
   private _origenLng: number;
   private _destinoLat: number;
   private _destinoLng: number;
+  private _origenDireccion: string | null;
+  private _destinoDireccion: string | null;
   private _estado: EstadosViaje;
   private _tarifaEstimada: number;
   private _metodoPago: string | null;
@@ -30,6 +32,8 @@ export class Viaje {
     this._origenLng = props.origenLng;
     this._destinoLat = props.destinoLat;
     this._destinoLng = props.destinoLng;
+    this._origenDireccion = this.normalizarDireccion(props.origenDireccion);
+    this._destinoDireccion = this.normalizarDireccion(props.destinoDireccion);
     this._estado = props.estado ?? EstadosViaje.SOLICITADO;
     this._tarifaEstimada = props.tarifaEstimada;
     this._metodoPago = props.metodoPago ?? null;
@@ -54,6 +58,8 @@ export class Viaje {
   get origenLng(): number { return this._origenLng; }
   get destinoLat(): number { return this._destinoLat; }
   get destinoLng(): number { return this._destinoLng; }
+  get origenDireccion(): string | null { return this._origenDireccion; }
+  get destinoDireccion(): string | null { return this._destinoDireccion; }
   get estado(): EstadosViaje { return this._estado; }
   get tarifaEstimada(): number { return this._tarifaEstimada; }
   get metodoPago(): string | null { return this._metodoPago; }
@@ -96,7 +102,11 @@ export class Viaje {
   }
 
   cancelar(actor: Roles, motivo?: string): void {
-    if (this._estado === EstadosViaje.COMPLETADO || this._estado === EstadosViaje.CANCELADO) {
+    // Idempotente: ya cancelado = éxito (timeout, reintentos de UI, doble tap).
+    if (this._estado === EstadosViaje.CANCELADO) {
+      return;
+    }
+    if (this._estado === EstadosViaje.COMPLETADO) {
       throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_CANCELABLE);
     }
     this._estado = EstadosViaje.CANCELADO;
@@ -105,13 +115,29 @@ export class Viaje {
     this._fechaFin = new Date();
   }
 
-  rechazar(conductorId: string): void {
-    if (this._estado !== EstadosViaje.SOLICITADO) {
-      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.SOLO_RECHAZABLE_SOLICITADO);
+  rechazar(conductorId: string): boolean {
+    const ofertable =
+      this._estado === EstadosViaje.SOLICITADO ||
+      this._estado === EstadosViaje.BUSCANDO;
+    if (!ofertable) {
+      // Idempotente: viaje ya asignado/cancelado — el conductor solo declina tarde.
+      return false;
     }
     if (!this._conductoresRechazados.includes(conductorId)) {
       this._conductoresRechazados.push(conductorId);
     }
+    this._estado = EstadosViaje.BUSCANDO;
+    return true;
+  }
+
+  iniciarBusqueda(): void {
+    if (
+      this._estado !== EstadosViaje.SOLICITADO &&
+      this._estado !== EstadosViaje.BUSCANDO
+    ) {
+      return;
+    }
+    this._estado = EstadosViaje.BUSCANDO;
   }
 
   private calcularTarifaEstimada(): void {
@@ -122,5 +148,13 @@ export class Viaje {
   private validar(): void {
     if (!this._pasajeroId) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.PASAJERO_ID_OBLIGATORIO);
     if (this._tarifaEstimada < 0) throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.TARIFA_NEGATIVA);
+  }
+
+  private normalizarDireccion(valor?: string | null): string | null {
+    const texto = valor?.trim();
+    if (!texto) {
+      return null;
+    }
+    return texto.length > 255 ? texto.slice(0, 255) : texto;
   }
 }

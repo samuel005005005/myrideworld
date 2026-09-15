@@ -36,10 +36,15 @@ import {
   RegistrarTokenPushDto,
 } from '../../aplicacion/dto/registrar-token-push.dto.js';
 import { ActualizarUbicacionConductorUseCase } from '../../aplicacion/casos-uso/actualizar-ubicacion-conductor.use-case.js';
+import { ListarConductoresCercanosUseCase } from '../../aplicacion/casos-uso/listar-conductores-cercanos.use-case.js';
 import {
   actualizarUbicacionConductorSchema,
   ActualizarUbicacionConductorDto,
 } from '../../aplicacion/dto/actualizar-ubicacion-conductor.dto.js';
+import {
+  listarConductoresCercanosQuerySchema,
+  ListarConductoresCercanosQueryDto,
+} from '../../aplicacion/dto/listar-conductores-cercanos-query.dto.js';
 import { ConductorMapper } from '../../aplicacion/mappers/conductor.mapper.js';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UseInterceptors, UploadedFiles } from '@nestjs/common';
@@ -63,6 +68,7 @@ export class ConductoresController {
     private readonly actualizarDisponibilidad: ActualizarDisponibilidadUseCase,
     private readonly registrarTokenPush: RegistrarTokenPushUseCase,
     private readonly actualizarUbicacion: ActualizarUbicacionConductorUseCase,
+    private readonly listarConductoresCercanos: ListarConductoresCercanosUseCase,
   ) {}
 
   @Post()
@@ -200,6 +206,23 @@ export class ConductoresController {
 
     const conductor = await this.subirDocumentos.ejecutar(id, rutas);
     return ConductorMapper.toResponse(conductor);
+  }
+
+  @Get('cercanos')
+  @UseGuards(AuthGuard, RolesGuard)
+  @RolesDecorator(Roles.PASAJERO)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar conductores conectados cercanos para el mapa del pasajero',
+  })
+  @ApiQuery({ name: 'lat', required: true, type: Number })
+  @ApiQuery({ name: 'lng', required: true, type: Number })
+  @ApiQuery({ name: 'radioKm', required: false, type: Number })
+  async listarCercanos(
+    @Query() query: ListarConductoresCercanosQueryDto,
+  ) {
+    const dto = listarConductoresCercanosQuerySchema.parse(query);
+    return this.listarConductoresCercanos.ejecutar(dto);
   }
 
   @Get('me')

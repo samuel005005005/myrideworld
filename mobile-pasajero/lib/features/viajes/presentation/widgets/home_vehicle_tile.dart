@@ -8,6 +8,7 @@ class HomeVehicleTile extends StatelessWidget {
   final String eta;
   final int capacity;
   final double? tarifaOficial;
+  final bool estimandoTarifa;
   final IconData icon;
   final String selectedId;
   final Color brandPrimary;
@@ -20,6 +21,7 @@ class HomeVehicleTile extends StatelessWidget {
     required this.eta,
     required this.capacity,
     required this.tarifaOficial,
+    this.estimandoTarifa = false,
     required this.icon,
     required this.selectedId,
     required this.brandPrimary,
@@ -49,23 +51,28 @@ class HomeVehicleTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, size: 40, color: Colors.black87),
-            const SizedBox(width: 16),
+            Icon(icon, size: 36, color: Colors.black87),
+            const SizedBox(width: 12),
             Expanded(
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       const Icon(Icons.person, size: 14, color: Colors.black54),
                       Text(
                         capacity.toString(),
@@ -79,28 +86,46 @@ class HomeVehicleTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     eta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  precioTexto,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
+            const SizedBox(width: 8),
+            Flexible(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      precioTexto,
+                      maxLines: 1,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
-                ),
-                if (tarifaOficial == null)
-                  const Text(
-                    AppStrings.homeTarifaPendienteApi,
-                    style: TextStyle(fontSize: 10, color: Colors.black54),
-                  ),
-              ],
+                  if (estimandoTarifa && tarifaOficial == null)
+                    Text(
+                      AppStrings.homeTarifaPendienteApi,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.black54,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),

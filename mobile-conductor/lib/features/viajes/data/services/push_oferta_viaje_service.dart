@@ -66,9 +66,11 @@ class PushOfertaViajeService {
         _manejarMensaje(inicial);
       }
 
-      final token = await messaging.getToken();
+      final token = await messaging.getToken().timeout(
+        const Duration(seconds: 8),
+      );
       if (token != null) {
-        await registrarTokenEnApi(token);
+        await registrarTokenEnApi(token).timeout(const Duration(seconds: 5));
       }
       messaging.onTokenRefresh.listen(registrarTokenEnApi);
 

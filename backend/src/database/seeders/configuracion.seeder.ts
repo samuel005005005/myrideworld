@@ -67,6 +67,11 @@ export class ConfiguracionSeeder {
         valor: '200',
         descripcion: C.RADIO_PROXIMIDAD_DESTINO_M_DESC,
       },
+      {
+        clave: C.CLAVE_RADIO_MAPA_FLOTA_KM,
+        valor: '25',
+        descripcion: C.RADIO_MAPA_FLOTA_KM_DESC,
+      },
     ];
 
     for (const conf of configuracionesIniciales) {

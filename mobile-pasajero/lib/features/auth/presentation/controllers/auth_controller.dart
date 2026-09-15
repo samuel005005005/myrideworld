@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/auth/sesion_invalida_tick.dart';
 import '../../../../core/logging/resultado_logging.dart';
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/usuario.dart';
@@ -13,6 +14,13 @@ final authControllerProvider = AsyncNotifierProvider<AuthController, Usuario?>(
 class AuthController extends AsyncNotifier<Usuario?> {
   @override
   Future<Usuario?> build() async {
+    ref.listen<int>(sesionInvalidaTickProvider, (anterior, siguiente) {
+      if (anterior == siguiente) {
+        return;
+      }
+      Future(() => invalidarSesion());
+    });
+
     final obtenerSesion = ref.read(obtenerSesionUseCaseProvider);
     final resultado = await obtenerSesion(NoParams());
 
@@ -47,6 +55,15 @@ class AuthController extends AsyncNotifier<Usuario?> {
   Future<void> logout() async {
     final logoutUseCase = ref.read(logoutUseCaseProvider);
     await logoutUseCase(NoParams());
+    state = const AsyncData(null);
+  }
+
+  /// Limpia la sesión en memoria (p. ej. tras 401 / token vencido).
+  /// El storage ya debe estar limpio por el interceptor o el repositorio.
+  void invalidarSesion() {
+    if (state.asData?.value == null && !state.isLoading) {
+      return;
+    }
     state = const AsyncData(null);
   }
 

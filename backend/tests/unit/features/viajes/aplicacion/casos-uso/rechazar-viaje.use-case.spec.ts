@@ -56,6 +56,7 @@ describe('RechazarViajeUseCase', () => {
       conductoresRechazados: [],
       rechazar: vi.fn().mockImplementation(function (this: any, cId: string) {
         this.conductoresRechazados.push(cId);
+        return true;
       }),
     } as unknown as Viaje;
 
@@ -96,6 +97,7 @@ describe('RechazarViajeUseCase', () => {
       conductoresRechazados: [],
       rechazar: vi.fn().mockImplementation(function (this: any, cId: string) {
         this.conductoresRechazados.push(cId);
+        return true;
       }),
       cancelar: vi.fn(),
     } as unknown as Viaje;
@@ -117,6 +119,24 @@ describe('RechazarViajeUseCase', () => {
       'SISTEMA',
       'No hay conductores disponibles en tu zona',
     );
+    expect(notificadorViajeMock.notificarNuevoViaje).not.toHaveBeenCalled();
+    expect(result).toBe(viajeMock);
+  });
+
+  it('DebeRetornarViaje_SinRotar_CuandoYaNoEsOfertable', async () => {
+    const viajeMock = {
+      id: 'viaje-3',
+      rechazar: vi.fn().mockReturnValue(false),
+      cancelar: vi.fn(),
+    } as unknown as Viaje;
+
+    viajeRepositoryMock.obtenerPorId.mockResolvedValue(viajeMock);
+
+    const result = await useCase.ejecutar('viaje-3', 'cond-1');
+
+    expect(viajeMock.rechazar).toHaveBeenCalledWith('cond-1');
+    expect(viajeRepositoryMock.guardar).not.toHaveBeenCalled();
+    expect(asignadorMock.buscarMasCercano).not.toHaveBeenCalled();
     expect(notificadorViajeMock.notificarNuevoViaje).not.toHaveBeenCalled();
     expect(result).toBe(viajeMock);
   });

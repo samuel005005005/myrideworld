@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ViajeOrmEntity } from './infraestructura/persistencia/entidades/viaje.orm-entity.js';
 import { ViajeRepositoryImpl } from './infraestructura/persistencia/repositorios/viaje.repository.impl.js';
@@ -15,6 +15,7 @@ import { ListarViajesUseCase } from './aplicacion/casos-uso/listar-viajes.use-ca
 import { RechazarViajeUseCase } from './aplicacion/casos-uso/rechazar-viaje.use-case.js';
 import { ObtenerViajeActivoUseCase } from './aplicacion/casos-uso/obtener-viaje-activo.use-case.js';
 import { ObtenerViajePorIdUseCase } from './aplicacion/casos-uso/obtener-viaje-por-id.use-case.js';
+import { OfertarViajesPendientesConductorUseCase } from './aplicacion/casos-uso/ofertar-viajes-pendientes-conductor.use-case.js';
 import { ViajesController } from './presentacion/controladores/viajes.controller.js';
 import { TarifasModule } from '../tarifas/tarifas.module.js';
 import { PagosBalancesModule } from '../pagos-balances/pagos-balances.module.js';
@@ -28,16 +29,16 @@ import { ProgramadorTimeoutOfertaService } from './aplicacion/servicios/programa
 import { ConductoresModule } from '../conductores/conductores.module.js';
 import { AsignadorConductorService } from './aplicacion/servicios/asignador-conductor.service.js';
 import { ValidadorProximidadViajeService } from './aplicacion/servicios/validador-proximidad-viaje.service.js';
-import { AuthModule } from '../auth/auth.module.js';
+import { JwtAuthModule } from '../../compartidos/seguridad/jwt-auth.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ViajeOrmEntity]),
     TarifasModule,
     PagosBalancesModule,
-    ConductoresModule,
+    forwardRef(() => ConductoresModule),
     BitacoraModule,
-    AuthModule,
+    JwtAuthModule,
   ],
   controllers: [ViajesController],
   providers: [
@@ -59,6 +60,7 @@ import { AuthModule } from '../auth/auth.module.js';
     RechazarViajeUseCase,
     ObtenerViajeActivoUseCase,
     ObtenerViajePorIdUseCase,
+    OfertarViajesPendientesConductorUseCase,
     ViajesGateway,
     FirebasePushConductorAdapter,
     {
@@ -79,9 +81,9 @@ import { AuthModule } from '../auth/auth.module.js';
     IniciarViajeUseCase,
     CompletarViajeUseCase,
     CancelarViajeUseCase,
+    OfertarViajesPendientesConductorUseCase,
     ViajesGateway,
     NOTIFICADOR_VIAJE,
   ],
 })
 export class ViajesModule {}
-

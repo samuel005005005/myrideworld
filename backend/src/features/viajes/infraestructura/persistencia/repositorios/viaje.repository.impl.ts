@@ -120,6 +120,19 @@ export class ViajeRepositoryImpl implements IViajeRepository {
     return entities.map((e) => ViajeOrmMapper.toDomain(e));
   }
 
+  async obtenerPendientesAsignacion(limite = 50): Promise<Viaje[]> {
+    const entities = await this.ormRepo
+      .createQueryBuilder('viaje')
+      .where('viaje.estado IN (:...estados)', {
+        estados: [EstadosViaje.SOLICITADO, EstadosViaje.BUSCANDO],
+      })
+      .orderBy('viaje.fechaSolicitud', 'ASC')
+      .take(limite)
+      .getMany();
+
+    return entities.map((e) => ViajeOrmMapper.toDomain(e));
+  }
+
   async contarPorEstados(estados: string[]): Promise<number> {
     if (estados.length === 0) return 0;
     return this.ormRepo

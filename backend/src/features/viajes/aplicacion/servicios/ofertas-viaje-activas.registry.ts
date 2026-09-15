@@ -13,9 +13,23 @@ export class OfertasViajeActivasRegistry {
     return this.porViaje.get(viajeId);
   }
 
+  /** Viaje cuya oferta activa está asignada a este conductor (si hay). */
+  viajeIdDeConductor(conductorId: string): string | undefined {
+    for (const [viajeId, asignado] of this.porViaje.entries()) {
+      if (asignado === conductorId) {
+        return viajeId;
+      }
+    }
+    return undefined;
+  }
+
   liberar(viajeId: string): string | undefined {
     const conductorId = this.porViaje.get(viajeId);
     this.porViaje.delete(viajeId);
     return conductorId;
+  }
+
+  tieneOfertaActivaPara(conductorId: string): boolean {
+    return this.viajeIdDeConductor(conductorId) !== undefined;
   }
 }

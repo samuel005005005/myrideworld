@@ -30,7 +30,9 @@ ReciboViaje resolverRecibo(Object? extra) {
       tarifa: (map['tarifa'] as num?)?.toDouble() ??
           (map['tarifaEstimada'] as num?)?.toDouble() ??
           0,
-      distancia: (map['distancia'] as num?)?.toDouble() ?? 0,
+      distancia: (map['distancia'] as num?)?.toDouble() ??
+          (map['distanciaKm'] as num?)?.toDouble() ??
+          0,
       duracionMinutos: (map['duracionMinutos'] as num?)?.toInt() ?? 0,
     );
   }

@@ -5,4 +5,6 @@ export interface ViajeDisponibleNotificacion {
   destinoLat: number;
   destinoLng: number;
   tarifaEstimada: number;
+  origenDireccion?: string | null;
+  destinoDireccion?: string | null;
 }

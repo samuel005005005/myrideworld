@@ -15,5 +15,7 @@ class AuthLocalDataSource {
 
   Future<SesionUsuario?> obtenerSesion() => sessionStorage.obtenerSesion();
 
+  Future<String?> obtenerToken() => sessionStorage.obtenerToken();
+
   Future<void> limpiar() => sessionStorage.limpiar();
 }

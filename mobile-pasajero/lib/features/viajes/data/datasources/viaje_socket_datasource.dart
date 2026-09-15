@@ -4,8 +4,10 @@ import '../../../../core/config/app_env.dart';
 import '../../../../core/storage/session_storage.dart';
 import '../../domain/entities/recibo_viaje.dart';
 import '../../domain/entities/conductor_asignado.dart';
+import '../../domain/entities/conductor_cercano.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
 import '../mappers/conductor_asignado_mapper.dart';
+import '../mappers/conductor_cercano_mapper.dart';
 import '../mappers/recibo_viaje_mapper.dart';
 
 class ViajeSocketDataSource implements ViajeRealtimeGateway {
@@ -13,6 +15,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
 
   io.Socket? _socket;
   String? _viajePendienteId;
+  ({double lat, double lng})? _flotaPendiente;
 
   ViajeSocketDataSource({required this.sessionStorage});
 
@@ -42,6 +45,10 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
       if (_viajePendienteId != null) {
         _emitirUnirseAViaje(_viajePendienteId!);
       }
+      final flota = _flotaPendiente;
+      if (flota != null) {
+        _emitirObservarFlota(flota.lat, flota.lng);
+      }
     });
 
     _socket?.connect();
@@ -55,13 +62,64 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     }
   }
 
+  @override
+  void observarFlota({required double latitud, required double longitud}) {
+    _flotaPendiente = (lat: latitud, lng: longitud);
+    if (_socket?.connected == true) {
+      _emitirObservarFlota(latitud, longitud);
+    }
+  }
+
+  @override
+  void dejarDeObservarFlota() {
+    _flotaPendiente = null;
+    _socket?.emit('dejarDeObservarFlota');
+  }
+
   void _emitirUnirseAViaje(String viajeId) {
     _socket?.emit('unirseAViaje', {'viajeId': viajeId});
+  }
+
+  void _emitirObservarFlota(double lat, double lng) {
+    _socket?.emit('observarFlota', {'lat': lat, 'lng': lng});
   }
 
   void _escuchar(String evento, void Function(dynamic) callback) {
     _socket?.off(evento);
     _socket?.on(evento, callback);
+  }
+
+  @override
+  void escucharUbicacionConductorFlota(
+    void Function(ConductorCercano conductor) callback,
+  ) {
+    _escuchar('ubicacionConductorFlota', (data) {
+      if (data is! Map) {
+        return;
+      }
+      try {
+        callback(
+          ConductorCercanoMapper.fromJson(Map<String, dynamic>.from(data)),
+        );
+      } catch (_) {
+        // Payload inválido: se ignora.
+      }
+    });
+  }
+
+  @override
+  void escucharConductorFueraDeFlota(
+    void Function(String conductorId) callback,
+  ) {
+    _escuchar('conductorFueraDeFlota', (data) {
+      if (data is! Map) {
+        return;
+      }
+      final id = data['conductorId'];
+      if (id is String && id.isNotEmpty) {
+        callback(id);
+      }
+    });
   }
 
   @override
@@ -132,6 +190,9 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   @override
   void desconectar() {
     _viajePendienteId = null;
+    _flotaPendiente = null;
+    _socket?.off('ubicacionConductorFlota');
+    _socket?.off('conductorFueraDeFlota');
     _socket?.off('ubicacionActualizada');
     _socket?.off('viajeAceptado');
     _socket?.off('conductorLlego');

@@ -14,6 +14,8 @@ export class ViajeMapper {
       origenLng: viaje.origenLng,
       destinoLat: viaje.destinoLat,
       destinoLng: viaje.destinoLng,
+      origenDireccion: viaje.origenDireccion,
+      destinoDireccion: viaje.destinoDireccion,
       estado: viaje.estado,
       tarifaEstimada: viaje.tarifaEstimada,
       fechaSolicitud: viaje.fechaSolicitud,

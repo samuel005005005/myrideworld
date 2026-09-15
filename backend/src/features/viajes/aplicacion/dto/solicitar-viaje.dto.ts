@@ -11,6 +11,16 @@ export const solicitarViajeSchema = z.object({
   origenLng: z.number().min(-180, V.LONGITUD_INVALIDA).max(180, V.LONGITUD_INVALIDA),
   destinoLat: z.number().min(-90, V.LATITUD_INVALIDA).max(90, V.LATITUD_INVALIDA),
   destinoLng: z.number().min(-180, V.LONGITUD_INVALIDA).max(180, V.LONGITUD_INVALIDA),
+  origenDireccion: z.preprocess(
+    (valor) =>
+      typeof valor === 'string' && valor.trim() === '' ? undefined : valor,
+    z.string().trim().min(1).max(255).optional(),
+  ),
+  destinoDireccion: z.preprocess(
+    (valor) =>
+      typeof valor === 'string' && valor.trim() === '' ? undefined : valor,
+    z.string().trim().min(1).max(255).optional(),
+  ),
 });
 
 export class SolicitarViajeDto {
@@ -28,4 +38,18 @@ export class SolicitarViajeDto {
 
   @ApiProperty({ example: S.EJEMPLO_LONGITUD_DESTINO, description: S.DESC_LONGITUD_DESTINO })
   destinoLng: number;
+
+  @ApiProperty({
+    example: S.EJEMPLO_ORIGEN_DIRECCION,
+    description: S.DESC_ORIGEN_DIRECCION,
+    required: false,
+  })
+  origenDireccion?: string;
+
+  @ApiProperty({
+    example: S.EJEMPLO_DESTINO_DIRECCION,
+    description: S.DESC_DESTINO_DIRECCION,
+    required: false,
+  })
+  destinoDireccion?: string;
 }

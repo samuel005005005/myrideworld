@@ -14,12 +14,16 @@ abstract class ViajeRemoteDataSource {
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
+    required String origenDireccion,
+    required String destinoDireccion,
     required String idempotencyKey,
   });
 
   Future<List<ViajeModel>> listarMisViajes();
 
   Future<ViajeModel> obtenerViajePorId(String viajeId);
+
+  Future<ViajeModel?> obtenerViajeActivo();
 
   Future<ViajeModel> cancelarViaje({
     required String viajeId,
@@ -42,6 +46,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
+    required String origenDireccion,
+    required String destinoDireccion,
     required String idempotencyKey,
   }) async {
     try {
@@ -60,6 +66,8 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
           'origenLng': origenLng,
           'destinoLat': destinoLat,
           'destinoLng': destinoLng,
+          'origenDireccion': origenDireccion,
+          'destinoDireccion': destinoDireccion,
         },
       );
 
@@ -133,6 +141,35 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       rethrow;
     } catch (e, stack) {
       AppLogger.error('ViajeRemoteDataSourceImpl.obtenerViajePorId', e, stack);
+      throw ServerException('${AppStrings.errorUnexpected}$e');
+    }
+  }
+
+  @override
+  Future<ViajeModel?> obtenerViajeActivo() async {
+    try {
+      final response = await dio.get(ApiEndpoints.viajeActivo);
+      final data = response.data;
+      if (data == null || data == '' || data == 'null') {
+        return null;
+      }
+      if (data is! Map) {
+        return null;
+      }
+      return ViajeMapper.fromJson(Map<String, dynamic>.from(data));
+    } on DioException catch (e) {
+      if (e.response != null && e.response?.data != null) {
+        final message =
+            e.response?.data['message'] ?? AppStrings.errorViajeActivo;
+        throw ServerException(
+          message is List ? message.first : message.toString(),
+        );
+      }
+      throw ServerException(AppStrings.errorServerConnection);
+    } on ServerException {
+      rethrow;
+    } catch (e, stack) {
+      AppLogger.error('ViajeRemoteDataSourceImpl.obtenerViajeActivo', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
   }

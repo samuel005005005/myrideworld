@@ -14,6 +14,8 @@ export interface IViajeRepository {
     hasta?: Date;
   }): Promise<Viaje[]>;
   obtenerViajesVencidos(minutos: number): Promise<Viaje[]>;
+  /** Viajes Solicitado/Buscando a la espera de un conductor. */
+  obtenerPendientesAsignacion(limite?: number): Promise<Viaje[]>;
   /** Asigna conductor solo si el viaje sigue disponible (evita carrera). */
   aceptarSiDisponible(viajeId: string, conductorId: string): Promise<Viaje | null>;
   contarPorEstados(estados: string[]): Promise<number>;

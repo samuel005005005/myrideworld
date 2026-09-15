@@ -11,6 +11,7 @@ import { TiposBitacora } from '../../../../compartidos/constantes/tipos-bitacora
 import { ServiciosSistema } from '../../../../compartidos/constantes/servicios-sistema.enum.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { ValidadorProximidadViajeService } from '../servicios/validador-proximidad-viaje.service.js';
+import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 
 @Injectable()
 export class CompletarViajeUseCase {
@@ -67,11 +68,42 @@ export class CompletarViajeUseCase {
       request: { viajeId: id },
     });
 
-    this.notificadorViaje.notificarViajeCompletado(
-      guardado.id,
-      Number(guardado.tarifaEstimada),
+    const distanciaKm =
+      Math.round(
+        calcularDistanciaKm(
+          guardado.origenLat,
+          guardado.origenLng,
+          guardado.destinoLat,
+          guardado.destinoLng,
+        ) * 100,
+      ) / 100;
+
+    const duracionMinutos = this._duracionMinutos(
+      guardado.fechaInicio,
+      guardado.fechaFin,
     );
 
+    this.notificadorViaje.notificarViajeCompletado({
+      viajeId: guardado.id,
+      tarifaEstimada: Number(guardado.tarifaEstimada),
+      distanciaKm,
+      duracionMinutos,
+    });
+
     return guardado;
+  }
+
+  private _duracionMinutos(
+    inicio: Date | null,
+    fin: Date | null,
+  ): number {
+    if (!inicio || !fin) {
+      return 0;
+    }
+    const ms = fin.getTime() - inicio.getTime();
+    if (ms <= 0) {
+      return 0;
+    }
+    return Math.max(1, Math.round(ms / 60_000));
   }
 }

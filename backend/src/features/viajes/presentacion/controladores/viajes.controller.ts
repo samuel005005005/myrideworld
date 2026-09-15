@@ -108,10 +108,17 @@ export class ViajesController {
 
   @Get('activo')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(RolesEnum.CONDUCTOR)
-  @ApiOperation({ summary: 'Obtener viaje activo del conductor (si existe)' })
-  async viajeActivo(@Req() req: { user: { sub: string } }) {
-    const viaje = await this.obtenerViajeActivo.ejecutar(req.user.sub);
+  @Roles(RolesEnum.CONDUCTOR, RolesEnum.PASAJERO)
+  @ApiOperation({
+    summary: 'Obtener viaje activo del conductor o pasajero (si existe)',
+  })
+  async viajeActivo(
+    @Req() req: { user: { sub: string; rol: string } },
+  ) {
+    const viaje = await this.obtenerViajeActivo.ejecutar(
+      req.user.sub,
+      req.user.rol as RolesEnum,
+    );
     return viaje ? ViajeMapper.toResponse(viaje) : null;
   }
 

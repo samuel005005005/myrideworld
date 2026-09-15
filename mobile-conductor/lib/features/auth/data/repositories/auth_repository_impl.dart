@@ -1,3 +1,4 @@
+import '../../../../core/auth/validador_jwt.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
@@ -59,7 +60,22 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Resultado<SesionUsuario?>> obtenerSesion() async {
     try {
+      final token = await localDataSource.obtenerToken();
+      if (token == null || token.isEmpty) {
+        return const Exito(null);
+      }
+
+      if (!ValidadorJwt.tieneFormatoValido(token) ||
+          ValidadorJwt.estaVencido(token)) {
+        await localDataSource.limpiar();
+        return const Exito(null);
+      }
+
       final sesion = await localDataSource.obtenerSesion();
+      if (sesion == null) {
+        await localDataSource.limpiar();
+        return const Exito(null);
+      }
       return Exito(sesion);
     } catch (e, stack) {
       return falloDesdeError(

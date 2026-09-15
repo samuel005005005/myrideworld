@@ -45,6 +45,17 @@ class _HomePageState extends ConsumerState<HomePage> {
         return Consumer(
           builder: (context, ref, _) {
             final estado = ref.watch(homeConductorControllerProvider);
+            ref.listen<HomeConductorState>(homeConductorControllerProvider, (
+              _,
+              siguiente,
+            ) {
+              if (siguiente.viajePendiente?.id == viaje.id) {
+                return;
+              }
+              if (ctx.mounted && Navigator.of(ctx).canPop()) {
+                Navigator.of(ctx).pop();
+              }
+            });
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
@@ -76,18 +87,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(height: 20),
                     _InfoChip(
                       icon: Icons.trip_origin,
-                      label: AppStrings.formatoOrigen(
-                        viaje.origenLat,
-                        viaje.origenLng,
-                      ),
+                      label: estado.origenOfertaTexto ??
+                          AppStrings.viajeOrigenCargando,
                     ),
                     const SizedBox(height: 8),
                     _InfoChip(
                       icon: Icons.flag_outlined,
-                      label: AppStrings.formatoDestino(
-                        viaje.destinoLat,
-                        viaje.destinoLng,
-                      ),
+                      label: estado.destinoOfertaTexto ??
+                          AppStrings.viajeDestinoCargando,
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -122,8 +129,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                               if (!context.mounted || viajeAceptado == null) {
                                 return;
                               }
-                              Navigator.of(ctx).pop();
-                              context.go('/viaje-active', extra: viajeAceptado);
+                              context.go(
+                                '/viaje-active',
+                                extra: viajeAceptado,
+                              );
                             },
                       child: estado.aceptandoViaje
                           ? const SizedBox(
@@ -156,15 +165,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                           estado.aceptandoViaje || estado.rechazandoViaje
                           ? null
                           : () async {
-                              final ok = await ref
+                              await ref
                                   .read(
                                     homeConductorControllerProvider.notifier,
                                   )
                                   .rechazarViaje(viaje);
-                              if (!context.mounted || !ok) {
-                                return;
-                              }
-                              Navigator.of(ctx).pop();
                             },
                       child: estado.rechazandoViaje
                           ? const SizedBox(
@@ -221,6 +226,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             _mostrarAlertaViaje(viajePendiente);
           }
         });
+      } else if (anterior?.viajePendiente != null &&
+          siguiente.viajePendiente == null) {
+        _ultimoViajeMostradoId = null;
       }
 
       if (siguiente.ubicacionActual != null &&
@@ -433,35 +441,44 @@ class _EstadoChip extends StatelessWidget {
               ? AppStrings.homeEstadoEnLinea
               : AppStrings.homeEstadoFueraDeLinea);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * 0.85,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            texto,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
-              fontSize: 13,
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                texto,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                  fontSize: 13,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

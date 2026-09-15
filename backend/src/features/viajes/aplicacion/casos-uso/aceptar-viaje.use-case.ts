@@ -9,6 +9,7 @@ import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
 import { ConductorMapper } from '../../../conductores/aplicacion/mappers/conductor.mapper.js';
 
 @Injectable()
@@ -33,7 +34,22 @@ export class AceptarViajeUseCase {
       if (!existente) {
         throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.NO_ENCONTRADO);
       }
-      throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.YA_ASIGNADO, 409);
+      if (existente.estado === EstadosViaje.CANCELADO) {
+        throw new DomainException(
+          MENSAJES.EXCEPCIONES.VIAJES.CANCELADO_NO_ACEPTABLE,
+          409,
+        );
+      }
+      if (existente.conductorId === dto.conductorId) {
+        return existente;
+      }
+      if (existente.conductorId) {
+        throw new DomainException(MENSAJES.EXCEPCIONES.VIAJES.YA_ASIGNADO, 409);
+      }
+      throw new DomainException(
+        MENSAJES.EXCEPCIONES.VIAJES.YA_NO_DISPONIBLE,
+        409,
+      );
     }
 
     const conductor = await this.conductorRepository.obtenerPorId(

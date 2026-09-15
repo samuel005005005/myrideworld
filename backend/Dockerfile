@@ -4,6 +4,7 @@ FROM node:22-alpine AS builder
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+COPY .npmrc ./
 RUN npm ci
 
 COPY . .
@@ -15,8 +16,9 @@ FROM node:22-alpine
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+COPY .npmrc ./
 # Instala solo dependencias de producción
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY --from=builder /usr/src/app/dist ./dist
 

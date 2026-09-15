@@ -3,8 +3,18 @@ import type { IViajeRepository } from '../../dominio/repositorios/viaje.reposito
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 
-const ESTADOS_ACTIVOS = new Set<string>([
+const ESTADOS_ACTIVOS_CONDUCTOR = new Set<string>([
+  EstadosViaje.ASIGNADO,
+  EstadosViaje.EN_CAMINO,
+  EstadosViaje.LLEGO,
+  EstadosViaje.EN_CURSO,
+]);
+
+const ESTADOS_ACTIVOS_PASAJERO = new Set<string>([
+  EstadosViaje.SOLICITADO,
+  EstadosViaje.BUSCANDO,
   EstadosViaje.ASIGNADO,
   EstadosViaje.EN_CAMINO,
   EstadosViaje.LLEGO,
@@ -18,10 +28,23 @@ export class ObtenerViajeActivoUseCase {
     private readonly viajeRepository: IViajeRepository,
   ) {}
 
-  async ejecutar(conductorId: string): Promise<Viaje | null> {
-    const viajes = await this.viajeRepository.obtenerPorConductor(conductorId);
-    return (
-      viajes.find((viaje) => ESTADOS_ACTIVOS.has(viaje.estado)) ?? null
-    );
+  async ejecutar(actorId: string, rol: Roles): Promise<Viaje | null> {
+    if (rol === Roles.CONDUCTOR) {
+      const viajes = await this.viajeRepository.obtenerPorConductor(actorId);
+      return (
+        viajes.find((viaje) => ESTADOS_ACTIVOS_CONDUCTOR.has(viaje.estado)) ??
+        null
+      );
+    }
+
+    if (rol === Roles.PASAJERO) {
+      const viajes = await this.viajeRepository.obtenerPorPasajero(actorId);
+      return (
+        viajes.find((viaje) => ESTADOS_ACTIVOS_PASAJERO.has(viaje.estado)) ??
+        null
+      );
+    }
+
+    return null;
   }
 }

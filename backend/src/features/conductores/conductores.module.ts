@@ -17,10 +17,14 @@ import { ActualizarConductorUseCase } from './aplicacion/casos-uso/actualizar-co
 import { ActualizarDisponibilidadUseCase } from './aplicacion/casos-uso/actualizar-disponibilidad.use-case.js';
 import { RegistrarTokenPushUseCase } from './aplicacion/casos-uso/registrar-token-push.use-case.js';
 import { ActualizarUbicacionConductorUseCase } from './aplicacion/casos-uso/actualizar-ubicacion-conductor.use-case.js';
+import { ListarConductoresCercanosUseCase } from './aplicacion/casos-uso/listar-conductores-cercanos.use-case.js';
 import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 
 @Module({
-  imports: [SeguridadModule, TypeOrmModule.forFeature([ConductorOrmEntity])],
+  imports: [
+    SeguridadModule,
+    TypeOrmModule.forFeature([ConductorOrmEntity]),
+  ],
   controllers: [ConductoresController],
   providers: [
     {
@@ -39,6 +43,7 @@ import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js
     ActualizarDisponibilidadUseCase,
     RegistrarTokenPushUseCase,
     ActualizarUbicacionConductorUseCase,
+    ListarConductoresCercanosUseCase,
   ],
   exports: [
     CONDUCTOR_REPOSITORY,

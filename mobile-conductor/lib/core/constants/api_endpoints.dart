@@ -18,6 +18,20 @@ class ApiEndpoints {
     return '/viajes/$viajeId/completar';
   }
 
+  static const String osrmRutaConduccion = '/route/v1/driving';
+  static const String osrmGeometriasGeoJson = 'geometries=geojson';
+
+  static String construirRutaOsrmConduccion({
+    required double origenLat,
+    required double origenLng,
+    required double destinoLat,
+    required double destinoLng,
+  }) {
+    return '$osrmRutaConduccion/'
+        '$origenLng,$origenLat;$destinoLng,$destinoLat'
+        '?$osrmGeometriasGeoJson';
+  }
+
   static String rechazarViaje(String viajeId) {
     return '/viajes/$viajeId/rechazar';
   }

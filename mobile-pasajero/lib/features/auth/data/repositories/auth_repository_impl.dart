@@ -1,4 +1,5 @@
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/auth/validador_jwt.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/logging/resultado_logging.dart';
@@ -59,6 +60,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final token = await sessionStorage.obtenerToken();
       if (token == null || token.isEmpty) {
+        return const Exito(null);
+      }
+
+      if (!ValidadorJwt.tieneFormatoValido(token) ||
+          ValidadorJwt.estaVencido(token)) {
+        await sessionStorage.limpiar();
         return const Exito(null);
       }
 

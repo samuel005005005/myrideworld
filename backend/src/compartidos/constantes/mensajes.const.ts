@@ -53,10 +53,14 @@ export const MENSAJES = {
       DESC_LONGITUD_ORIGEN: 'Longitud del punto de origen',
       DESC_LATITUD_DESTINO: 'Latitud del punto de destino',
       DESC_LONGITUD_DESTINO: 'Longitud del punto de destino',
+      DESC_ORIGEN_DIRECCION: 'Dirección legible del punto de origen',
+      DESC_DESTINO_DIRECCION: 'Dirección legible del punto de destino',
       EJEMPLO_LATITUD_ORIGEN: -34.6037,
       EJEMPLO_LONGITUD_ORIGEN: -58.3816,
       EJEMPLO_LATITUD_DESTINO: -34.5837,
       EJEMPLO_LONGITUD_DESTINO: -58.4016,
+      EJEMPLO_ORIGEN_DIRECCION: 'Hard Rock Hotel & Casino Punta Cana',
+      EJEMPLO_DESTINO_DIRECCION: 'Aeropuerto Internacional de Punta Cana (PUJ)',
       DESC_CONDUCTOR_ID: 'UUID del conductor',
       EJEMPLO_MOTIVO: 'El conductor tarda mucho',
     },
@@ -118,10 +122,13 @@ export const MENSAJES = {
       CLAVE_SOPORTE_WHATSAPP: 'SOPORTE_WHATSAPP',
       CLAVE_RADIO_PROXIMIDAD_ORIGEN_M: 'RADIO_PROXIMIDAD_ORIGEN_M',
       CLAVE_RADIO_PROXIMIDAD_DESTINO_M: 'RADIO_PROXIMIDAD_DESTINO_M',
+      CLAVE_RADIO_MAPA_FLOTA_KM: 'RADIO_MAPA_FLOTA_KM',
       RADIO_PROXIMIDAD_ORIGEN_M_DESC:
         'Radio en metros para marcar llegada / iniciar cerca del origen',
       RADIO_PROXIMIDAD_DESTINO_M_DESC:
         'Radio en metros para completar el viaje cerca del destino',
+      RADIO_MAPA_FLOTA_KM_DESC:
+        'Radio en km para mostrar conductores disponibles en el mapa del pasajero',
     },
     TARIFAS: {
       PRECIO_MAYOR_CERO: 'El precio debe ser mayor a cero.',
@@ -146,6 +153,8 @@ export const MENSAJES = {
       LLEGADA_SOLO_CONDUCTOR: 'Solo el conductor asignado puede marcar la llegada.',
       ACCION_SOLO_CONDUCTOR_ASIGNADO: 'Solo el conductor asignado puede realizar esta acción.',
       YA_ASIGNADO: 'El viaje ya fue tomado por otro conductor.',
+      YA_NO_DISPONIBLE: 'Este viaje ya no esta disponible.',
+      CANCELADO_NO_ACEPTABLE: 'El pasajero cancelo el viaje.',
       SIN_CONDUCTORES: 'No hay conductores disponibles',
       SIN_CONDUCTORES_ZONA: 'No hay conductores disponibles en tu zona',
       COMPLETADO_EXITOSO: 'Viaje completado exitosamente',
