@@ -6,10 +6,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../domain/entities/viaje.dart';
 import '../controllers/home_conductor_controller.dart';
 import '../controllers/home_conductor_state.dart';
 import '../widgets/home_conductor_drawer.dart';
+import '../widgets/ofertas_viaje_sheet.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -22,7 +22,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final MapController _mapController = MapController();
   static const LatLng _fallbackMapa = LatLng(18.582, -68.3971);
-  String? _ultimoViajeMostradoId;
+  bool _sheetOfertasAbierto = false;
 
   @override
   void initState() {
@@ -32,169 +32,24 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  void _mostrarAlertaViaje(Viaje viaje) {
-    showModalBottomSheet(
+  Future<void> _abrirSheetOfertas() async {
+    if (_sheetOfertasAbierto || !mounted) {
+      return;
+    }
+    _sheetOfertasAbierto = true;
+    await showModalBottomSheet<void>(
       context: context,
       isDismissible: false,
       enableDrag: false,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final estado = ref.watch(homeConductorControllerProvider);
-            ref.listen<HomeConductorState>(homeConductorControllerProvider, (
-              _,
-              siguiente,
-            ) {
-              if (siguiente.viajePendiente?.id == viaje.id) {
-                return;
-              }
-              if (ctx.mounted && Navigator.of(ctx).canPop()) {
-                Navigator.of(ctx).pop();
-              }
-            });
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      AppStrings.homeNuevoViajeTitulo,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.onlineGreen,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _InfoChip(
-                      icon: Icons.trip_origin,
-                      label: estado.origenOfertaTexto ??
-                          AppStrings.viajeOrigenCargando,
-                    ),
-                    const SizedBox(height: 8),
-                    _InfoChip(
-                      icon: Icons.flag_outlined,
-                      label: estado.destinoOfertaTexto ??
-                          AppStrings.viajeDestinoCargando,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      AppStrings.formatoTarifa(viaje.tarifaEstimada),
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.textDark,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.brandPrimary,
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed:
-                          estado.aceptandoViaje || estado.rechazandoViaje
-                          ? null
-                          : () async {
-                              final viajeAceptado = await ref
-                                  .read(
-                                    homeConductorControllerProvider.notifier,
-                                  )
-                                  .aceptarViaje(viaje);
-                              if (!context.mounted || viajeAceptado == null) {
-                                return;
-                              }
-                              context.go(
-                                '/viaje-active',
-                                extra: viajeAceptado,
-                              );
-                            },
-                      child: estado.aceptandoViaje
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.black87,
-                              ),
-                            )
-                          : const Text(
-                              AppStrings.homeAceptarViaje,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.textDark,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: AppTheme.borderGrey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed:
-                          estado.aceptandoViaje || estado.rechazandoViaje
-                          ? null
-                          : () async {
-                              await ref
-                                  .read(
-                                    homeConductorControllerProvider.notifier,
-                                  )
-                                  .rechazarViaje(viaje);
-                            },
-                      child: estado.rechazandoViaje
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text(
-                              AppStrings.homeRechazarViaje,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      builder: (_) => const OfertasViajeSheet(),
     );
+    _sheetOfertasAbierto = false;
   }
-
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(homeConductorControllerProvider);
@@ -217,18 +72,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         });
       }
 
-      final viajePendiente = siguiente.viajePendiente;
-      if (viajePendiente != null &&
-          viajePendiente.id != _ultimoViajeMostradoId) {
-        _ultimoViajeMostradoId = viajePendiente.id;
+      if (siguiente.tieneOfertas && !_sheetOfertasAbierto) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            _mostrarAlertaViaje(viajePendiente);
+            _abrirSheetOfertas();
           }
         });
-      } else if (anterior?.viajePendiente != null &&
-          siguiente.viajePendiente == null) {
-        _ultimoViajeMostradoId = null;
       }
 
       if (siguiente.ubicacionActual != null &&
@@ -479,41 +328,6 @@ class _EstadoChip extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderGrey),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppTheme.brandPrimary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textDark,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

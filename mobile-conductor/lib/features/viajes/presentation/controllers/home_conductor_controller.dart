@@ -18,6 +18,7 @@ import '../../domain/usecases/aceptar_viaje_params.dart';
 import '../../domain/usecases/actualizar_disponibilidad_params.dart';
 import '../../domain/usecases/obtener_direccion_params.dart';
 import '../../domain/usecases/rechazar_viaje_params.dart';
+import '../models/oferta_en_cola.dart';
 import '../providers/viaje_cancelado_id_provider.dart';
 import '../providers/viajes_provider.dart';
 import 'home_conductor_state.dart';
@@ -133,23 +134,12 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     _subOfertasPush?.cancel();
     _subCancelPush?.cancel();
     _subOfertasPush = alerta.ofertas.listen((viaje) {
-      // También durante el cambio a Conectado (la oferta puede llegar antes de enLinea).
       if (!state.enLinea && !state.cambiandoDisponibilidad) {
         return;
       }
-      _mostrarOferta(viaje);
+      _agregarOferta(viaje);
     });
-    _subCancelPush = alerta.cancelaciones.listen((viajeId) {
-      final pendiente = state.viajePendiente;
-      if (pendiente?.id == viajeId) {
-        ref.read(viajeRealtimeGatewayProvider).salirDeViaje(viajeId);
-        state = state.copyWith(
-          viajePendiente: null,
-          origenOfertaTexto: null,
-          destinoOfertaTexto: null,
-        );
-      }
-    });
+    _subCancelPush = alerta.cancelaciones.listen(_quitarOferta);
   }
 
   void consumirViajeActivoRestaurado() {
@@ -229,9 +219,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     state = state.copyWith(
       cambiandoDisponibilidad: false,
       enLinea: false,
-      viajePendiente: null,
-      origenOfertaTexto: null,
-      destinoOfertaTexto: null,
+      ofertas: const <OfertaEnCola>[],
       errorMensaje: null,
     );
   }
@@ -313,7 +301,11 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       return null;
     }
 
-    state = state.copyWith(aceptandoViaje: true, errorMensaje: null);
+    state = state.copyWith(
+      aceptandoViaje: true,
+      aceptandoViajeId: viaje.id,
+      errorMensaje: null,
+    );
 
     final aceptarViaje = ref.read(aceptarViajeProvider);
     final resultado = await aceptarViaje(
@@ -329,24 +321,19 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         ref.read(viajeRealtimeGatewayProvider).salirDeViaje(viaje.id);
         state = state.copyWith(
           aceptandoViaje: false,
-          viajePendiente: null,
-          origenOfertaTexto: null,
-          destinoOfertaTexto: null,
+          aceptandoViajeId: null,
           errorMensaje: failure.mensaje,
         );
         return null;
       },
       (viajeAceptado) {
-        unawaited(
-          OfertaViajeAlertaService.instancia.detener(viajeId: viaje.id),
-        );
+        unawaited(OfertaViajeAlertaService.instancia.detener());
         unawaited(_detenerPublicacionGpsFlota());
         ref.read(viajeRealtimeGatewayProvider).unirseAViaje(viajeAceptado.id);
         state = state.copyWith(
           aceptandoViaje: false,
-          viajePendiente: null,
-          origenOfertaTexto: null,
-          destinoOfertaTexto: null,
+          aceptandoViajeId: null,
+          ofertas: const <OfertaEnCola>[],
           errorMensaje: null,
         );
         return viajeAceptado;
@@ -355,20 +342,22 @@ class HomeConductorController extends Notifier<HomeConductorState> {
   }
 
   Future<bool> rechazarViaje(Viaje viaje) async {
-    state = state.copyWith(rechazandoViaje: true, errorMensaje: null);
+    state = state.copyWith(
+      rechazandoViaje: true,
+      rechazandoViajeId: viaje.id,
+      errorMensaje: null,
+    );
 
     final resultado = await ref.read(rechazarViajeProvider)(
       RechazarViajeParams(viajeId: viaje.id),
     );
 
-    // Siempre liberamos la oferta local: el conductor declinó.
     unawaited(OfertaViajeAlertaService.instancia.detener(viajeId: viaje.id));
     ref.read(viajeRealtimeGatewayProvider).salirDeViaje(viaje.id);
+    _quitarOferta(viaje.id);
     state = state.copyWith(
       rechazandoViaje: false,
-      viajePendiente: null,
-      origenOfertaTexto: null,
-      destinoOfertaTexto: null,
+      rechazandoViajeId: null,
       errorMensaje: null,
     );
 
@@ -397,6 +386,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     state = state.copyWith(errorMensaje: null);
   }
 
+
   Future<void> _configurarSocket(SesionUsuario sesion) async {
     final gateway = ref.read(viajeRealtimeGatewayProvider);
     await gateway.conectar();
@@ -408,31 +398,19 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     });
     gateway.escucharOfertaCancelada((viajeId) {
       OfertaViajeAlertaService.instancia.avisarCancelacion(viajeId);
-      final pendiente = state.viajePendiente;
-      if (pendiente?.id == viajeId) {
-        gateway.salirDeViaje(viajeId);
-        state = state.copyWith(
-          viajePendiente: null,
-          origenOfertaTexto: null,
-          destinoOfertaTexto: null,
-        );
-      }
+      gateway.salirDeViaje(viajeId);
+      _quitarOferta(viajeId);
     });
     gateway.escucharViajeCancelado((viajeId) {
       OfertaViajeAlertaService.instancia.avisarCancelacion(viajeId);
       gateway.salirDeViaje(viajeId);
-      final pendiente = state.viajePendiente;
-      if (pendiente?.id == viajeId) {
-        state = state.copyWith(
-          viajePendiente: null,
-          origenOfertaTexto: null,
-          destinoOfertaTexto: null,
-          errorMensaje: AppStrings.viajeCanceladoPorPasajero,
-        );
-      }
+      _quitarOferta(viajeId);
       final paraRestaurar = state.viajeActivoParaRestaurar;
       if (paraRestaurar?.id == viajeId) {
-        state = state.copyWith(viajeActivoParaRestaurar: null);
+        state = state.copyWith(
+          viajeActivoParaRestaurar: null,
+          errorMensaje: AppStrings.viajeCanceladoPorPasajero,
+        );
       }
       ref.read(viajeCanceladoIdProvider.notifier).notificar(viajeId);
     });
@@ -444,33 +422,49 @@ class HomeConductorController extends Notifier<HomeConductorState> {
         // Sigue en línea: FCM cubre app cerrada / sin socket.
       },
     );
-    // Une a sala conductor_* y dispara oferta de pendientes en el backend.
     gateway.identificarConductor(sesion.userId);
   }
 
-  void _mostrarOferta(Viaje viaje) {
-    if (state.viajePendiente?.id == viaje.id &&
-        state.origenOfertaTexto != null) {
+  void _agregarOferta(Viaje viaje) {
+    final existentes = List<OfertaEnCola>.from(state.ofertas);
+    final indice = existentes.indexWhere((o) => o.viaje.id == viaje.id);
+    if (indice >= 0) {
+      existentes[indice] = OfertaEnCola(
+        viaje: viaje,
+        origenTexto: existentes[indice].origenTexto,
+        destinoTexto: existentes[indice].destinoTexto,
+      );
+    } else {
+      existentes.add(OfertaEnCola(viaje: viaje));
+    }
+    existentes.sort(
+      (a, b) => b.viaje.tarifaEstimada.compareTo(a.viaje.tarifaEstimada),
+    );
+    state = state.copyWith(ofertas: existentes, errorMensaje: null);
+    unawaited(_resolverEtiquetasOferta(viaje));
+  }
+
+  void _quitarOferta(String viajeId) {
+    final quedan = state.ofertas
+        .where((o) => o.viaje.id != viajeId)
+        .toList(growable: false);
+    if (quedan.length == state.ofertas.length) {
       return;
     }
-    state = state.copyWith(
-      viajePendiente: viaje,
-      origenOfertaTexto: null,
-      destinoOfertaTexto: null,
-      errorMensaje: null,
-    );
-    unawaited(_resolverEtiquetasOferta(viaje));
+    state = state.copyWith(ofertas: quedan);
+    if (quedan.isEmpty) {
+      unawaited(OfertaViajeAlertaService.instancia.detener());
+    }
   }
 
   Future<void> _resolverEtiquetasOferta(Viaje viaje) async {
     try {
       final obtenerDireccion = ref.read(obtenerDireccionUseCaseProvider);
 
+      String? origenTexto;
       final origenGuardado = viaje.origenDireccion;
       if (!AppStrings.esDireccionGenerica(origenGuardado)) {
-        state = state.copyWith(
-          origenOfertaTexto: AppStrings.formatoOrigenTexto(origenGuardado!),
-        );
+        origenTexto = AppStrings.formatoOrigenTexto(origenGuardado!);
       } else {
         final origenResultado = await obtenerDireccion(
           ObtenerDireccionParams(
@@ -478,76 +472,74 @@ class HomeConductorController extends Notifier<HomeConductorState> {
             longitud: viaje.origenLng,
           ),
         ).timeout(const Duration(seconds: 6));
-        if (state.viajePendiente?.id != viaje.id) {
-          return;
-        }
-        state = state.copyWith(
-          origenOfertaTexto: origenResultado.fold(
-            (_) => AppStrings.formatoOrigenCoords(
-              viaje.origenLat,
-              viaje.origenLng,
-            ),
-            AppStrings.formatoOrigenTexto,
+        origenTexto = origenResultado.fold(
+          (_) => AppStrings.formatoOrigenCoords(
+            viaje.origenLat,
+            viaje.origenLng,
           ),
+          AppStrings.formatoOrigenTexto,
         );
-        // Nominatim público: ~1 req/s.
         await Future<void>.delayed(const Duration(milliseconds: 1100));
-        if (state.viajePendiente?.id != viaje.id) {
-          return;
-        }
       }
 
+      _actualizarTextosOferta(viaje.id, origenTexto: origenTexto);
+
+      String? destinoTexto;
       final destinoGuardado = viaje.destinoDireccion;
       if (!AppStrings.esDireccionGenerica(destinoGuardado)) {
-        state = state.copyWith(
-          destinoOfertaTexto: AppStrings.formatoDestinoTexto(destinoGuardado!),
-        );
-        return;
-      }
-
-      final destinoResultado = await obtenerDireccion(
-        ObtenerDireccionParams(
-          latitud: viaje.destinoLat,
-          longitud: viaje.destinoLng,
-        ),
-      ).timeout(const Duration(seconds: 6));
-      if (state.viajePendiente?.id != viaje.id) {
-        return;
-      }
-      state = state.copyWith(
-        destinoOfertaTexto: destinoResultado.fold(
+        destinoTexto = AppStrings.formatoDestinoTexto(destinoGuardado!);
+      } else {
+        final destinoResultado = await obtenerDireccion(
+          ObtenerDireccionParams(
+            latitud: viaje.destinoLat,
+            longitud: viaje.destinoLng,
+          ),
+        ).timeout(const Duration(seconds: 6));
+        destinoTexto = destinoResultado.fold(
           (_) => AppStrings.formatoDestinoCoords(
             viaje.destinoLat,
             viaje.destinoLng,
           ),
           AppStrings.formatoDestinoTexto,
-        ),
-      );
+        );
+      }
+
+      _actualizarTextosOferta(viaje.id, destinoTexto: destinoTexto);
     } catch (error, stack) {
       AppLogger.error(
         'HomeConductorController._resolverEtiquetasOferta',
         error,
         stack,
       );
-      if (state.viajePendiente?.id != viaje.id) {
-        return;
-      }
-      state = state.copyWith(
-        origenOfertaTexto: state.origenOfertaTexto ??
-            (!AppStrings.esDireccionGenerica(viaje.origenDireccion)
-                ? AppStrings.formatoOrigenTexto(viaje.origenDireccion!)
-                : AppStrings.formatoOrigenCoords(
-                    viaje.origenLat,
-                    viaje.origenLng,
-                  )),
-        destinoOfertaTexto: state.destinoOfertaTexto ??
-            (!AppStrings.esDireccionGenerica(viaje.destinoDireccion)
-                ? AppStrings.formatoDestinoTexto(viaje.destinoDireccion!)
-                : AppStrings.formatoDestinoCoords(
-                    viaje.destinoLat,
-                    viaje.destinoLng,
-                  )),
+      _actualizarTextosOferta(
+        viaje.id,
+        origenTexto: !AppStrings.esDireccionGenerica(viaje.origenDireccion)
+            ? AppStrings.formatoOrigenTexto(viaje.origenDireccion!)
+            : AppStrings.formatoOrigenCoords(viaje.origenLat, viaje.origenLng),
+        destinoTexto: !AppStrings.esDireccionGenerica(viaje.destinoDireccion)
+            ? AppStrings.formatoDestinoTexto(viaje.destinoDireccion!)
+            : AppStrings.formatoDestinoCoords(
+                viaje.destinoLat,
+                viaje.destinoLng,
+              ),
       );
     }
+  }
+
+  void _actualizarTextosOferta(
+    String viajeId, {
+    String? origenTexto,
+    String? destinoTexto,
+  }) {
+    final indice = state.ofertas.indexWhere((o) => o.viaje.id == viajeId);
+    if (indice < 0) {
+      return;
+    }
+    final actualizadas = List<OfertaEnCola>.from(state.ofertas);
+    actualizadas[indice] = actualizadas[indice].copyWith(
+      origenTexto: origenTexto,
+      destinoTexto: destinoTexto,
+    );
+    state = state.copyWith(ofertas: actualizadas);
   }
 }

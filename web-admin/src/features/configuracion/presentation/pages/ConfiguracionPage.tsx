@@ -85,7 +85,7 @@ export function ConfiguracionPage() {
         <div>
           <h1>Configuración</h1>
           <p className="muted">
-            Tarifas, fees, timeouts y contactos de soporte
+            Tarifas (base, km, mínima, Cap Cana), geocerca, fees, timeouts y soporte
             {!puedeEditarConfig ? ' (solo lectura)' : ''}
           </p>
         </div>

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../constants/env_keys.dart';
 
 /// Configuración de entorno sin empaquetar `.env` en el binario.
@@ -44,20 +42,5 @@ class AppEnv {
       return 'https://nominatim.openstreetmap.org';
     }
     return defined;
-  }
-
-  /// Solo `kDebugMode`. Si ambas vienen en `.env`, sustituyen al GPS del dispositivo.
-  static ({double latitud, double longitud})? get gpsOverrideDebug {
-    if (!kDebugMode) {
-      return null;
-    }
-    const latRaw = String.fromEnvironment(EnvKeys.gpsOverrideLat);
-    const lngRaw = String.fromEnvironment(EnvKeys.gpsOverrideLng);
-    final latitud = double.tryParse(latRaw);
-    final longitud = double.tryParse(lngRaw);
-    if (latitud == null || longitud == null) {
-      return null;
-    }
-    return (latitud: latitud, longitud: longitud);
   }
 }

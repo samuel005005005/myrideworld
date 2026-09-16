@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/viaje.dart';
+import '../models/oferta_en_cola.dart';
 
 class HomeConductorState {
   static const Object _sinCambio = Object();
@@ -10,11 +11,11 @@ class HomeConductorState {
   final bool cambiandoDisponibilidad;
   final bool aceptandoViaje;
   final bool rechazandoViaje;
-  final Viaje? viajePendiente;
+  final List<OfertaEnCola> ofertas;
+  final String? aceptandoViajeId;
+  final String? rechazandoViajeId;
   final Viaje? viajeActivoParaRestaurar;
   final LatLng? ubicacionActual;
-  final String? origenOfertaTexto;
-  final String? destinoOfertaTexto;
   final String? errorMensaje;
 
   const HomeConductorState({
@@ -23,13 +24,15 @@ class HomeConductorState {
     this.cambiandoDisponibilidad = false,
     this.aceptandoViaje = false,
     this.rechazandoViaje = false,
-    this.viajePendiente,
+    this.ofertas = const <OfertaEnCola>[],
+    this.aceptandoViajeId,
+    this.rechazandoViajeId,
     this.viajeActivoParaRestaurar,
     this.ubicacionActual,
-    this.origenOfertaTexto,
-    this.destinoOfertaTexto,
     this.errorMensaje,
   });
+
+  bool get tieneOfertas => ofertas.isNotEmpty;
 
   HomeConductorState copyWith({
     bool? inicializando,
@@ -37,11 +40,11 @@ class HomeConductorState {
     bool? cambiandoDisponibilidad,
     bool? aceptandoViaje,
     bool? rechazandoViaje,
-    Object? viajePendiente = _sinCambio,
+    List<OfertaEnCola>? ofertas,
+    Object? aceptandoViajeId = _sinCambio,
+    Object? rechazandoViajeId = _sinCambio,
     Object? viajeActivoParaRestaurar = _sinCambio,
     Object? ubicacionActual = _sinCambio,
-    Object? origenOfertaTexto = _sinCambio,
-    Object? destinoOfertaTexto = _sinCambio,
     Object? errorMensaje = _sinCambio,
   }) {
     return HomeConductorState(
@@ -51,21 +54,19 @@ class HomeConductorState {
           cambiandoDisponibilidad ?? this.cambiandoDisponibilidad,
       aceptandoViaje: aceptandoViaje ?? this.aceptandoViaje,
       rechazandoViaje: rechazandoViaje ?? this.rechazandoViaje,
-      viajePendiente: identical(viajePendiente, _sinCambio)
-          ? this.viajePendiente
-          : viajePendiente as Viaje?,
+      ofertas: ofertas ?? this.ofertas,
+      aceptandoViajeId: identical(aceptandoViajeId, _sinCambio)
+          ? this.aceptandoViajeId
+          : aceptandoViajeId as String?,
+      rechazandoViajeId: identical(rechazandoViajeId, _sinCambio)
+          ? this.rechazandoViajeId
+          : rechazandoViajeId as String?,
       viajeActivoParaRestaurar: identical(viajeActivoParaRestaurar, _sinCambio)
           ? this.viajeActivoParaRestaurar
           : viajeActivoParaRestaurar as Viaje?,
       ubicacionActual: identical(ubicacionActual, _sinCambio)
           ? this.ubicacionActual
           : ubicacionActual as LatLng?,
-      origenOfertaTexto: identical(origenOfertaTexto, _sinCambio)
-          ? this.origenOfertaTexto
-          : origenOfertaTexto as String?,
-      destinoOfertaTexto: identical(destinoOfertaTexto, _sinCambio)
-          ? this.destinoOfertaTexto
-          : destinoOfertaTexto as String?,
       errorMensaje: identical(errorMensaje, _sinCambio)
           ? this.errorMensaje
           : errorMensaje as String?,

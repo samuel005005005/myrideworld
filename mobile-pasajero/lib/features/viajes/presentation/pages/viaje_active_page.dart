@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -160,53 +161,77 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                     if (estado.ubicacionConductor != null)
                       Marker(
                         point: estado.ubicacionConductor!,
-                        width: 72,
-                        height: 68,
+                        width: 148,
+                        height: 88,
                         alignment: Alignment.center,
                         child: MarcadorMapaViaje(
                           color: brandPrimary,
                           icono: Icons.directions_car_filled_rounded,
-                          etiqueta: AppStrings.trackingMarcadorConductor,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorConductor,
+                            estado.direccionConductor,
+                          ),
                           onTap: () => _mostrarDetalleMarcador(
                             titulo: AppStrings.trackingDetalleConductor,
                             color: brandPrimary,
                             icono: Icons.directions_car_filled_rounded,
+                            lugar: estado.direccionConductor,
+                            punto: estado.ubicacionConductor!,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: estado.ubicacionConductor!,
                           ),
                         ),
                       ),
                     if (estado.origen != null && !estado.haciaDestino)
                       Marker(
                         point: estado.origen!,
-                        width: 72,
-                        height: 78,
+                        width: 148,
+                        height: 98,
                         alignment: Alignment.bottomCenter,
                         child: MarcadorMapaViaje(
                           color: const Color(0xFF2563EB),
                           icono: Icons.person_rounded,
-                          etiqueta: AppStrings.trackingMarcadorRecogida,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorRecogida,
+                            estado.direccionRecogida,
+                          ),
                           conPunta: true,
                           onTap: () => _mostrarDetalleMarcador(
                             titulo: AppStrings.trackingDetalleRecogida,
                             color: const Color(0xFF2563EB),
                             icono: Icons.person_rounded,
+                            lugar: estado.direccionRecogida,
+                            punto: estado.origen!,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: estado.origen!,
                           ),
                         ),
                       ),
                     if (estado.destino != null)
                       Marker(
                         point: estado.destino!,
-                        width: 72,
-                        height: 78,
+                        width: 148,
+                        height: 98,
                         alignment: Alignment.bottomCenter,
                         child: MarcadorMapaViaje(
                           color: const Color(0xFFDC2626),
                           icono: Icons.place_rounded,
-                          etiqueta: AppStrings.trackingMarcadorDestino,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorDestino,
+                            estado.direccionDestino,
+                          ),
                           conPunta: true,
                           onTap: () => _mostrarDetalleMarcador(
                             titulo: AppStrings.trackingDetalleDestino,
                             color: const Color(0xFFDC2626),
                             icono: Icons.place_rounded,
+                            lugar: estado.direccionDestino,
+                            punto: estado.destino!,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: estado.destino!,
                           ),
                         ),
                       ),
@@ -238,15 +263,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 16,
-            child: ElevatedButton.icon(
-              onPressed: () => context.push('/ayuda'),
-              icon: const Icon(Icons.shield, color: Colors.white, size: 18),
-              label: const Text(AppStrings.trackingSOS),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: dangerColor,
-                foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-                elevation: 4,
+            child: Material(
+              color: dangerColor,
+              elevation: 4,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: () => context.push('/ayuda'),
+                borderRadius: BorderRadius.circular(24),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.shield, color: Colors.white, size: 18),
+                      SizedBox(width: 6),
+                      Text(
+                        AppStrings.trackingSOS,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -463,11 +504,38 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
     );
   }
 
+  Future<void> _copiarInfoMarcador({required LatLng punto}) async {
+    final texto = AppStrings.formatoCoordenada(
+      punto.latitude,
+      punto.longitude,
+    );
+    await Clipboard.setData(ClipboardData(text: texto));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(AppStrings.trackingMarcadorCopiado),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _mostrarDetalleMarcador({
     required String titulo,
     required Color color,
     required IconData icono,
+    required String? lugar,
+    required LatLng punto,
   }) {
+    final textoLugar = (lugar == null || lugar.trim().isEmpty)
+        ? AppStrings.trackingDireccionCargando
+        : lugar;
+    final coords = AppStrings.formatoCoordenada(
+      punto.latitude,
+      punto.longitude,
+    );
+
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
@@ -480,17 +548,21 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: 48,
@@ -503,18 +575,55 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        titulo,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titulo,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            textoLugar,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            coords,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      await _copiarInfoMarcador(punto: punto);
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    label: const Text(AppStrings.trackingMarcadorCopiarCoords),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(

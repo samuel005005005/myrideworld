@@ -23,6 +23,17 @@ export class OfertasViajeActivasRegistry {
     return undefined;
   }
 
+  /** Todos los viajes ofertados actualmente a este conductor. */
+  viajesIdsDeConductor(conductorId: string): string[] {
+    const ids: string[] = [];
+    for (const [viajeId, asignado] of this.porViaje.entries()) {
+      if (asignado === conductorId) {
+        ids.push(viajeId);
+      }
+    }
+    return ids;
+  }
+
   liberar(viajeId: string): string | undefined {
     const conductorId = this.porViaje.get(viajeId);
     this.porViaje.delete(viajeId);

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import type { ViajeDisponibleNotificacion } from '../puertos/viaje-disponible-notificacion.js';
 import type { ViajeAceptadoNotificacion } from '../puertos/viaje-aceptado-notificacion.js';
@@ -8,6 +9,7 @@ import type { ViajeCompletadoNotificacion } from '../puertos/viaje-completado-no
 import { ViajesGateway } from '../../presentacion/gateways/viajes.gateway.js';
 import { OfertasViajeActivasRegistry } from '../servicios/ofertas-viaje-activas.registry.js';
 import { ProgramadorTimeoutOfertaService } from '../servicios/programador-timeout-oferta.service.js';
+import { RechazarViajeUseCase } from '../casos-uso/rechazar-viaje.use-case.js';
 
 /**
  * Socket (app abierta) + FCM (app en background/cerrada).
@@ -22,6 +24,7 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     private readonly push: IPushConductor,
     private readonly ofertas: OfertasViajeActivasRegistry,
     private readonly programadorTimeout: ProgramadorTimeoutOfertaService,
+    private readonly moduleRef: ModuleRef,
   ) {}
 
   notificarNuevoViaje(
@@ -46,6 +49,10 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     this.programadorTimeout.cancelar(notificacion.viajeId);
     this.ofertas.liberar(notificacion.viajeId);
     this.gateway.notificarViajeAceptado(notificacion);
+    void this._liberarOtrasOfertasDelConductor(
+      notificacion.conductorId,
+      notificacion.viajeId,
+    );
   }
 
   notificarConductorLlego(viajeId: string): void {
@@ -78,5 +85,34 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
 
   notificarViajeCompletado(notificacion: ViajeCompletadoNotificacion): void {
     this.gateway.notificarViajeCompletado(notificacion);
+  }
+
+  /** Al aceptar un viaje, el resto de ofertas del conductor rotan a otros. */
+  private async _liberarOtrasOfertasDelConductor(
+    conductorId: string,
+    viajeAceptadoId: string,
+  ): Promise<void> {
+    const otros = this.ofertas
+      .viajesIdsDeConductor(conductorId)
+      .filter((id) => id !== viajeAceptadoId);
+    if (otros.length === 0) {
+      return;
+    }
+    try {
+      const rechazar = this.moduleRef.get(RechazarViajeUseCase, {
+        strict: false,
+      });
+      for (const viajeId of otros) {
+        this.programadorTimeout.cancelar(viajeId);
+        this.ofertas.liberar(viajeId);
+        this.gateway.cancelarOfertaViaje(conductorId, viajeId);
+        void this.push.cancelarOfertaViaje(conductorId, viajeId);
+        await rechazar.ejecutar(viajeId, conductorId);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `No se pudieron rotar otras ofertas de ${conductorId}: ${String(error)}`,
+      );
+    }
   }
 }

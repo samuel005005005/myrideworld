@@ -22,6 +22,13 @@ class AppStrings {
   static const String homeDrawerSinEmail = '';
   static const String homeDrawerLogout = 'Cerrar Sesion';
   static const String homeNuevoViajeTitulo = 'NUEVO VIAJE DISPONIBLE';
+  static const String homeOfertasTitulo = 'VIAJES DISPONIBLES';
+  static String formatoOfertasCantidad(int cantidad) {
+    if (cantidad <= 1) {
+      return '1 viaje disponible';
+    }
+    return '$cantidad viajes disponibles — elegí el que te convenga';
+  }
   static const String homeAceptarViaje = 'ACEPTAR VIAJE';
   static const String homeRechazarViaje = 'RECHAZAR';
   static const String homeAceptandoViaje = 'Aceptando viaje...';

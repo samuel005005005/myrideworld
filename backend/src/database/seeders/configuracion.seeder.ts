@@ -48,6 +48,22 @@ export class ConfiguracionSeeder {
         descripcion: C.TARIFA_MINIMA_DESC,
       },
       {
+        clave: C.CLAVE_TARIFA_ZONA_CAP_CANA,
+        valor: '4',
+        descripcion: C.TARIFA_ZONA_CAP_CANA_DESC,
+      },
+      {
+        clave: C.CLAVE_GEOCERCA_CAP_CANA,
+        valor: JSON.stringify({
+          tipo: 'bbox',
+          latMin: 18.45,
+          latMax: 18.53,
+          lngMin: -68.48,
+          lngMax: -68.35,
+        }),
+        descripcion: C.GEOCERCA_CAP_CANA_DESC,
+      },
+      {
         clave: C.CLAVE_SOPORTE_TELEFONO,
         valor: '+18095550100',
         descripcion: C.SOPORTE_TELEFONO_DESC,

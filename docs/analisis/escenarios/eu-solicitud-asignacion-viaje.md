@@ -9,13 +9,15 @@ Permitir que un pasajero solicite un viaje y el sistema asigne automáticamente 
 
 ## 2. Criterios de Aceptación
 - El pasajero debe visualizar la tarifa fija antes de confirmar.
+- Si origen y destino están dentro de Cap Cana, la tarifa mostrada es la plana de zona (configurable; seed USD 4).
+- Si el viaje no es interno Cap Cana, aplica tarifario OD o fórmula base+km.
 - El sistema debe buscar conductores en estado `Conectado` y `Disponible` cerca del origen.
 - Se debe ofrecer a un conductor a la vez (escalonado).
 - Si el conductor rechaza o el tiempo de espera expira, pasa al siguiente.
 
 ## 3. Flujo Enumerado
 1. Pasajero selecciona Origen y Destino en la App.
-2. Sistema calcula distancia y recupera la Tarifa fija.
+2. Sistema calcula distancia y determina la tarifa (Cap Cana plana → OD → fórmula).
 3. Pasajero confirma solicitud. Estado del viaje -> `Solicitado`.
 4. Sistema busca lista de conductores candidatos (radio cercano).
 5. Sistema filtra y ordena por distancia (más cercano primero). Estado del viaje -> `Buscando conductor`.

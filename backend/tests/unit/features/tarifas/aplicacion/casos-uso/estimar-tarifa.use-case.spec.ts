@@ -4,23 +4,40 @@ import { EstimarTarifaDto } from '../../../../../../src/features/tarifas/aplicac
 import { Tarifa } from '../../../../../../src/features/tarifas/dominio/entidades/tarifa.entity.js';
 import { Configuracion } from '../../../../../../src/features/configuracion/dominio/entidades/configuracion.entity.js';
 import { DomainException } from '../../../../../../src/compartidos/excepciones/domain.exception.js';
+import { EstadosTarifa } from '../../../../../../src/compartidos/constantes/estados-tarifa.enum.js';
+
+const GEOCERCA_SEED = JSON.stringify({
+  tipo: 'bbox',
+  latMin: 18.45,
+  latMax: 18.53,
+  lngMin: -68.48,
+  lngMax: -68.35,
+});
 
 describe('EstimarTarifaUseCase', () => {
   let useCase: EstimarTarifaUseCase;
-  let tarifaRepositoryMock: any;
-  let configRepoMock: any;
+  let tarifaRepositoryMock: {
+    guardar: ReturnType<typeof vi.fn>;
+    obtenerTarifaActiva: ReturnType<typeof vi.fn>;
+  };
+  let configRepoMock: {
+    obtenerPorClave: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     tarifaRepositoryMock = {
       guardar: vi.fn((tarifa: Tarifa) => Promise.resolve(tarifa)),
+      obtenerTarifaActiva: vi.fn().mockResolvedValue(null),
     };
 
     configRepoMock = {
       obtenerPorClave: vi.fn((clave: string) => {
-        const valores: Record<string, string> = {
+        const valores: { [clave: string]: string } = {
           TARIFA_BASE: '30.0',
           TARIFA_KM: '15.0',
           TARIFA_MINIMA: '50.0',
+          TARIFA_ZONA_CAP_CANA: '4',
+          GEOCERCA_CAP_CANA: GEOCERCA_SEED,
         };
         const valor = valores[clave];
         if (!valor) {
@@ -65,13 +82,89 @@ describe('EstimarTarifaUseCase', () => {
   });
 
   it('DebeFallar_CuandoAdminNoDefinioTarifaBase', async () => {
-    configRepoMock.obtenerPorClave = vi.fn().mockResolvedValue(null);
+    configRepoMock.obtenerPorClave = vi.fn((clave: string) => {
+      if (clave === 'GEOCERCA_CAP_CANA') {
+        return Promise.resolve(
+          Configuracion.crear({
+            clave,
+            valor: GEOCERCA_SEED,
+            descripcion: clave,
+          }),
+        );
+      }
+      return Promise.resolve(null);
+    });
 
     const dto: EstimarTarifaDto = {
       origenLat: 0,
       origenLng: 0,
       destinoLat: 1,
       destinoLng: 0,
+    };
+
+    await expect(useCase.ejecutar(dto)).rejects.toBeInstanceOf(DomainException);
+  });
+
+  it('DebeAplicarTarifaPlanaCapCana_CuandoOrigenYDestinoEstanDentro', async () => {
+    const dto: EstimarTarifaDto = {
+      origenLat: 18.49,
+      origenLng: -68.4,
+      destinoLat: 18.5,
+      destinoLng: -68.42,
+    };
+
+    const resultado = await useCase.ejecutar(dto);
+
+    expect(resultado.precio).toBe(4);
+    expect(tarifaRepositoryMock.obtenerTarifaActiva).not.toHaveBeenCalled();
+  });
+
+  it('DebeUsarTarifarioOd_CuandoViajeEsMixtoCapCana', async () => {
+    const od = Tarifa.crear({
+      id: 'od-1',
+      origen: 'Cap Cana',
+      destino: 'Aeropuerto',
+      precio: 45,
+      estado: EstadosTarifa.ACTIVO,
+    });
+    tarifaRepositoryMock.obtenerTarifaActiva.mockResolvedValue(od);
+
+    const dto: EstimarTarifaDto = {
+      origenLat: 18.49,
+      origenLng: -68.4,
+      destinoLat: 18.57,
+      destinoLng: -68.36,
+      origenNombre: 'Cap Cana',
+      destinoNombre: 'Aeropuerto',
+    };
+
+    const resultado = await useCase.ejecutar(dto);
+
+    expect(resultado.precio).toBe(45);
+    expect(resultado.tarifaId).toBe('od-1');
+  });
+
+  it('DebeFallar_CuandoGeocercaCapCanaEsInvalida', async () => {
+    configRepoMock.obtenerPorClave = vi.fn((clave: string) => {
+      if (clave === 'GEOCERCA_CAP_CANA') {
+        return Promise.resolve(
+          Configuracion.crear({
+            clave,
+            valor: '{invalido',
+            descripcion: clave,
+          }),
+        );
+      }
+      return Promise.resolve(
+        Configuracion.crear({ clave, valor: '4', descripcion: clave }),
+      );
+    });
+
+    const dto: EstimarTarifaDto = {
+      origenLat: 18.49,
+      origenLng: -68.4,
+      destinoLat: 18.5,
+      destinoLng: -68.42,
     };
 
     await expect(useCase.ejecutar(dto)).rejects.toBeInstanceOf(DomainException);

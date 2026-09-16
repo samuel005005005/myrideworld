@@ -24,12 +24,13 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 ### 2.3 Administrador
 - **US-1.3.1:** Como administrador, quiero dar de alta conductores (datos, vehículo, credenciales), aprobar/activar/desactivar y ver documentación, para mantener el control de la flota de la asociación. (Prioridad: Must Have)
 - **US-1.3.2:** Como administrador, quiero poder crear, modificar, consultar y activar/desactivar tarifas basadas en origen/destino/zona/ruta, para mantener actualizado el tarifario de la asociación. (Prioridad: Must Have)
+- **US-1.3.5:** Como administrador, quiero configurar el precio fijo de viajes internos en Cap Cana (valor inicial USD 4) y la geocerca de esa zona, igual que el resto del tarifario, para ajustar la tarifa local sin redeploy. (Prioridad: Must Have)
 - **US-1.3.3:** Como administrador, quiero visualizar un dashboard general de la operación (conductores disponibles/ocupados, viajes activos/completados), para monitorear el negocio en tiempo real. (Prioridad: Must Have)
 - **US-1.3.4:** Como administrador, quiero poder ver el registro histórico de viajes, pagos, balances por conductor y auditoría de cancelaciones, para gestionar las finanzas y resolver disputas. (Prioridad: Must Have)
 
 ## 3. Capacidades Core del Sistema
 
-- **REQ-3.1 Sistema de Tarifas Fijas:** La plataforma usará un tarifario preestablecido por la Asociación. El precio se determina combinando origen, destino, zona o ruta antes de solicitar el viaje. NO habrá tarifa dinámica.
+- **REQ-3.1 Sistema de Tarifas Fijas:** La plataforma usará un tarifario preestablecido por la Asociación. El precio se determina antes de solicitar el viaje según prioridad: (1) viaje interno Cap Cana → tarifa plana configurable; (2) par Origen-Destino activo del tarifario; (3) fórmula base + km (+ mínimo). NO habrá tarifa dinámica por demanda.
 - **REQ-3.2 Asignación Automática Escalonada:** Al haber una solicitud, el sistema busca conductores activos, conectados, disponibles y con GPS válido. Ordena por proximidad y envía la solicitud al más cercano.
 - **REQ-3.3 Manejo de Estados de Viaje:** Seguimiento estricto: Solicitado -> Buscando conductor -> Conductor asignado -> Conductor en camino -> Conductor llegó -> Viaje en curso -> Completado. (Alternos: Cancelado, Sin conductor disponible).
 - **REQ-3.4 Control de Ubicación:** Precisión GPS indispensable. Validación de proximidad (radio configurable) para permitir al conductor marcar "Llegué".
@@ -46,11 +47,14 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 | BR-CNC-001 | **Cancelaciones y Penalidades:** En la fase MVP, NO existen penalidades ni cobros automáticos por cancelación (ni para pasajero ni para conductor). Toda cancelación solo genera un registro de auditoría. | Cancelación de viaje | Administrativo (Informativo) |
 | BR-LIQ-001 | **Responsabilidad de Liquidación:** Los balances calculados por la plataforma son distribuidos de forma externa (semanalmente) por la Asociación de Taxis. La app NO requiere sistema de retiro de fondos (withdraw) automático para el conductor. | Pagos | Fuera del alcance del sistema transaccional |
 | BR-VAL-001 | **Validación de Llegada:** El conductor solo puede marcar "Llegué" si su ubicación GPS actual se encuentra dentro del radio configurable respecto a las coordenadas del punto de recogida establecido. | Progreso del Viaje | Bloqueo de acción en App Conductor |
+| BR-TAR-001 | **Tarifa plana Cap Cana:** Si origen y destino están ambos dentro de la geocerca Cap Cana, el precio del viaje es la tarifa plana de zona (seed inicial USD 4), configurable desde Admin (`TARIFA_ZONA_CAP_CANA` o equivalente). No se aplica fórmula base+km ni pares OD externos. | Estimación / solicitud | Precio fijo interno |
+| BR-TAR-002 | **Fuera de Cap Cana / mixtos (confirmado):** Si origen o destino (o ambos) están fuera de Cap Cana, aplica el tarifario OD activo; si no hay par OD, la fórmula `TARIFA_BASE` + km × `TARIFA_KM` con piso `TARIFA_MINIMA`. | Estimación / solicitud | Precio según tarifario externo |
+| BR-TAR-003 | **Geocerca Cap Cana en Admin (confirmado):** No hay polígono oficial entregado; la asociación define y ajusta la geocerca en Admin (MVP: bbox editable; evolución: polígono GeoJSON). Seed inicial aproximado en configuración; el monto plano sigue siendo `TARIFA_ZONA_CAP_CANA` (USD 4). Sin hardcode en apps. | Admin / Configuración | Cambio de precio/zona sin redeploy |
 
 ## 5. Criterios de Éxito (Prueba E2E)
 **SC-1: Flujo Operativo Núcleo (Core Loop)**
 1. El pasajero inicia sesión e indica origen y destino.
-2. El sistema determina la tarifa usando el tarifario.
+2. El sistema determina la tarifa (Cap Cana plana si aplica; si no, OD o fórmula).
 3. El pasajero confirma la solicitud.
 4. El sistema identifica conductores disponibles cercanos y ofrece el viaje escalonadamente.
 5. El conductor más cercano recibe la notificación y acepta dentro del tiempo límite.

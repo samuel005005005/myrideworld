@@ -7,6 +7,8 @@ import { CONFIGURACION_REPOSITORY } from '../../../configuracion/dominio/reposit
 import { EstimarTarifaDto } from '../dto/estimar-tarifa.dto.js';
 import { EstimacionTarifaResultado } from '../dto/estimacion-tarifa-resultado.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
+import { parsearGeocercaBbox } from '../../../../compartidos/utilidades/parsear-geocerca-bbox.util.js';
+import { puntoEnGeocercaBbox } from '../../../../compartidos/utilidades/punto-en-geocerca-bbox.util.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 
@@ -30,15 +32,23 @@ export class EstimarTarifaUseCase {
       dto.destinoLng,
     );
 
+    const precioCapCana = await this.intentarTarifaPlanaCapCana(dto);
+    if (precioCapCana !== null) {
+      return this.construirResultado(
+        precioCapCana,
+        distancia,
+        'Cap Cana',
+        'Cap Cana',
+        persistir,
+      );
+    }
+
     if (dto.origenNombre?.trim() && dto.destinoNombre?.trim()) {
       const od = await this.tarifaRepository.obtenerTarifaActiva(
         dto.origenNombre.trim(),
         dto.destinoNombre.trim(),
       );
       if (od) {
-        if (persistir) {
-          return new EstimacionTarifaResultado(od.precio, distancia, od.id);
-        }
         return new EstimacionTarifaResultado(od.precio, distancia, od.id);
       }
     }
@@ -54,11 +64,58 @@ export class EstimarTarifaUseCase {
     precio = Math.max(precio, tarifaMinima);
     precio = Math.round(precio * 100) / 100;
 
-    const tarifa = Tarifa.crear({
-      origen: `${dto.origenLat},${dto.origenLng}`,
-      destino: `${dto.destinoLat},${dto.destinoLng}`,
+    return this.construirResultado(
       precio,
-    });
+      distancia,
+      `${dto.origenLat},${dto.origenLng}`,
+      `${dto.destinoLat},${dto.destinoLng}`,
+      persistir,
+    );
+  }
+
+  /** BR-TAR-001: ambos puntos en Cap Cana → tarifa plana; si no aplica → null. */
+  private async intentarTarifaPlanaCapCana(
+    dto: EstimarTarifaDto,
+  ): Promise<number | null> {
+    const C = MENSAJES.EXCEPCIONES.CONFIGURACION;
+    const geocercaConfig = await this.configRepo.obtenerPorClave(
+      C.CLAVE_GEOCERCA_CAP_CANA,
+    );
+    if (!geocercaConfig) {
+      throw new DomainException(C.NO_DEFINIDA(C.CLAVE_GEOCERCA_CAP_CANA), 503);
+    }
+
+    const geocerca = parsearGeocercaBbox(geocercaConfig.valor);
+    if (!geocerca) {
+      throw new DomainException(C.GEOCERCA_CAP_CANA_INVALIDA, 503);
+    }
+
+    const origenDentro = puntoEnGeocercaBbox(
+      dto.origenLat,
+      dto.origenLng,
+      geocerca,
+    );
+    const destinoDentro = puntoEnGeocercaBbox(
+      dto.destinoLat,
+      dto.destinoLng,
+      geocerca,
+    );
+
+    if (!origenDentro || !destinoDentro) {
+      return null;
+    }
+
+    return this.obtenerParametroNumerico(C.CLAVE_TARIFA_ZONA_CAP_CANA);
+  }
+
+  private async construirResultado(
+    precio: number,
+    distancia: number,
+    origen: string,
+    destino: string,
+    persistir: boolean,
+  ): Promise<EstimacionTarifaResultado> {
+    const tarifa = Tarifa.crear({ origen, destino, precio });
 
     if (persistir) {
       const guardada = await this.tarifaRepository.guardar(tarifa);

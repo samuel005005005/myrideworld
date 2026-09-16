@@ -5,6 +5,11 @@ dist/
 .env.*
 !.env.example
 
+# Service accounts Firebase
+secrets/**
+!secrets/README.md
+*firebase-adminsdk*.json
+
 # Dependencias y logs
 node_modules/
 logs/

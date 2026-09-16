@@ -11,6 +11,7 @@ import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.e
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 
 const RADIO_KM = 50;
+const MAX_OFERTAS_SIMULTANEAS = 5;
 
 const ESTADOS_CONDUCTOR_OCUPADO = new Set<string>([
   EstadosViaje.ASIGNADO,
@@ -20,8 +21,8 @@ const ESTADOS_CONDUCTOR_OCUPADO = new Set<string>([
 ]);
 
 /**
- * Cuando un conductor pasa a Conectado, ofrece el viaje pendiente más cercano
- * que aún no tiene oferta activa (p. ej. solicitado sin conductores online).
+ * Cuando un conductor pasa a Conectado, ofrece los viajes pendientes cercanos
+ * (varios a la vez) para que elija en la app.
  */
 @Injectable()
 export class OfertarViajesPendientesConductorUseCase {
@@ -55,9 +56,6 @@ export class OfertarViajesPendientesConductorUseCase {
     ) {
       return;
     }
-    if (this.ofertas.tieneOfertaActivaPara(conductorId)) {
-      return;
-    }
 
     const propios = await this.viajeRepository.obtenerPorConductor(conductorId);
     const ocupado = propios.some((viaje) =>
@@ -67,13 +65,22 @@ export class OfertarViajesPendientesConductorUseCase {
       return;
     }
 
+    const yaOfertados = new Set(this.ofertas.viajesIdsDeConductor(conductorId));
+    const cupo = Math.max(0, MAX_OFERTAS_SIMULTANEAS - yaOfertados.size);
+    if (cupo === 0) {
+      return;
+    }
+
     const pendientes =
       await this.viajeRepository.obtenerPendientesAsignacion();
-    let mejorId: string | null = null;
-    let minimaDistancia = Infinity;
+    const candidatos: { id: string; distancia: number }[] = [];
 
     for (const viaje of pendientes) {
-      if (this.ofertas.conductorDe(viaje.id)) {
+      const ofertadoA = this.ofertas.conductorDe(viaje.id);
+      if (ofertadoA && ofertadoA !== conductorId) {
+        continue;
+      }
+      if (yaOfertados.has(viaje.id)) {
         continue;
       }
       if (viaje.conductoresRechazados.includes(conductorId)) {
@@ -89,47 +96,50 @@ export class OfertarViajesPendientesConductorUseCase {
       if (distancia > RADIO_KM) {
         continue;
       }
-      if (distancia < minimaDistancia) {
-        minimaDistancia = distancia;
-        mejorId = viaje.id;
+      candidatos.push({ id: viaje.id, distancia });
+    }
+
+    candidatos.sort((a, b) => a.distancia - b.distancia);
+
+    let ofertados = 0;
+    for (const candidato of candidatos) {
+      if (ofertados >= cupo) {
+        break;
       }
-    }
+      const viaje = await this.viajeRepository.obtenerPorId(candidato.id);
+      if (!viaje) {
+        continue;
+      }
+      if (
+        viaje.estado !== EstadosViaje.SOLICITADO &&
+        viaje.estado !== EstadosViaje.BUSCANDO
+      ) {
+        continue;
+      }
+      const ofertadoA = this.ofertas.conductorDe(viaje.id);
+      if (ofertadoA && ofertadoA !== conductorId) {
+        continue;
+      }
 
-    if (!mejorId) {
-      return;
-    }
+      viaje.iniciarBusqueda();
+      const guardado = await this.viajeRepository.guardar(viaje);
 
-    const viaje = await this.viajeRepository.obtenerPorId(mejorId);
-    if (!viaje) {
-      return;
-    }
-    if (
-      viaje.estado !== EstadosViaje.SOLICITADO &&
-      viaje.estado !== EstadosViaje.BUSCANDO
-    ) {
-      return;
-    }
-    if (this.ofertas.conductorDe(viaje.id)) {
-      return;
-    }
+      this.logger.log(
+        `Conductor ${conductorId} online → oferta viaje ${guardado.id} ` +
+          `(${candidato.distancia.toFixed(2)} km)`,
+      );
 
-    viaje.iniciarBusqueda();
-    const guardado = await this.viajeRepository.guardar(viaje);
-
-    this.logger.log(
-      `Conductor ${conductorId} online → oferta viaje ${guardado.id} ` +
-        `(${minimaDistancia.toFixed(2)} km)`,
-    );
-
-    this.notificadorViaje.notificarNuevoViaje(conductorId, {
-      id: guardado.id,
-      origenLat: guardado.origenLat,
-      origenLng: guardado.origenLng,
-      destinoLat: guardado.destinoLat,
-      destinoLng: guardado.destinoLng,
-      tarifaEstimada: Number(guardado.tarifaEstimada),
-      origenDireccion: guardado.origenDireccion,
-      destinoDireccion: guardado.destinoDireccion,
-    });
+      this.notificadorViaje.notificarNuevoViaje(conductorId, {
+        id: guardado.id,
+        origenLat: guardado.origenLat,
+        origenLng: guardado.origenLng,
+        destinoLat: guardado.destinoLat,
+        destinoLng: guardado.destinoLng,
+        tarifaEstimada: Number(guardado.tarifaEstimada),
+        origenDireccion: guardado.origenDireccion,
+        destinoDireccion: guardado.destinoDireccion,
+      });
+      ofertados += 1;
+    }
   }
 }

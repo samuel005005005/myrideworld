@@ -9,6 +9,7 @@
 - [x] **API dashboard:** `GET /api/admin/dashboard`.
 - [x] **API pasajeros:** `GET /api/pasajeros` admin.
 - [x] **API tarifario OD:** CRUD tarifas + estimar prioriza OD activa.
+- [x] **Tarifa plana Cap Cana:** viajes con origen y destino dentro de Cap Cana → precio fijo (seed USD 4) configurable en Admin; fuera/mixtos → OD o fórmula. Geocerca Cap Cana editable. (BR-TAR-001..003, US-1.3.5)
 - [x] **Web-admin:** dashboard, flota (alta + gestión), tarifario, viajes, balances, bitácora, usuarios admin, config + RBAC UI.
 - [x] **Alta conductor asociación:** `POST /api/conductores` solo admin; formulario en Flota; sin auto-registro público.
 - [x] **Apps polish:** tracking pasajero (llamar real / sin botones muertos); mensajes proximidad conductor.

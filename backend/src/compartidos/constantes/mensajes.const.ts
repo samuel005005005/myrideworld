@@ -110,6 +110,12 @@ export const MENSAJES = {
       TARIFA_BASE_DESC: 'Tarifa base (USD) definida por la asociación',
       TARIFA_KM_DESC: 'Precio por kilómetro (USD) definido por la asociación',
       TARIFA_MINIMA_DESC: 'Tarifa mínima (USD) definida por la asociación',
+      TARIFA_ZONA_CAP_CANA_DESC:
+        'Precio fijo (USD) para viajes con origen y destino dentro de Cap Cana',
+      GEOCERCA_CAP_CANA_DESC:
+        'Bbox JSON Cap Cana: {"tipo":"bbox","latMin":…,"latMax":…,"lngMin":…,"lngMax":…}',
+      GEOCERCA_CAP_CANA_INVALIDA:
+        'GEOCERCA_CAP_CANA debe ser un JSON bbox válido (tipo, latMin, latMax, lngMin, lngMax).',
       SOPORTE_TELEFONO_DESC: 'Teléfono de la central de asistencia',
       SOPORTE_WHATSAPP_DESC: 'WhatsApp oficial (solo dígitos con código país)',
       CLAVE_FEE_PLATAFORMA: 'FEE_PLATAFORMA',
@@ -118,6 +124,8 @@ export const MENSAJES = {
       CLAVE_TARIFA_BASE: 'TARIFA_BASE',
       CLAVE_TARIFA_KM: 'TARIFA_KM',
       CLAVE_TARIFA_MINIMA: 'TARIFA_MINIMA',
+      CLAVE_TARIFA_ZONA_CAP_CANA: 'TARIFA_ZONA_CAP_CANA',
+      CLAVE_GEOCERCA_CAP_CANA: 'GEOCERCA_CAP_CANA',
       CLAVE_SOPORTE_TELEFONO: 'SOPORTE_TELEFONO',
       CLAVE_SOPORTE_WHATSAPP: 'SOPORTE_WHATSAPP',
       CLAVE_RADIO_PROXIMIDAD_ORIGEN_M: 'RADIO_PROXIMIDAD_ORIGEN_M',

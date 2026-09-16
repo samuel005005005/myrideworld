@@ -4,12 +4,14 @@
 
 - **Modo:** desarrollo
 - **Hecho:**
-  - Cancel post-aceptación: ya factible (US-1.1.7 + API hasta Completado)
-  - Origen oferta: direcciones en payload socket/FCM; pasajero geocodifica “Mi ubicación”; fallback coords
-- **Falta:** redeploy API + hot restart ambas apps
-- **Reanudar:** Pedir viaje con GPS → oferta debe mostrar calle real en Origen
+  - Tarifa plana Cap Cana: `TARIFA_ZONA_CAP_CANA` + `GEOCERCA_CAP_CANA` (seed bbox)
+  - Estimar prioriza Cap Cana → OD → fórmula; mixtos usan tarifario
+  - Admin FINANZAS ve/edita ambas claves; tests OK
+- **Falta:** redeploy API + seed en VM para insertar las 2 claves nuevas
+- **Reanudar:** Deploy backend y verificar estimar interno Cap Cana = 4 USD
 
 ## Histórico
 
-- 2026-09-15: Oferta al Conectado (socket race + !enLinea); flota; crash ESM.
+- 2026-09-16: Análisis Cap Cana; deploy guide; lista ofertas conductor.
+- 2026-09-15: Direcciones origen oferta; cancel post-aceptación; flota; oferta al Conectado.
 - 2026-09-12: Checkpoint tras migración `.agents`→`.cursor`.

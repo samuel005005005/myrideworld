@@ -5,7 +5,8 @@ class MarcadorMapaViaje extends StatelessWidget {
   final Color color;
   final IconData icono;
   final String etiqueta;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool conPunta;
 
   const MarcadorMapaViaje({
@@ -13,7 +14,8 @@ class MarcadorMapaViaje extends StatelessWidget {
     required this.color,
     required this.icono,
     required this.etiqueta,
-    this.onTap,
+    required this.onTap,
+    this.onLongPress,
     this.conPunta = false,
   });
 
@@ -21,12 +23,13 @@ class MarcadorMapaViaje extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            constraints: const BoxConstraints(maxWidth: 120),
+            constraints: const BoxConstraints(maxWidth: 140),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -41,13 +44,14 @@ class MarcadorMapaViaje extends StatelessWidget {
             ),
             child: Text(
               etiqueta,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: color,
+                height: 1.15,
               ),
             ),
           ),

@@ -1,6 +1,8 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../../../core/config/app_env.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/tipos/resultado.dart';
@@ -10,11 +12,6 @@ import '../../domain/repositories/ubicacion_gateway.dart';
 class GeolocatorUbicacionGateway implements UbicacionGateway {
   @override
   Future<Resultado<Coordenada>> obtenerUbicacionActual() async {
-    final override = _coordenadaOverride();
-    if (override != null) {
-      return Exito(override);
-    }
-
     try {
       final servicioHabilitado = await Geolocator.isLocationServiceEnabled();
       if (!servicioHabilitado) {
@@ -31,45 +28,70 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
         return const Fallo(ValidationFailure(AppStrings.errorGpsPermiso));
       }
 
-      try {
-        final ultima = await Geolocator.getLastKnownPosition();
-        try {
-          final posicion = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(
-              accuracy: LocationAccuracy.medium,
-              timeLimit: Duration(seconds: 6),
-            ),
-          );
-          return Exito(_desdePosicion(posicion));
-        } catch (_) {
-          if (ultima != null) {
-            return Exito(_desdePosicion(ultima));
-          }
-          return const Fallo(ServerFailure(AppStrings.errorGpsObtener));
-        }
-      } catch (_) {
-        return const Fallo(ServerFailure(AppStrings.errorGpsObtener));
+      final ultima = await Geolocator.getLastKnownPosition();
+      final actual = await _leerPosicionActual();
+      if (actual != null) {
+        return Exito(_desdePosicion(actual));
       }
-    } catch (_) {
+      if (ultima != null) {
+        debugPrint(
+          '[MyRide] GPS: usando ultima conocida '
+          '(${ultima.latitude}, ${ultima.longitude})',
+        );
+        return Exito(_desdePosicion(ultima));
+      }
+
+      return const Fallo(ServerFailure(AppStrings.errorGpsObtener));
+    } catch (error, stack) {
+      debugPrint('[MyRide] GPS error: $error\n$stack');
       return const Fallo(ServerFailure(AppStrings.errorGpsObtener));
     }
+  }
+
+  Future<Position?> _leerPosicionActual() async {
+    for (final settings in _ajustesLectura()) {
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: settings,
+        );
+      } catch (error) {
+        debugPrint('[MyRide] GPS getCurrentPosition falló: $error');
+      }
+    }
+    return null;
+  }
+
+  List<LocationSettings> _ajustesLectura() {
+    if (Platform.isAndroid) {
+      return [
+        AndroidSettings(
+          accuracy: LocationAccuracy.low,
+          forceLocationManager: true,
+          timeLimit: const Duration(seconds: 12),
+        ),
+        AndroidSettings(
+          accuracy: LocationAccuracy.medium,
+          forceLocationManager: true,
+          timeLimit: const Duration(seconds: 12),
+        ),
+      ];
+    }
+    return const [
+      LocationSettings(
+        accuracy: LocationAccuracy.low,
+        timeLimit: Duration(seconds: 12),
+      ),
+      LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 12),
+      ),
+    ];
   }
 
   Coordenada _desdePosicion(Position posicion) {
     return Coordenada(
       latitud: posicion.latitude,
       longitud: posicion.longitude,
-    );
-  }
-
-  Coordenada? _coordenadaOverride() {
-    final override = AppEnv.gpsOverrideDebug;
-    if (override == null) {
-      return null;
-    }
-    return Coordenada(
-      latitud: override.latitud,
-      longitud: override.longitud,
     );
   }
 }

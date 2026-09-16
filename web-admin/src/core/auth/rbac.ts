@@ -63,6 +63,8 @@ const CLAVES_CONFIG_FINANZAS = new Set([
   'TARIFA_BASE',
   'TARIFA_KM',
   'TARIFA_MINIMA',
+  'TARIFA_ZONA_CAP_CANA',
+  'GEOCERCA_CAP_CANA',
 ]);
 
 export function puedeLeerSeccion(

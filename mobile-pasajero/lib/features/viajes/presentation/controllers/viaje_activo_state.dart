@@ -19,6 +19,9 @@ class ViajeActivoState {
   final bool cancelando;
   final String? errorCancelacion;
   final bool cancelado;
+  final String? direccionConductor;
+  final String? direccionRecogida;
+  final String? direccionDestino;
 
   const ViajeActivoState({
     this.viajeId,
@@ -34,6 +37,9 @@ class ViajeActivoState {
     this.cancelando = false,
     this.errorCancelacion,
     this.cancelado = false,
+    this.direccionConductor,
+    this.direccionRecogida,
+    this.direccionDestino,
   });
 
   bool get puedeCancelar =>
@@ -57,6 +63,9 @@ class ViajeActivoState {
     bool? cancelando,
     Object? errorCancelacion = _sinCambio,
     bool? cancelado,
+    Object? direccionConductor = _sinCambio,
+    Object? direccionRecogida = _sinCambio,
+    Object? direccionDestino = _sinCambio,
   }) {
     return ViajeActivoState(
       viajeId: identical(viajeId, _sinCambio)
@@ -86,6 +95,15 @@ class ViajeActivoState {
           ? this.errorCancelacion
           : errorCancelacion as String?,
       cancelado: cancelado ?? this.cancelado,
+      direccionConductor: identical(direccionConductor, _sinCambio)
+          ? this.direccionConductor
+          : direccionConductor as String?,
+      direccionRecogida: identical(direccionRecogida, _sinCambio)
+          ? this.direccionRecogida
+          : direccionRecogida as String?,
+      direccionDestino: identical(direccionDestino, _sinCambio)
+          ? this.direccionDestino
+          : direccionDestino as String?,
     );
   }
 }

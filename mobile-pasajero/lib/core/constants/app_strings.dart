@@ -255,6 +255,11 @@ class AppStrings {
   static const String trackingDetalleRecogida = 'Tu punto de recogida';
   static const String trackingDetalleDestino = 'Destino del viaje';
   static const String trackingMarcadorCerrar = 'Cerrar';
+  static const String trackingMarcadorCopiado = 'Coordenadas copiadas';
+  static const String trackingMarcadorCopiarCoords = 'Copiar latitud y longitud';
+  static const String trackingDireccionCargando = 'Obteniendo nombre del lugar...';
+  static const String trackingDireccionNoDisponible =
+      'Nombre del lugar no disponible';
   static const String trackingConductorPendiente = 'Buscando conductor...';
   static const String trackingVehiculoPendiente = 'Vehiculo por confirmar';
   static const String trackingPlacaPendiente = '---';
@@ -338,5 +343,16 @@ class AppStrings {
 
   static String formatoEtaTracking(double kilometros, int minutos) {
     return '${kilometros.toStringAsFixed(1)} km | ~ $minutos min';
+  }
+
+  static String formatoMarcadorConLugar(String rol, String? lugar) {
+    if (lugar == null || lugar.trim().isEmpty) {
+      return rol;
+    }
+    return '$rol · $lugar';
+  }
+
+  static String formatoCoordenada(double latitud, double longitud) {
+    return '${latitud.toStringAsFixed(5)}, ${longitud.toStringAsFixed(5)}';
   }
 }
