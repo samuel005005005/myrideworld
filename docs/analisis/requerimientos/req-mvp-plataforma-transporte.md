@@ -31,7 +31,7 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 ## 3. Capacidades Core del Sistema
 
 - **REQ-3.1 Sistema de Tarifas Fijas:** La plataforma usará un tarifario preestablecido por la Asociación. El precio se determina antes de solicitar el viaje según prioridad: (1) viaje interno Cap Cana → tarifa plana configurable; (2) par Origen-Destino activo del tarifario; (3) fórmula base + km (+ mínimo). NO habrá tarifa dinámica por demanda.
-- **REQ-3.2 Asignación Automática Escalonada:** Al haber una solicitud, el sistema busca conductores activos, conectados, disponibles y con GPS válido. Ordena por proximidad y envía la solicitud al más cercano.
+- **REQ-3.2 Asignación Automática Concurrente:** Al haber una solicitud, el sistema busca conductores activos con GPS de flota válido dentro de `RADIO_ASIGNACION_KM`. Ordena por proximidad y envía la solicitud en paralelo a los **N más cercanos** (`MAX_CONDUCTORES_OFERTA_PARALELA`). El primero que acepta se asigna; al resto se cancela la oferta.
 - **REQ-3.3 Manejo de Estados de Viaje:** Seguimiento estricto: Solicitado -> Buscando conductor -> Conductor asignado -> Conductor en camino -> Conductor llegó -> Viaje en curso -> Completado. (Alternos: Cancelado, Sin conductor disponible).
 - **REQ-3.4 Control de Ubicación:** Precisión GPS indispensable. Validación de proximidad (radio configurable) para permitir al conductor marcar "Llegué".
 - **REQ-3.5 Integración de Pasarela de Pagos:** Integración con la pasarela existente. La información de la tarjeta no se almacena en los servidores propios.
@@ -41,7 +41,7 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 
 | ID | Regla | Aplicación | Impacto |
 |----|------|-------------|--------|
-| BR-ASG-001 | **Tiempo de respuesta escalonada:** El conductor tiene un tiempo límite configurable para aceptar o rechazar el viaje. Si se acaba el tiempo sin respuesta o si rechaza, la solicitud pasa automáticamente al siguiente conductor más cercano. | Asignación de viajes | Traspaso al siguiente conductor o estado "Sin conductor disponible" |
+| BR-ASG-001 | **Tiempo de respuesta por oferta:** Cada conductor ofertado tiene un tiempo límite configurable para aceptar o rechazar. Si expira o rechaza, se retira solo su oferta; si no queda nadie sonando, se buscan más candidatos o "Sin conductor disponible". | Asignación de viajes | Retiro de oferta / reoferta / sin conductor |
 | BR-PAG-001 | **Cargo por procesamiento (Tarjeta):** Todo viaje pagado mediante pasarela electrónica sufre un cargo del 7.5% sobre la tarifa bruta. Este cargo se deduce para calcular el monto neto generado. | Finalización y Balance | Descuento en balance del conductor |
 | BR-PAG-002 | **Viajes en Efectivo:** No aplican cargos de procesamiento electrónico. Todo el valor bruto es el valor generado. | Finalización y Balance | 0% cargo |
 | BR-CNC-001 | **Cancelaciones y Penalidades:** En la fase MVP, NO existen penalidades ni cobros automáticos por cancelación (ni para pasajero ni para conductor). Toda cancelación solo genera un registro de auditoría. | Cancelación de viaje | Administrativo (Informativo) |
@@ -56,8 +56,8 @@ Desarrollar una plataforma digital de transporte turístico para Punta Cana orie
 1. El pasajero inicia sesión e indica origen y destino.
 2. El sistema determina la tarifa (Cap Cana plana si aplica; si no, OD o fórmula).
 3. El pasajero confirma la solicitud.
-4. El sistema identifica conductores disponibles cercanos y ofrece el viaje escalonadamente.
-5. El conductor más cercano recibe la notificación y acepta dentro del tiempo límite.
+4. El sistema identifica conductores disponibles cercanos y ofrece el viaje en paralelo.
+5. Los conductores cercanos reciben la notificación; el primero que acepta dentro del tiempo límite queda asignado.
 6. El pasajero visualiza en tiempo real la información y ubicación del conductor.
 7. El conductor llega al origen (validado por GPS) y marca llegada.
 8. El conductor inicia el viaje.

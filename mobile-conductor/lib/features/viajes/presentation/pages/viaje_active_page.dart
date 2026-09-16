@@ -14,6 +14,7 @@ import '../controllers/viaje_activo_state.dart';
 import '../utils/abrir_navegacion_externa.dart';
 import '../utils/app_navegacion_externa.dart';
 import '../widgets/marcador_mapa_viaje.dart';
+import '../widgets/capa_marcador_posicion_suave.dart';
 
 class ViajeActivePage extends ConsumerStatefulWidget {
   final Viaje viaje;
@@ -303,31 +304,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                   ),
                 MarkerLayer(
                   markers: [
-                    if (ubicacionActual.latitude != 0 ||
-                        ubicacionActual.longitude != 0)
-                      Marker(
-                        point: ubicacionActual,
-                        width: 148,
-                        height: 88,
-                        alignment: Alignment.center,
-                        child: MarcadorMapaViaje(
-                          color: AppTheme.brandPrimary,
-                          icono: Icons.directions_car_filled_rounded,
-                          etiqueta: AppStrings.formatoMarcadorConLugar(
-                            AppStrings.viajeMarcadorConductor,
-                            estado.direccionConductor,
-                          ),
-                          onTap: () => _mostrarDetalleMarcador(
-                            titulo: AppStrings.viajeDetalleConductor,
-                            color: AppTheme.brandPrimary,
-                            icono: Icons.directions_car_filled_rounded,
-                            lugar: estado.direccionConductor,
-                          ),
-                          onLongPress: () => _copiarInfoMarcador(
-                            punto: ubicacionActual,
-                          ),
-                        ),
-                      ),
                     if (mostrarRecogida)
                       Marker(
                         point: pasajero,
@@ -378,6 +354,37 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                       ),
                     ),
                   ],
+                ),
+                CapaMarcadorPosicionSuave(
+                  destino:
+                      (ubicacionActual.latitude != 0 ||
+                          ubicacionActual.longitude != 0)
+                      ? ubicacionActual
+                      : null,
+                  width: 148,
+                  height: 88,
+                  builder: (context, puntoVisible) {
+                    return MarcadorMapaViaje(
+                      color: AppTheme.brandPrimary,
+                      icono: Icons.directions_car_filled_rounded,
+                      etiqueta: AppStrings.formatoMarcadorConLugar(
+                        AppStrings.viajeMarcadorConductor,
+                        estado.direccionConductor,
+                      ),
+                      onTap: () => _mostrarDetalleMarcador(
+                        titulo: AppStrings.viajeDetalleConductor,
+                        color: AppTheme.brandPrimary,
+                        icono: Icons.directions_car_filled_rounded,
+                        lugar: estado.direccionConductor,
+                      ),
+                      onLongPress: () => _copiarInfoMarcador(
+                        punto: ubicacionActual.latitude != 0 ||
+                                ubicacionActual.longitude != 0
+                            ? ubicacionActual
+                            : puntoVisible,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

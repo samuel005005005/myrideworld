@@ -386,6 +386,20 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     state = state.copyWith(errorMensaje: null);
   }
 
+  /// Tras aceptar se sale de flota; al volver al home hay que reentrar
+  /// o el backend deja de ofertar (sigue "EN LÍNEA" en UI sin GPS de flota).
+  Future<void> reanudarFlotaSiEnLinea() async {
+    if (!state.enLinea) {
+      return;
+    }
+    final sesion = _sesionUsuario;
+    if (sesion == null) {
+      return;
+    }
+    await _configurarSocket(sesion);
+    unawaited(_push?.iniciar());
+    _iniciarPublicacionGpsFlota();
+  }
 
   Future<void> _configurarSocket(SesionUsuario sesion) async {
     final gateway = ref.read(viajeRealtimeGatewayProvider);
@@ -394,6 +408,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       if (!state.enLinea && !state.cambiandoDisponibilidad) {
         return;
       }
+      gateway.unirseAViaje(viaje.id);
       unawaited(OfertaViajeAlertaService.instancia.iniciarAlerta(viaje));
     });
     gateway.escucharOfertaCancelada((viajeId) {

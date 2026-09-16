@@ -107,6 +107,12 @@ export const MENSAJES = {
       TIMEOUT_VIAJE_MINUTOS_DESC: 'Minutos antes de cancelar un viaje sin aceptar',
       TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS_DESC:
         'Segundos que un conductor tiene para aceptar o rechazar una oferta',
+      MAX_CONDUCTORES_OFERTA_PARALELA_DESC:
+        'Máximo de conductores que reciben una oferta a la vez (los N más cercanos)',
+      RADIO_ASIGNACION_KM_DESC:
+        'Radio en km para buscar conductores al asignar un viaje',
+      MAX_MARCADORES_FLOTA_MAPA_DESC:
+        'Máximo de conductores a mostrar en el mapa del pasajero',
       TARIFA_BASE_DESC: 'Tarifa base (USD) definida por la asociación',
       TARIFA_KM_DESC: 'Precio por kilómetro (USD) definido por la asociación',
       TARIFA_MINIMA_DESC: 'Tarifa mínima (USD) definida por la asociación',
@@ -121,6 +127,9 @@ export const MENSAJES = {
       CLAVE_FEE_PLATAFORMA: 'FEE_PLATAFORMA',
       CLAVE_TIMEOUT_VIAJE_MINUTOS: 'TIMEOUT_VIAJE_MINUTOS',
       CLAVE_TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS: 'TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS',
+      CLAVE_MAX_CONDUCTORES_OFERTA_PARALELA: 'MAX_CONDUCTORES_OFERTA_PARALELA',
+      CLAVE_RADIO_ASIGNACION_KM: 'RADIO_ASIGNACION_KM',
+      CLAVE_MAX_MARCADORES_FLOTA_MAPA: 'MAX_MARCADORES_FLOTA_MAPA',
       CLAVE_TARIFA_BASE: 'TARIFA_BASE',
       CLAVE_TARIFA_KM: 'TARIFA_KM',
       CLAVE_TARIFA_MINIMA: 'TARIFA_MINIMA',
@@ -196,6 +205,8 @@ export const MENSAJES = {
       ROL_INVALIDO: 'Rol no válido.',
       TOKEN_AUSENTE: 'Token ausente.',
       ADMIN_INACTIVO: 'Cuenta de administrador desactivada.',
+      SESION_OTRO_DISPOSITIVO:
+        'Tu sesión se abrió en otro dispositivo. Volvé a iniciar sesión.',
     },
     ADMINISTRADORES: {
       EMAIL_REGISTRADO: 'El email de administrador ya está registrado.',

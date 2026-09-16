@@ -10,6 +10,10 @@ import '../../domain/entities/coordenada.dart';
 import '../../domain/repositories/ubicacion_gateway.dart';
 
 class GeolocatorUbicacionGateway implements UbicacionGateway {
+  /// En emuladores API 35+ (p. ej. Pixel 10) el fused a veces no entrega
+  /// fixes nuevos; la última conocida del sistema sí está disponible.
+  static const Duration _maxEdadUltimaConocida = Duration(minutes: 15);
+
   @override
   Future<Resultado<Coordenada>> obtenerUbicacionActual() async {
     try {
@@ -29,13 +33,22 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
       }
 
       final ultima = await Geolocator.getLastKnownPosition();
+      if (_esUltimaUtil(ultima)) {
+        debugPrint(
+          '[MyRide] GPS: ultima conocida reciente '
+          '(${ultima!.latitude}, ${ultima.longitude})',
+        );
+        return Exito(_desdePosicion(ultima));
+      }
+
       final actual = await _leerPosicionActual();
       if (actual != null) {
         return Exito(_desdePosicion(actual));
       }
+
       if (ultima != null) {
         debugPrint(
-          '[MyRide] GPS: usando ultima conocida '
+          '[MyRide] GPS: fallback ultima conocida '
           '(${ultima.latitude}, ${ultima.longitude})',
         );
         return Exito(_desdePosicion(ultima));
@@ -46,6 +59,14 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
       debugPrint('[MyRide] GPS error: $error\n$stack');
       return const Fallo(ServerFailure(AppStrings.errorGpsObtener));
     }
+  }
+
+  bool _esUltimaUtil(Position? posicion) {
+    if (posicion == null) {
+      return false;
+    }
+    final edad = DateTime.now().difference(posicion.timestamp);
+    return !edad.isNegative && edad <= _maxEdadUltimaConocida;
   }
 
   Future<Position?> _leerPosicionActual() async {
@@ -64,10 +85,16 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
   List<LocationSettings> _ajustesLectura() {
     if (Platform.isAndroid) {
       return [
+        // Fused / Play Services (necesario en Pixel 10 / API 37).
         AndroidSettings(
-          accuracy: LocationAccuracy.low,
+          accuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 15),
+        ),
+        // LocationManager nativo (otros AVDs).
+        AndroidSettings(
+          accuracy: LocationAccuracy.high,
           forceLocationManager: true,
-          timeLimit: const Duration(seconds: 12),
+          timeLimit: const Duration(seconds: 15),
         ),
         AndroidSettings(
           accuracy: LocationAccuracy.medium,
@@ -78,8 +105,8 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     }
     return const [
       LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: Duration(seconds: 12),
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 15),
       ),
       LocationSettings(
         accuracy: LocationAccuracy.medium,

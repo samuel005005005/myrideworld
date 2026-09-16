@@ -13,6 +13,7 @@ import { RechazarViajeUseCase } from '../casos-uso/rechazar-viaje.use-case.js';
 
 /**
  * Socket (app abierta) + FCM (app en background/cerrada).
+ * Un viaje puede ofertarse a varios conductores a la vez.
  */
 @Injectable()
 export class NotificadorViajeCompuesto implements INotificadorViaje {
@@ -31,10 +32,10 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     conductorId: string,
     viaje: ViajeDisponibleNotificacion,
   ): void {
-    const anterior = this.ofertas.conductorDe(viaje.id);
-    if (anterior && anterior !== conductorId) {
-      this.gateway.cancelarOfertaViaje(anterior, viaje.id);
-      void this.push.cancelarOfertaViaje(anterior, viaje.id);
+    if (this.ofertas.tieneOferta(viaje.id, conductorId)) {
+      // Reemitir (reconexión) sin reiniciar timeout si ya está sonando.
+      this.gateway.notificarNuevoViaje(conductorId, viaje);
+      return;
     }
 
     this.ofertas.registrar(viaje.id, conductorId);
@@ -46,8 +47,15 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
   }
 
   notificarViajeAceptado(notificacion: ViajeAceptadoNotificacion): void {
-    this.programadorTimeout.cancelar(notificacion.viajeId);
-    this.ofertas.liberar(notificacion.viajeId);
+    this.programadorTimeout.cancelarViaje(notificacion.viajeId);
+    const ofertados = this.ofertas.liberarTodos(notificacion.viajeId);
+    for (const conductorId of ofertados) {
+      if (conductorId === notificacion.conductorId) {
+        continue;
+      }
+      this.gateway.cancelarOfertaViaje(conductorId, notificacion.viajeId);
+      void this.push.cancelarOfertaViaje(conductorId, notificacion.viajeId);
+    }
     this.gateway.notificarViajeAceptado(notificacion);
     void this._liberarOtrasOfertasDelConductor(
       notificacion.conductorId,
@@ -65,9 +73,9 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     motivo: string | undefined,
     conductorId?: string | null,
   ): void {
-    this.programadorTimeout.cancelar(viajeId);
-    const ofertado = this.ofertas.liberar(viajeId);
-    if (ofertado) {
+    this.programadorTimeout.cancelarViaje(viajeId);
+    const ofertados = this.ofertas.liberarTodos(viajeId);
+    for (const ofertado of ofertados) {
       this.gateway.cancelarOfertaViaje(ofertado, viajeId);
       void this.push.cancelarOfertaViaje(ofertado, viajeId);
     }
@@ -75,7 +83,8 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
       viajeId,
       actor,
       motivo,
-      conductorId ?? ofertado,
+      conductorId,
+      ofertados,
     );
   }
 
@@ -87,7 +96,17 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
     this.gateway.notificarViajeCompletado(notificacion);
   }
 
-  /** Al aceptar un viaje, el resto de ofertas del conductor rotan a otros. */
+  /** Retira la oferta de un conductor (rechazo / timeout) sin cancelar el viaje. */
+  retirarOfertaDeConductor(viajeId: string, conductorId: string): void {
+    this.programadorTimeout.cancelar(viajeId, conductorId);
+    if (!this.ofertas.liberarConductor(viajeId, conductorId)) {
+      return;
+    }
+    this.gateway.cancelarOfertaViaje(conductorId, viajeId);
+    void this.push.cancelarOfertaViaje(conductorId, viajeId);
+  }
+
+  /** Al aceptar, libera otras ofertas del mismo conductor hacia el resto. */
   private async _liberarOtrasOfertasDelConductor(
     conductorId: string,
     viajeAceptadoId: string,
@@ -103,10 +122,7 @@ export class NotificadorViajeCompuesto implements INotificadorViaje {
         strict: false,
       });
       for (const viajeId of otros) {
-        this.programadorTimeout.cancelar(viajeId);
-        this.ofertas.liberar(viajeId);
-        this.gateway.cancelarOfertaViaje(conductorId, viajeId);
-        void this.push.cancelarOfertaViaje(conductorId, viajeId);
+        // rechazar retira oferta + reoferta a otros / cancela si nadie queda
         await rechazar.ejecutar(viajeId, conductorId);
       }
     } catch (error) {

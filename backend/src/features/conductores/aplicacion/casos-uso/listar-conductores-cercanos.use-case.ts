@@ -11,6 +11,7 @@ import { FlotaConductoresActivosRegistry } from '../servicios/flota-conductores-
 
 const C = MENSAJES.EXCEPCIONES.CONFIGURACION;
 const RADIO_DEFAULT = '25';
+const MAX_MARCADORES_DEFAULT = '20';
 
 @Injectable()
 export class ListarConductoresCercanosUseCase {
@@ -33,6 +34,16 @@ export class ListarConductoresCercanosUseCase {
     const radioKm =
       params.radioKm ??
       (Number.isFinite(radioConfig) && radioConfig > 0 ? radioConfig : 15);
+    const maxMarcadores = Number(
+      await this.configRepo.obtenerValor(
+        C.CLAVE_MAX_MARCADORES_FLOTA_MAPA,
+        MAX_MARCADORES_DEFAULT,
+      ),
+    );
+    const tope =
+      Number.isFinite(maxMarcadores) && maxMarcadores > 0
+        ? Math.floor(maxMarcadores)
+        : 20;
 
     const candidatos = await this.conductorRepository.obtenerDisponiblesCercanos(
       params.lat,
@@ -40,7 +51,7 @@ export class ListarConductoresCercanosUseCase {
       radioKm,
     );
 
-    const resultado: ConductorCercanoMapaDto[] = [];
+    const ranqueados: { dto: ConductorCercanoMapaDto; distancia: number }[] = [];
     for (const conductor of candidatos) {
       if (!this.flotaActiva.estaActivoEnFlota(conductor.id)) {
         continue;
@@ -50,11 +61,17 @@ export class ListarConductoresCercanosUseCase {
       if (lat === null || lng === null) {
         continue;
       }
-      if (calcularDistanciaKm(params.lat, params.lng, lat, lng) > radioKm) {
+      const distancia = calcularDistanciaKm(params.lat, params.lng, lat, lng);
+      if (distancia > radioKm) {
         continue;
       }
-      resultado.push(ConductorMapper.toCercanoMapa(conductor));
+      ranqueados.push({
+        dto: ConductorMapper.toCercanoMapa(conductor),
+        distancia,
+      });
     }
-    return resultado;
+
+    ranqueados.sort((a, b) => a.distancia - b.distancia);
+    return ranqueados.slice(0, tope).map((item) => item.dto);
   }
 }

@@ -42,19 +42,19 @@ export class SolicitarViajeUseCase {
 
     const guardado = await this.viajeRepository.guardar(viaje);
 
-    const conductorSugerido = await this.asignadorConductor.buscarMasCercano({
+    const candidatos = await this.asignadorConductor.buscarCercanos({
       origenLat: guardado.origenLat,
       origenLng: guardado.origenLng,
       excluidos: guardado.conductoresRechazados,
     });
 
-    if (conductorSugerido) {
+    if (candidatos.length > 0) {
       guardado.iniciarBusqueda();
       await this.viajeRepository.guardar(guardado);
       this.logger.log(
-        `Oferta viaje ${guardado.id} → conductor ${conductorSugerido.id}`,
+        `Oferta viaje ${guardado.id} → ${candidatos.length} conductor(es)`,
       );
-      this.notificadorViaje.notificarNuevoViaje(conductorSugerido.id, {
+      const payload = {
         id: guardado.id,
         origenLat: guardado.origenLat,
         origenLng: guardado.origenLng,
@@ -63,10 +63,13 @@ export class SolicitarViajeUseCase {
         tarifaEstimada: Number(guardado.tarifaEstimada),
         origenDireccion: guardado.origenDireccion,
         destinoDireccion: guardado.destinoDireccion,
-      });
+      };
+      for (const conductor of candidatos) {
+        this.notificadorViaje.notificarNuevoViaje(conductor.id, payload);
+      }
     } else {
       this.logger.warn(
-        `Viaje ${guardado.id} sin conductor cercano ` +
+        `Viaje ${guardado.id} sin conductor cercano activo ` +
           `(origen ${guardado.origenLat},${guardado.origenLng}). ` +
           'No se emitió socket/FCM.',
       );

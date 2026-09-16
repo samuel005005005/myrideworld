@@ -3,6 +3,7 @@ import { RechazarViajeUseCase } from '../../../../../../src/features/viajes/apli
 import { IViajeRepository } from '../../../../../../src/features/viajes/dominio/repositorios/viaje.repository.js';
 import type { INotificadorViaje } from '../../../../../../src/features/viajes/aplicacion/puertos/notificador-viaje.port.js';
 import { AsignadorConductorService } from '../../../../../../src/features/viajes/aplicacion/servicios/asignador-conductor.service.js';
+import { OfertasViajeActivasRegistry } from '../../../../../../src/features/viajes/aplicacion/servicios/ofertas-viaje-activas.registry.js';
 import { Viaje } from '../../../../../../src/features/viajes/dominio/entidades/viaje.entity.js';
 import { Conductor } from '../../../../../../src/features/conductores/dominio/entidades/conductor.entity.js';
 import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
@@ -14,6 +15,7 @@ describe('RechazarViajeUseCase', () => {
   let viajeRepositoryMock: Mocked<IViajeRepository>;
   let notificadorViajeMock: Mocked<INotificadorViaje>;
   let asignadorMock: Mocked<AsignadorConductorService>;
+  let ofertas: OfertasViajeActivasRegistry;
 
   beforeEach(() => {
     viajeRepositoryMock = {
@@ -24,16 +26,21 @@ describe('RechazarViajeUseCase', () => {
     notificadorViajeMock = {
       notificarNuevoViaje: vi.fn(),
       notificarViajeCancelado: vi.fn(),
+      retirarOfertaDeConductor: vi.fn(),
     } as any;
 
     asignadorMock = {
+      buscarCercanos: vi.fn(),
       buscarMasCercano: vi.fn(),
     } as any;
+
+    ofertas = new OfertasViajeActivasRegistry();
 
     useCase = new RechazarViajeUseCase(
       viajeRepositoryMock,
       notificadorViajeMock,
       asignadorMock,
+      ofertas,
     );
   });
 
@@ -45,7 +52,7 @@ describe('RechazarViajeUseCase', () => {
     );
   });
 
-  it('DebeAsignarSiguienteConductor_CuandoHayConductoresDisponibles', async () => {
+  it('DebeOfertarASiguientes_CuandoNoQuedanOfertasActivas', async () => {
     const viajeMock = {
       id: 'viaje-1',
       origenLat: 10,
@@ -53,7 +60,7 @@ describe('RechazarViajeUseCase', () => {
       destinoLat: 11,
       destinoLng: 11,
       tarifaEstimada: 25,
-      conductoresRechazados: [],
+      conductoresRechazados: [] as string[],
       rechazar: vi.fn().mockImplementation(function (this: any, cId: string) {
         this.conductoresRechazados.push(cId);
         return true;
@@ -68,12 +75,16 @@ describe('RechazarViajeUseCase', () => {
 
     viajeRepositoryMock.obtenerPorId.mockResolvedValue(viajeMock);
     viajeRepositoryMock.guardar.mockResolvedValue(viajeMock);
-    asignadorMock.buscarMasCercano.mockResolvedValue(conductorSiguiente);
+    asignadorMock.buscarCercanos.mockResolvedValue([conductorSiguiente]);
 
     const result = await useCase.ejecutar('viaje-1', 'cond-1');
 
     expect(viajeMock.rechazar).toHaveBeenCalledWith('cond-1');
     expect(viajeRepositoryMock.guardar).toHaveBeenCalledWith(viajeMock);
+    expect(notificadorViajeMock.retirarOfertaDeConductor).toHaveBeenCalledWith(
+      'viaje-1',
+      'cond-1',
+    );
     expect(notificadorViajeMock.notificarNuevoViaje).toHaveBeenCalledWith(
       'cond-2',
       {
@@ -89,12 +100,42 @@ describe('RechazarViajeUseCase', () => {
     expect(result).toBe(viajeMock);
   });
 
+  it('NoDebeBuscarSiguientes_CuandoOtrosSiguenConOferta', async () => {
+    const viajeMock = {
+      id: 'viaje-1',
+      origenLat: 10,
+      origenLng: 10,
+      destinoLat: 11,
+      destinoLng: 11,
+      tarifaEstimada: 25,
+      conductoresRechazados: [] as string[],
+      rechazar: vi.fn().mockReturnValue(true),
+    } as unknown as Viaje;
+
+    ofertas.registrar('viaje-1', 'cond-1');
+    ofertas.registrar('viaje-1', 'cond-2');
+    notificadorViajeMock.retirarOfertaDeConductor.mockImplementation(
+      (viajeId, conductorId) => {
+        ofertas.liberarConductor(viajeId, conductorId);
+      },
+    );
+
+    viajeRepositoryMock.obtenerPorId.mockResolvedValue(viajeMock);
+    viajeRepositoryMock.guardar.mockResolvedValue(viajeMock);
+
+    await useCase.ejecutar('viaje-1', 'cond-1');
+
+    expect(asignadorMock.buscarCercanos).not.toHaveBeenCalled();
+    expect(notificadorViajeMock.notificarNuevoViaje).not.toHaveBeenCalled();
+    expect(notificadorViajeMock.notificarViajeCancelado).not.toHaveBeenCalled();
+  });
+
   it('DebeCancelarViaje_CuandoNoHayConductoresDisponibles', async () => {
     const viajeMock = {
       id: 'viaje-2',
       origenLat: 10,
       origenLng: 10,
-      conductoresRechazados: [],
+      conductoresRechazados: [] as string[],
       rechazar: vi.fn().mockImplementation(function (this: any, cId: string) {
         this.conductoresRechazados.push(cId);
         return true;
@@ -104,7 +145,7 @@ describe('RechazarViajeUseCase', () => {
 
     viajeRepositoryMock.obtenerPorId.mockResolvedValue(viajeMock);
     viajeRepositoryMock.guardar.mockResolvedValue(viajeMock);
-    asignadorMock.buscarMasCercano.mockResolvedValue(null);
+    asignadorMock.buscarCercanos.mockResolvedValue([]);
 
     const result = await useCase.ejecutar('viaje-2', 'cond-1');
 
@@ -136,7 +177,7 @@ describe('RechazarViajeUseCase', () => {
 
     expect(viajeMock.rechazar).toHaveBeenCalledWith('cond-1');
     expect(viajeRepositoryMock.guardar).not.toHaveBeenCalled();
-    expect(asignadorMock.buscarMasCercano).not.toHaveBeenCalled();
+    expect(asignadorMock.buscarCercanos).not.toHaveBeenCalled();
     expect(notificadorViajeMock.notificarNuevoViaje).not.toHaveBeenCalled();
     expect(result).toBe(viajeMock);
   });

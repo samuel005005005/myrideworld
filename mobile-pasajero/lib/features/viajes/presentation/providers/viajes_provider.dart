@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/auth/sesion_invalida_tick.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/datasources/flota_remote_datasource.dart';
 import '../../data/datasources/geocoding_remote_datasource.dart';
@@ -52,9 +53,14 @@ final routingRemoteDataSourceProvider = Provider<RoutingRemoteDataSource>((
 });
 
 final viajeRealtimeGatewayProvider = Provider<ViajeRealtimeGateway>((ref) {
-  return ViajeSocketDataSource(
+  final gateway = ViajeSocketDataSource(
     sessionStorage: ref.watch(sessionStorageProvider),
   );
+  gateway.escucharSesionReemplazada((_) async {
+    await ref.read(sessionStorageProvider).limpiar();
+    ref.read(sesionInvalidaTickProvider.notifier).notificar();
+  });
+  return gateway;
 });
 
 final ubicacionGatewayProvider = Provider<UbicacionGateway>((ref) {

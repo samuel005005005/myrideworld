@@ -21,6 +21,7 @@ import { ProcesosBatchModule } from './features/procesos-batch/procesos-batch.mo
 import { IdempotenciaModule } from './features/idempotencia/idempotencia.module.js';
 import { AdministradoresModule } from './features/administradores/administradores.module.js';
 import { AdminDashboardModule } from './features/admin-dashboard/admin-dashboard.module.js';
+import { SesionesModule } from './compartidos/seguridad/sesiones.module.js';
 import { MENSAJES } from './compartidos/constantes/mensajes.const.js';
 
 function obtenerJwtSecret(): string {
@@ -51,6 +52,7 @@ function obtenerJwtSecret(): string {
         signOptions: { expiresIn: '1d' },
       }),
     }),
+    SesionesModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

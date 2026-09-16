@@ -1,6 +1,7 @@
 import '../entities/recibo_viaje.dart';
 import '../entities/conductor_asignado.dart';
 import '../entities/conductor_cercano.dart';
+import '../entities/viaje.dart';
 
 /// Puerto de dominio para eventos en tiempo real del viaje.
 abstract class ViajeRealtimeGateway {
@@ -31,6 +32,14 @@ abstract class ViajeRealtimeGateway {
   void escucharViajeIniciado(void Function() callback);
 
   void escucharViajeCompletado(void Function(ReciboViaje recibo) callback);
+
+  /// Snapshot del viaje desde BD al unirse / reconectar al room.
+  void escucharEstadoViaje(
+    void Function(Viaje viaje, double? latConductor, double? lngConductor)
+        callback,
+  );
+
+  void escucharSesionReemplazada(void Function(String motivo) callback);
 
   void desconectar();
 }

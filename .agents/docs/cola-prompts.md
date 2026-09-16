@@ -4,13 +4,14 @@
 
 - **Modo:** desarrollo
 - **Hecho:**
-  - Flota home se detiene al solicitar/restaurar viaje
-  - Viaje activo / radar: dejarDeObservarFlota; solo conductor asignado
-- **Falta:** redeploy API (registry flota) + hot reload pasajero
-- **Reanudar:** Validar: home con flota → solicitud → activo solo 1 conductor
+  - Canal viaje: `unirseAViaje` emite `estadoViaje` (resync BD)
+  - Sesión única: JWT `sid` + `SesionesActivasRegistry`; kick `sesionReemplazada`
+  - Apps: escuchan resync + logout al kick
+- **Falta:** reiniciar API + hot restart apps; probar 2 dispositivos mismo user + reconnect en viaje
+- **Reanudar:** Validar sesión única y resync del room `viaje_{id}`
 
 ## Histórico
 
-- 2026-09-16: Cap Cana; FCM; GPS real; tracking; marcadores viaje; flota ghost.
-- 2026-09-15: Direcciones origen oferta; cancel post-aceptación; flota; oferta al Conectado.
-- 2026-09-12: Checkpoint tras migración `.agents`→`.cursor`.
+- 2026-09-16: Canal viaje + sesión 1 dispositivo; flota post-viaje; escala ofertas.
+- 2026-09-15: Direcciones; cancel; flota; oferta al Conectado.
+- 2026-09-12: Checkpoint `.agents`→`.cursor`.

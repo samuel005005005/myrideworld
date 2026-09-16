@@ -104,6 +104,28 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       state = state.copyWith(reciboPendiente: recibo);
     });
 
+    gateway.escucharEstadoViaje((viaje, latConductor, lngConductor) {
+      if (state.viajeId != null && state.viajeId != viaje.id) {
+        return;
+      }
+      final haciaDestino = _estadoHaciaDestino(viaje.estado);
+      state = state.copyWith(
+        viajeId: viaje.id,
+        origen: LatLng(viaje.origenLat, viaje.origenLng),
+        destino: LatLng(viaje.destinoLat, viaje.destinoLng),
+        conductor: viaje.conductor ?? state.conductor,
+        haciaDestino: haciaDestino,
+        estadoViaje: _tituloDesdeEstadoApi(viaje.estado),
+        ubicacionConductor: (latConductor != null && lngConductor != null)
+            ? LatLng(latConductor, lngConductor)
+            : state.ubicacionConductor,
+      );
+      if (latConductor != null && lngConductor != null) {
+        _actualizarEtaLocal(LatLng(latConductor, lngConductor));
+      }
+      unawaited(_actualizarRuta(forzar: true));
+    });
+
     await detalleFuture;
   }
 

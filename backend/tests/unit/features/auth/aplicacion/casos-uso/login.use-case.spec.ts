@@ -11,6 +11,7 @@ import { Pasajero } from '../../../../../../src/features/pasajeros/dominio/entid
 import { Conductor } from '../../../../../../src/features/conductores/dominio/entidades/conductor.entity.js';
 import type { IHasheadorPassword } from '../../../../../../src/compartidos/seguridad/hasheador-password.port.js';
 import type { IGeneradorToken } from '../../../../../../src/features/auth/aplicacion/puertos/generador-token.port.js';
+import { SesionesActivasRegistry } from '../../../../../../src/compartidos/seguridad/sesiones-activas.registry.js';
 import { describe, it, expect, beforeEach, vi, type Mocked } from 'vitest';
 
 describe('LoginUseCase', () => {
@@ -21,6 +22,7 @@ describe('LoginUseCase', () => {
   let conductorRepositoryMock: Mocked<IConductorRepository>;
   let administradorRepositoryMock: Mocked<IAdministradorRepository>;
   let hasheadorPasswordMock: Mocked<IHasheadorPassword>;
+  let sesionesActivasMock: { activar: ReturnType<typeof vi.fn> };
 
   const FAKE_TOKEN = 'token.fake.123';
 
@@ -50,6 +52,10 @@ describe('LoginUseCase', () => {
       comparar: vi.fn(),
     } as any;
 
+    sesionesActivasMock = {
+      activar: vi.fn(),
+    };
+
     useCase = new LoginUseCase(
       generadorTokenMock,
       configServiceMock,
@@ -57,6 +63,7 @@ describe('LoginUseCase', () => {
       conductorRepositoryMock,
       administradorRepositoryMock,
       hasheadorPasswordMock,
+      sesionesActivasMock as unknown as SesionesActivasRegistry,
     );
   });
 
@@ -73,10 +80,17 @@ describe('LoginUseCase', () => {
       });
 
       expect(result.token).toBe(FAKE_TOKEN);
-      expect(generadorTokenMock.firmar).toHaveBeenCalledWith({
-        sub: 'uuid-1',
-        rol: Roles.PASAJERO,
-      });
+      expect(sesionesActivasMock.activar).toHaveBeenCalledWith(
+        'uuid-1',
+        expect.any(String),
+      );
+      expect(generadorTokenMock.firmar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: 'uuid-1',
+          rol: Roles.PASAJERO,
+          sid: expect.any(String),
+        }),
+      );
     });
 
     it('DebeLanzarExcepcion_CuandoEmailNoExiste', async () => {
@@ -123,10 +137,13 @@ describe('LoginUseCase', () => {
       });
 
       expect(result.token).toBe(FAKE_TOKEN);
-      expect(generadorTokenMock.firmar).toHaveBeenCalledWith({
-        sub: 'uuid-2',
-        rol: Roles.CONDUCTOR,
-      });
+      expect(generadorTokenMock.firmar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: 'uuid-2',
+          rol: Roles.CONDUCTOR,
+          sid: expect.any(String),
+        }),
+      );
     });
   });
 
@@ -149,11 +166,14 @@ describe('LoginUseCase', () => {
 
       expect(result.token).toBe(FAKE_TOKEN);
       expect(result.adminRol).toBe(RolesAdmin.SUPER_ADMIN);
-      expect(generadorTokenMock.firmar).toHaveBeenCalledWith({
-        sub: 'admin-uuid',
-        rol: Roles.ADMIN,
-        adminRol: RolesAdmin.SUPER_ADMIN,
-      });
+      expect(generadorTokenMock.firmar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: 'admin-uuid',
+          rol: Roles.ADMIN,
+          adminRol: RolesAdmin.SUPER_ADMIN,
+          sid: expect.any(String),
+        }),
+      );
     });
 
     it('DebeRetornarToken_CuandoFallbackEnvYNoHayAdminEnBd', async () => {
@@ -171,11 +191,14 @@ describe('LoginUseCase', () => {
       });
 
       expect(result.token).toBe(FAKE_TOKEN);
-      expect(generadorTokenMock.firmar).toHaveBeenCalledWith({
-        sub: 'admin-env-fallback',
-        rol: Roles.ADMIN,
-        adminRol: RolesAdmin.SUPER_ADMIN,
-      });
+      expect(generadorTokenMock.firmar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sub: 'admin-env-fallback',
+          rol: Roles.ADMIN,
+          adminRol: RolesAdmin.SUPER_ADMIN,
+          sid: expect.any(String),
+        }),
+      );
     });
 
     it('DebeLanzarExcepcion_CuandoCredencialesSonInvalidas', async () => {

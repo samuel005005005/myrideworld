@@ -20,6 +20,10 @@ abstract class ViajeRealtimeGateway {
 
   void escucharViajeCancelado(void Function(String viajeId) callback);
 
+  void escucharEstadoViaje(void Function(Viaje viaje) callback);
+
+  void escucharSesionReemplazada(void Function(String motivo) callback);
+
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,

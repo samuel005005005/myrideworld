@@ -9,6 +9,10 @@ import { DomainException } from '../../../../../../src/compartidos/excepciones/d
 import { EstadosViaje } from '../../../../../../src/compartidos/constantes/estados-viaje.enum.js';
 import { MENSAJES } from '../../../../../../src/compartidos/constantes/mensajes.const.js';
 import { ValidadorProximidadViajeService } from '../../../../../../src/features/viajes/aplicacion/servicios/validador-proximidad-viaje.service.js';
+import type { IConductorRepository } from '../../../../../../src/features/conductores/dominio/repositorios/conductor.repository.js';
+import { FlotaConductoresActivosRegistry } from '../../../../../../src/features/conductores/aplicacion/servicios/flota-conductores-activos.registry.js';
+import { ModuleRef } from '@nestjs/core';
+import { EstadosDisponibilidadConductor } from '../../../../../../src/compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 
 describe('CompletarViajeUseCase', () => {
   let useCase: CompletarViajeUseCase;
@@ -23,6 +27,9 @@ describe('CompletarViajeUseCase', () => {
   let generarPagoUseCaseMock: { ejecutar: Mock };
   let registrarBitacoraUseCaseMock: { ejecutar: Mock };
   let validadorProximidadMock: { asegurarCercaDe: Mock };
+  let conductorRepositoryMock: { obtenerPorId: Mock };
+  let flotaActivaMock: { tocar: Mock };
+  let moduleRefMock: { get: Mock };
 
   beforeEach(() => {
     viajeRepositoryMock = {
@@ -49,12 +56,30 @@ describe('CompletarViajeUseCase', () => {
       asegurarCercaDe: vi.fn().mockResolvedValue(undefined),
     };
 
+    conductorRepositoryMock = {
+      obtenerPorId: vi.fn().mockResolvedValue({
+        id: 'c-1',
+        estadoDisponibilidad: EstadosDisponibilidadConductor.CONECTADO,
+      }),
+    };
+
+    flotaActivaMock = {
+      tocar: vi.fn(),
+    };
+
+    moduleRefMock = {
+      get: vi.fn().mockReturnValue({ ejecutar: vi.fn().mockResolvedValue(undefined) }),
+    };
+
     useCase = new CompletarViajeUseCase(
       viajeRepositoryMock as unknown as IViajeRepository,
       notificadorViajeMock as unknown as INotificadorViaje,
       generarPagoUseCaseMock as unknown as GenerarPagoUseCase,
       registrarBitacoraUseCaseMock as unknown as RegistrarBitacoraUseCase,
       validadorProximidadMock as unknown as ValidadorProximidadViajeService,
+      conductorRepositoryMock as unknown as IConductorRepository,
+      flotaActivaMock as unknown as FlotaConductoresActivosRegistry,
+      moduleRefMock as unknown as ModuleRef,
     );
   });
 
@@ -97,6 +122,7 @@ describe('CompletarViajeUseCase', () => {
         duracionMinutos: expect.any(Number),
       }),
     );
+    expect(flotaActivaMock.tocar).toHaveBeenCalledWith('c-1');
   });
 
   it('debería lanzar DomainException si el viaje no existe', async () => {

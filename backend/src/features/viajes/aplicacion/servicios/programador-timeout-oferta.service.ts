@@ -6,7 +6,7 @@ import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { OfertasViajeActivasRegistry } from './ofertas-viaje-activas.registry.js';
 import { RechazarViajeUseCase } from '../casos-uso/rechazar-viaje.use-case.js';
 
-/** BR-ASG-001: si no acepta/rechaza a tiempo, pasa al siguiente conductor. */
+/** Si un conductor no responde a tiempo, se retira su oferta (otros siguen). */
 @Injectable()
 export class ProgramadorTimeoutOfertaService {
   private readonly logger = new Logger(ProgramadorTimeoutOfertaService.name);
@@ -20,30 +20,49 @@ export class ProgramadorTimeoutOfertaService {
   ) {}
 
   async programar(viajeId: string, conductorId: string): Promise<void> {
-    this.cancelar(viajeId);
+    this.cancelar(viajeId, conductorId);
     const clave =
       MENSAJES.EXCEPCIONES.CONFIGURACION.CLAVE_TIMEOUT_OFERTA_CONDUCTOR_SEGUNDOS;
     const segundos = Number(
       await this.configRepo.obtenerValor(clave, '30'),
     );
     const ms = Math.max(5, Number.isFinite(segundos) ? segundos : 30) * 1000;
+    const key = this._clave(viajeId, conductorId);
     const handle = setTimeout(() => {
       void this.expirar(viajeId, conductorId);
     }, ms);
-    this.timers.set(viajeId, handle);
+    this.timers.set(key, handle);
   }
 
-  cancelar(viajeId: string): void {
-    const handle = this.timers.get(viajeId);
-    if (handle) {
-      clearTimeout(handle);
-      this.timers.delete(viajeId);
+  cancelar(viajeId: string, conductorId?: string): void {
+    if (conductorId) {
+      const key = this._clave(viajeId, conductorId);
+      const handle = this.timers.get(key);
+      if (handle) {
+        clearTimeout(handle);
+      }
+      this.timers.delete(key);
+      return;
+    }
+    this.cancelarViaje(viajeId);
+  }
+
+  cancelarViaje(viajeId: string): void {
+    const prefijo = `${viajeId}::`;
+    for (const key of [...this.timers.keys()]) {
+      if (key.startsWith(prefijo)) {
+        const handle = this.timers.get(key);
+        if (handle) {
+          clearTimeout(handle);
+        }
+        this.timers.delete(key);
+      }
     }
   }
 
   private async expirar(viajeId: string, conductorId: string): Promise<void> {
-    this.timers.delete(viajeId);
-    if (this.ofertas.conductorDe(viajeId) !== conductorId) {
+    this.timers.delete(this._clave(viajeId, conductorId));
+    if (!this.ofertas.tieneOferta(viajeId, conductorId)) {
       return;
     }
     try {
@@ -56,8 +75,12 @@ export class ProgramadorTimeoutOfertaService {
       );
     } catch (error) {
       this.logger.warn(
-        `No se pudo rotar oferta expirada ${viajeId}: ${String(error)}`,
+        `No se pudo retirar oferta expirada ${viajeId}/${conductorId}: ${String(error)}`,
       );
     }
+  }
+
+  private _clave(viajeId: string, conductorId: string): string {
+    return `${viajeId}::${conductorId}`;
   }
 }

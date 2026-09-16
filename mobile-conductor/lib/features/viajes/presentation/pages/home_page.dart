@@ -27,8 +27,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(homeConductorControllerProvider.notifier).inicializar();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final controller = ref.read(homeConductorControllerProvider.notifier);
+      await controller.inicializar();
+      await controller.reanudarFlotaSiEnLinea();
     });
   }
 

@@ -58,6 +58,16 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
         ref.read(viajeCanceladoIdProvider.notifier).notificar(canceladoId);
       }
     });
+    gateway.escucharEstadoViaje((sincronizado) {
+      if (state.viaje?.id != sincronizado.id) {
+        return;
+      }
+      final nuevoEstado = MapeadorEstadoViajeActivo.desdeApi(sincronizado.estado);
+      state = state.copyWith(
+        viaje: sincronizado,
+        estado: nuevoEstado,
+      );
+    });
 
     final ubicacionInicial = await ref
         .read(ubicacionGatewayProvider)

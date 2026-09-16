@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import { LoginDto } from '../dto/login.dto.js';
 import type { IPasajeroRepository } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
@@ -15,6 +16,8 @@ import type { IHasheadorPassword } from '../../../../compartidos/seguridad/hashe
 import { HASHEADOR_PASSWORD } from '../../../../compartidos/seguridad/hasheador-password.port.js';
 import type { IGeneradorToken } from '../puertos/generador-token.port.js';
 import { GENERADOR_TOKEN } from '../puertos/generador-token.port.js';
+import type { JwtClaims } from '../../../../compartidos/seguridad/jwt-claims.js';
+import { SesionesActivasRegistry } from '../../../../compartidos/seguridad/sesiones-activas.registry.js';
 
 const E = MENSAJES.EXCEPCIONES.AUTH;
 
@@ -34,6 +37,7 @@ export class LoginUseCase {
     @Inject(ADMINISTRADOR_REPOSITORY)
     private readonly administradorRepository: IAdministradorRepository,
     @Inject(HASHEADOR_PASSWORD) private readonly hasheadorPassword: IHasheadorPassword,
+    private readonly sesionesActivas: SesionesActivasRegistry,
   ) {}
 
   async ejecutar(dto: LoginDto): Promise<LoginResultado> {
@@ -107,11 +111,13 @@ export class LoginUseCase {
       throw new DomainException(E.ROL_INVALIDO, 401);
     }
 
-    const payload: Record<string, unknown> = { sub: id, rol: dto.rol };
+    const sid = randomUUID();
+    const payload: JwtClaims = { sub: id, rol: dto.rol, sid };
     if (adminRol) {
       payload.adminRol = adminRol;
     }
 
+    this.sesionesActivas.activar(id, sid);
     const token = await this.generadorToken.firmar(payload);
 
     return { token, adminRol, nombreCompleto };

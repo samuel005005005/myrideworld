@@ -47,7 +47,7 @@ class _CapaConductoresFlotaState extends State<CapaConductoresFlota>
       if (existente == null) {
         final controller = AnimationController(
           vsync: this,
-          duration: const Duration(milliseconds: 1400),
+          duration: const Duration(milliseconds: 2200),
         )..addListener(() {
             if (mounted) {
               setState(() {});
@@ -81,15 +81,22 @@ class _CapaConductoresFlotaState extends State<CapaConductoresFlota>
         begin: existente.latVisible,
         end: destinoLat,
       ).animate(
-        CurvedAnimation(parent: existente.controller, curve: Curves.easeInOut),
+        CurvedAnimation(parent: existente.controller, curve: Curves.linear),
       );
       existente.lngAnim = Tween<double>(
         begin: existente.lngVisible,
         end: destinoLng,
       ).animate(
-        CurvedAnimation(parent: existente.controller, curve: Curves.easeInOut),
+        CurvedAnimation(parent: existente.controller, curve: Curves.linear),
       );
+      final metros = const Distance().as(
+        LengthUnit.Meter,
+        LatLng(existente.latVisible, existente.lngVisible),
+        LatLng(destinoLat, destinoLng),
+      );
+      final ms = (metros / 28.0 * 1000.0).clamp(700.0, 3200.0).round();
       existente.controller
+        ..duration = Duration(milliseconds: ms)
         ..reset()
         ..forward();
     }

@@ -16,8 +16,13 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   io.Socket? _socket;
   String? _conductorPendienteId;
   String? _viajePendienteId;
+  final Set<String> _viajesUnidos = <String>{};
   ({double lat, double lng})? _flotaPendiente;
   final List<void Function(String viajeId)> _listenersViajeCancelado = [];
+  void Function()? _onConnectExtra;
+  void Function()? _onDisconnectExtra;
+  void Function(String motivo)? _onSesionReemplazada;
+  bool _conectando = false;
 
   ViajeSocketDataSource({
     required this.sessionStorage,
@@ -37,58 +42,87 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     if (_socket?.connected == true) {
       return;
     }
+    if (_conectando) {
+      return;
+    }
 
-    _socket?.dispose();
-    final listo = Completer<void>();
-    _socket = io.io(
-      socketUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .setAuth({'token': token})
-          .setExtraHeaders({'Authorization': 'Bearer $token'})
-          .build(),
-    );
-
-    _socket?.onConnect((_) {
-      if (kDebugMode) {
-        debugPrint(AppStrings.socketConectado);
-      }
-      if (_conductorPendienteId != null) {
-        _emitirIdentificarConductor(_conductorPendienteId!);
-      }
-      if (_viajePendienteId != null) {
-        _emitirUnirseAViaje(_viajePendienteId!);
-      }
-      final flota = _flotaPendiente;
-      if (flota != null) {
-        _socket?.emit('publicarUbicacionFlota', {
-          'lat': flota.lat,
-          'lng': flota.lng,
-        });
-      }
-      if (!listo.isCompleted) {
-        listo.complete();
-      }
-    });
-
-    _socket?.onDisconnect((_) {
-      if (kDebugMode) {
-        debugPrint(AppStrings.socketDesconectado);
-      }
-    });
-
-    _socket?.onConnectError((error) {
-      if (!listo.isCompleted) {
-        listo.completeError(error ?? 'connect_error');
-      }
-    });
-
-    _socket?.connect();
+    _conectando = true;
     try {
-      await listo.future.timeout(const Duration(seconds: 8));
-    } catch (_) {
-      // Continúa: el listener onConnect identificará al reconectar.
+      _socket?.dispose();
+      final listo = Completer<void>();
+      _socket = io.io(
+        socketUrl,
+        io.OptionBuilder()
+            .setTransports(['websocket'])
+            .enableReconnection()
+            .setReconnectionAttempts(20)
+            .setReconnectionDelay(1200)
+            .disableAutoConnect()
+            .setAuth({'token': token})
+            .setExtraHeaders({'Authorization': 'Bearer $token'})
+            .build(),
+      );
+
+      _socket?.onConnect((_) {
+        if (kDebugMode) {
+          debugPrint(AppStrings.socketConectado);
+        }
+        _rehidratarSesion();
+        _engancharSesionReemplazada();
+        _onConnectExtra?.call();
+        if (!listo.isCompleted) {
+          listo.complete();
+        }
+      });
+
+      _socket?.onReconnect((_) {
+        _rehidratarSesion();
+        _engancharSesionReemplazada();
+        _onConnectExtra?.call();
+      });
+
+      _socket?.onDisconnect((_) {
+        if (kDebugMode) {
+          debugPrint(AppStrings.socketDesconectado);
+        }
+        _onDisconnectExtra?.call();
+      });
+
+      _socket?.onConnectError((error) {
+        if (!listo.isCompleted) {
+          listo.completeError(error ?? 'connect_error');
+        }
+      });
+
+      _engancharSesionReemplazada();
+      _socket?.connect();
+      try {
+        await listo.future.timeout(const Duration(seconds: 8));
+      } catch (_) {
+        // Continúa: onConnect/onReconnect rehidratan al conectar.
+      }
+    } finally {
+      _conectando = false;
+    }
+  }
+
+  void _rehidratarSesion() {
+    if (_conductorPendienteId != null) {
+      _emitirIdentificarConductor(_conductorPendienteId!);
+    }
+    final viajes = <String>{
+      ..._viajesUnidos,
+      if (_viajePendienteId != null) _viajePendienteId!,
+    };
+    for (final viajeId in viajes) {
+      _emitirUnirseAViaje(viajeId);
+    }
+    final flota = _flotaPendiente;
+    if (flota != null) {
+      _socket?.emit('publicarUbicacionFlota', {
+        'lat': flota.lat,
+        'lng': flota.lng,
+      });
     }
   }
 
@@ -103,6 +137,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   @override
   void unirseAViaje(String viajeId) {
     _viajePendienteId = viajeId;
+    _viajesUnidos.add(viajeId);
     if (_socket?.connected == true) {
       _emitirUnirseAViaje(viajeId);
     }
@@ -113,6 +148,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     if (_viajePendienteId == viajeId) {
       _viajePendienteId = null;
     }
+    _viajesUnidos.remove(viajeId);
     _socket?.emit('salirDeViaje', {'viajeId': viajeId});
   }
 
@@ -129,25 +165,12 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     required void Function() onConnect,
     required void Function() onDisconnect,
   }) {
-    _socket?.off('connect');
-    _socket?.off('disconnect');
-    _socket?.onConnect((_) {
-      if (_conductorPendienteId != null) {
-        _emitirIdentificarConductor(_conductorPendienteId!);
-      }
-      if (_viajePendienteId != null) {
-        _emitirUnirseAViaje(_viajePendienteId!);
-      }
-      final flota = _flotaPendiente;
-      if (flota != null) {
-        _socket?.emit('publicarUbicacionFlota', {
-          'lat': flota.lat,
-          'lng': flota.lng,
-        });
-      }
+    // No reemplazar handlers internos: se encadenan vía callbacks.
+    _onConnectExtra = onConnect;
+    _onDisconnectExtra = onDisconnect;
+    if (_socket?.connected == true) {
       onConnect();
-    });
-    _socket?.onDisconnect((_) => onDisconnect());
+    }
   }
 
   @override
@@ -203,6 +226,45 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   }
 
   @override
+  void escucharEstadoViaje(void Function(Viaje viaje) callback) {
+    _socket?.off('estadoViaje');
+    _socket?.on('estadoViaje', (data) {
+      if (data is! Map) {
+        return;
+      }
+      try {
+        final viaje = ViajeMapper.toDomain(
+          ViajeMapper.fromApiData(Map<String, dynamic>.from(data)),
+        );
+        callback(viaje);
+      } catch (_) {
+        // Payload inválido.
+      }
+    });
+  }
+
+  @override
+  void escucharSesionReemplazada(void Function(String motivo) callback) {
+    _onSesionReemplazada = callback;
+    _engancharSesionReemplazada();
+  }
+
+  void _engancharSesionReemplazada() {
+    final callback = _onSesionReemplazada;
+    if (callback == null || _socket == null) {
+      return;
+    }
+    _socket?.off('sesionReemplazada');
+    _socket?.on('sesionReemplazada', (data) {
+      var motivo = 'Sesión reemplazada';
+      if (data is Map && data['motivo'] is String) {
+        motivo = data['motivo'] as String;
+      }
+      callback(motivo);
+    });
+  }
+
+  @override
   void actualizarUbicacion({
     required String viajeId,
     required double latitud,
@@ -240,11 +302,16 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   void desconectar() {
     _conductorPendienteId = null;
     _viajePendienteId = null;
+    _viajesUnidos.clear();
     _flotaPendiente = null;
+    _onConnectExtra = null;
+    _onDisconnectExtra = null;
     _listenersViajeCancelado.clear();
     _socket?.off('nuevoViajeDisponible');
     _socket?.off('ofertaViajeCancelada');
     _socket?.off('viajeCancelado');
+    _socket?.off('estadoViaje');
+    _socket?.off('sesionReemplazada');
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;

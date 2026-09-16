@@ -10,6 +10,8 @@ import '../../domain/entities/coordenada_conductor.dart';
 import '../../domain/repositories/ubicacion_gateway.dart';
 
 class GeolocatorUbicacionGateway implements UbicacionGateway {
+  static const Duration _maxEdadUltimaConocida = Duration(minutes: 15);
+
   @override
   Future<Resultado<CoordenadaConductor>> obtenerUbicacionActual() async {
     try {
@@ -19,13 +21,21 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
       }
 
       final ultima = await Geolocator.getLastKnownPosition();
+      if (_esUltimaUtil(ultima)) {
+        debugPrint(
+          '[MyRide] GPS: ultima conocida reciente '
+          '(${ultima!.latitude}, ${ultima.longitude})',
+        );
+        return Exito(_desdePosicion(ultima));
+      }
+
       final actual = await _leerPosicionActual();
       if (actual != null) {
         return Exito(_desdePosicion(actual));
       }
       if (ultima != null) {
         debugPrint(
-          '[MyRide] GPS: usando ultima conocida '
+          '[MyRide] GPS: fallback ultima conocida '
           '(${ultima.latitude}, ${ultima.longitude})',
         );
         return Exito(_desdePosicion(ultima));
@@ -50,6 +60,14 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     ).map(_desdePosicion);
   }
 
+  bool _esUltimaUtil(Position? posicion) {
+    if (posicion == null) {
+      return false;
+    }
+    final edad = DateTime.now().difference(posicion.timestamp);
+    return !edad.isNegative && edad <= _maxEdadUltimaConocida;
+  }
+
   Future<Position?> _leerPosicionActual() async {
     for (final settings in _ajustesLectura()) {
       try {
@@ -67,9 +85,13 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     if (Platform.isAndroid) {
       return [
         AndroidSettings(
-          accuracy: LocationAccuracy.low,
+          accuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 15),
+        ),
+        AndroidSettings(
+          accuracy: LocationAccuracy.high,
           forceLocationManager: true,
-          timeLimit: const Duration(seconds: 12),
+          timeLimit: const Duration(seconds: 15),
         ),
         AndroidSettings(
           accuracy: LocationAccuracy.medium,
@@ -80,8 +102,8 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     }
     return const [
       LocationSettings(
-        accuracy: LocationAccuracy.low,
-        timeLimit: Duration(seconds: 12),
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 15),
       ),
       LocationSettings(
         accuracy: LocationAccuracy.medium,
@@ -92,10 +114,11 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
 
   LocationSettings _ajustesStream() {
     if (Platform.isAndroid) {
+      // Sin forceLocationManager: en Pixel 10 / API 37 el LocationManager
+      // nativo no entrega updates del emu geo fix.
       return AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 8,
-        forceLocationManager: true,
       );
     }
     return const LocationSettings(

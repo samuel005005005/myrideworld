@@ -7,6 +7,8 @@ export interface INotificadorViaje {
     conductorId: string,
     viaje: ViajeDisponibleNotificacion,
   ): void;
+  /** Retira oferta de un conductor (rechazo/timeout) sin cancelar el viaje. */
+  retirarOfertaDeConductor(viajeId: string, conductorId: string): void;
   notificarViajeAceptado(notificacion: ViajeAceptadoNotificacion): void;
   notificarConductorLlego(viajeId: string): void;
   notificarViajeCancelado(
@@ -14,6 +16,7 @@ export interface INotificadorViaje {
     actor: string,
     motivo: string | undefined,
     conductorId?: string | null,
+    conductoresOfertados?: string[],
   ): void;
   notificarViajeIniciado(viajeId: string): void;
   notificarViajeCompletado(notificacion: ViajeCompletadoNotificacion): void;

@@ -7,6 +7,7 @@ import { ActualizarDisponibilidadDto } from '../dto/actualizar-disponibilidad.dt
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
+import { FlotaConductoresActivosRegistry } from '../servicios/flota-conductores-activos.registry.js';
 
 @Injectable()
 export class ActualizarDisponibilidadUseCase {
@@ -16,6 +17,7 @@ export class ActualizarDisponibilidadUseCase {
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
     private readonly moduleRef: ModuleRef,
+    private readonly flotaActiva: FlotaConductoresActivosRegistry,
   ) {}
 
   async ejecutar(
@@ -41,7 +43,10 @@ export class ActualizarDisponibilidadUseCase {
     if (
       dto.estadoDisponibilidad === EstadosDisponibilidadConductor.CONECTADO
     ) {
+      this.flotaActiva.tocar(guardado.id);
       await this._ofertarPendientesSiDisponible(guardado.id);
+    } else {
+      this.flotaActiva.salir(guardado.id);
     }
 
     return guardado;

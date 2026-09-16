@@ -88,6 +88,21 @@ export class ConfiguracionSeeder {
         valor: '25',
         descripcion: C.RADIO_MAPA_FLOTA_KM_DESC,
       },
+      {
+        clave: C.CLAVE_MAX_CONDUCTORES_OFERTA_PARALELA,
+        valor: '5',
+        descripcion: C.MAX_CONDUCTORES_OFERTA_PARALELA_DESC,
+      },
+      {
+        clave: C.CLAVE_RADIO_ASIGNACION_KM,
+        valor: '15',
+        descripcion: C.RADIO_ASIGNACION_KM_DESC,
+      },
+      {
+        clave: C.CLAVE_MAX_MARCADORES_FLOTA_MAPA,
+        valor: '20',
+        descripcion: C.MAX_MARCADORES_FLOTA_MAPA_DESC,
+      },
     ];
 
     for (const conf of configuracionesIniciales) {

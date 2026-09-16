@@ -12,6 +12,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../controllers/viaje_activo_controller.dart';
 import '../controllers/viaje_activo_state.dart';
 import '../widgets/marcador_mapa_viaje.dart';
+import '../widgets/capa_marcador_posicion_suave.dart';
 
 class ViajeActivePage extends ConsumerStatefulWidget {
   final String? viajeId;
@@ -61,8 +62,9 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
     }
     final clave =
         '${estado.viajeId}|${estado.haciaDestino}|${estado.puntosRuta.length}|'
-        '${estado.ubicacionConductor?.latitude.toStringAsFixed(4)}|'
-        '${estado.origen?.latitude.toStringAsFixed(4)}';
+        // Cámara solo ante cambios gruesos (~100 m), no en cada fix GPS.
+        '${estado.ubicacionConductor?.latitude.toStringAsFixed(3)}|'
+        '${estado.origen?.latitude.toStringAsFixed(3)}';
     if (_ultimaClaveCamara == clave) {
       return;
     }
@@ -158,31 +160,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                   ),
                 MarkerLayer(
                   markers: [
-                    if (estado.ubicacionConductor != null)
-                      Marker(
-                        point: estado.ubicacionConductor!,
-                        width: 148,
-                        height: 88,
-                        alignment: Alignment.center,
-                        child: MarcadorMapaViaje(
-                          color: brandPrimary,
-                          icono: Icons.directions_car_filled_rounded,
-                          etiqueta: AppStrings.formatoMarcadorConLugar(
-                            AppStrings.trackingMarcadorConductor,
-                            estado.direccionConductor,
-                          ),
-                          onTap: () => _mostrarDetalleMarcador(
-                            titulo: AppStrings.trackingDetalleConductor,
-                            color: brandPrimary,
-                            icono: Icons.directions_car_filled_rounded,
-                            lugar: estado.direccionConductor,
-                            punto: estado.ubicacionConductor!,
-                          ),
-                          onLongPress: () => _copiarInfoMarcador(
-                            punto: estado.ubicacionConductor!,
-                          ),
-                        ),
-                      ),
                     if (estado.origen != null && !estado.haciaDestino)
                       Marker(
                         point: estado.origen!,
@@ -236,6 +213,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                         ),
                       ),
                   ],
+                ),
+                CapaMarcadorPosicionSuave(
+                  destino: estado.ubicacionConductor,
+                  width: 148,
+                  height: 88,
+                  builder: (context, puntoVisible) {
+                    return MarcadorMapaViaje(
+                      color: brandPrimary,
+                      icono: Icons.directions_car_filled_rounded,
+                      etiqueta: AppStrings.formatoMarcadorConLugar(
+                        AppStrings.trackingMarcadorConductor,
+                        estado.direccionConductor,
+                      ),
+                      onTap: () => _mostrarDetalleMarcador(
+                        titulo: AppStrings.trackingDetalleConductor,
+                        color: brandPrimary,
+                        icono: Icons.directions_car_filled_rounded,
+                        lugar: estado.direccionConductor,
+                        punto: estado.ubicacionConductor ?? puntoVisible,
+                      ),
+                      onLongPress: () => _copiarInfoMarcador(
+                        punto: estado.ubicacionConductor ?? puntoVisible,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

@@ -1,43 +1,99 @@
 import { Injectable } from '@nestjs/common';
 
-/** Registro en memoria de oferta activa por viaje (para cancelar timbre). */
+/** Ofertas activas: un viaje puede sonar en varios conductores a la vez. */
 @Injectable()
 export class OfertasViajeActivasRegistry {
-  private readonly porViaje = new Map<string, string>();
+  private readonly porViaje = new Map<string, Set<string>>();
+  /** Índice inverso O(1) para listar viajes de un conductor. */
+  private readonly porConductor = new Map<string, Set<string>>();
 
   registrar(viajeId: string, conductorId: string): void {
-    this.porViaje.set(viajeId, conductorId);
+    let setViaje = this.porViaje.get(viajeId);
+    if (!setViaje) {
+      setViaje = new Set<string>();
+      this.porViaje.set(viajeId, setViaje);
+    }
+    setViaje.add(conductorId);
+
+    let setConductor = this.porConductor.get(conductorId);
+    if (!setConductor) {
+      setConductor = new Set<string>();
+      this.porConductor.set(conductorId, setConductor);
+    }
+    setConductor.add(viajeId);
   }
 
+  /** @deprecated Preferí conductoresDe — queda el primero para compat. */
   conductorDe(viajeId: string): string | undefined {
-    return this.porViaje.get(viajeId);
+    const set = this.porViaje.get(viajeId);
+    if (!set || set.size === 0) {
+      return undefined;
+    }
+    return set.values().next().value;
   }
 
-  /** Viaje cuya oferta activa está asignada a este conductor (si hay). */
+  conductoresDe(viajeId: string): string[] {
+    const set = this.porViaje.get(viajeId);
+    return set ? [...set] : [];
+  }
+
+  tieneOferta(viajeId: string, conductorId: string): boolean {
+    return this.porViaje.get(viajeId)?.has(conductorId) ?? false;
+  }
+
   viajeIdDeConductor(conductorId: string): string | undefined {
-    for (const [viajeId, asignado] of this.porViaje.entries()) {
-      if (asignado === conductorId) {
-        return viajeId;
-      }
+    const set = this.porConductor.get(conductorId);
+    if (!set || set.size === 0) {
+      return undefined;
     }
-    return undefined;
+    return set.values().next().value;
   }
 
-  /** Todos los viajes ofertados actualmente a este conductor. */
   viajesIdsDeConductor(conductorId: string): string[] {
-    const ids: string[] = [];
-    for (const [viajeId, asignado] of this.porViaje.entries()) {
-      if (asignado === conductorId) {
-        ids.push(viajeId);
+    const set = this.porConductor.get(conductorId);
+    return set ? [...set] : [];
+  }
+
+  liberarConductor(viajeId: string, conductorId: string): boolean {
+    const setViaje = this.porViaje.get(viajeId);
+    if (!setViaje) {
+      return false;
+    }
+    const habia = setViaje.delete(conductorId);
+    if (setViaje.size === 0) {
+      this.porViaje.delete(viajeId);
+    }
+
+    const setConductor = this.porConductor.get(conductorId);
+    if (setConductor) {
+      setConductor.delete(viajeId);
+      if (setConductor.size === 0) {
+        this.porConductor.delete(conductorId);
       }
     }
-    return ids;
+    return habia;
+  }
+
+  liberarTodos(viajeId: string): string[] {
+    const set = this.porViaje.get(viajeId);
+    this.porViaje.delete(viajeId);
+    const conductores = set ? [...set] : [];
+    for (const conductorId of conductores) {
+      const setConductor = this.porConductor.get(conductorId);
+      if (!setConductor) {
+        continue;
+      }
+      setConductor.delete(viajeId);
+      if (setConductor.size === 0) {
+        this.porConductor.delete(conductorId);
+      }
+    }
+    return conductores;
   }
 
   liberar(viajeId: string): string | undefined {
-    const conductorId = this.porViaje.get(viajeId);
-    this.porViaje.delete(viajeId);
-    return conductorId;
+    const todos = this.liberarTodos(viajeId);
+    return todos[0];
   }
 
   tieneOfertaActivaPara(conductorId: string): boolean {

@@ -3,15 +3,21 @@ import type { IViajeRepository } from '../../dominio/repositorios/viaje.reposito
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import type { IConfiguracionRepository } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
+import { CONFIGURACION_REPOSITORY } from '../../../configuracion/dominio/repositorios/configuracion.repository.js';
 import type { INotificadorViaje } from '../puertos/notificador-viaje.port.js';
 import { NOTIFICADOR_VIAJE } from '../puertos/notificador-viaje.port.js';
 import { OfertasViajeActivasRegistry } from '../servicios/ofertas-viaje-activas.registry.js';
+import { FlotaConductoresActivosRegistry } from '../../../conductores/aplicacion/servicios/flota-conductores-activos.registry.js';
 import { EstadosDisponibilidadConductor } from '../../../../compartidos/constantes/estados-disponibilidad-conductor.enum.js';
 import { EstadosViaje } from '../../../../compartidos/constantes/estados-viaje.enum.js';
+import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 
-const RADIO_KM = 50;
-const MAX_OFERTAS_SIMULTANEAS = 5;
+const C = MENSAJES.EXCEPCIONES.CONFIGURACION;
+const RADIO_KM_DEFAULT = 15;
+const MAX_OFERTAS_CONDUCTOR_DEFAULT = 5;
+const MAX_PARALELO_VIAJE_DEFAULT = 5;
 
 const ESTADOS_CONDUCTOR_OCUPADO = new Set<string>([
   EstadosViaje.ASIGNADO,
@@ -21,8 +27,8 @@ const ESTADOS_CONDUCTOR_OCUPADO = new Set<string>([
 ]);
 
 /**
- * Cuando un conductor pasa a Conectado, ofrece los viajes pendientes cercanos
- * (varios a la vez) para que elija en la app.
+ * Cuando un conductor pasa a Conectado, ofrece viajes pendientes cercanos
+ * respetando cupos por conductor y por viaje (escala multi-usuario).
  */
 @Injectable()
 export class OfertarViajesPendientesConductorUseCase {
@@ -35,9 +41,12 @@ export class OfertarViajesPendientesConductorUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
+    @Inject(CONFIGURACION_REPOSITORY)
+    private readonly configRepo: IConfiguracionRepository,
     @Inject(NOTIFICADOR_VIAJE)
     private readonly notificadorViaje: INotificadorViaje,
     private readonly ofertas: OfertasViajeActivasRegistry,
+    private readonly flotaActiva: FlotaConductoresActivosRegistry,
   ) {}
 
   async ejecutar(conductorId: string): Promise<void> {
@@ -56,6 +65,9 @@ export class OfertarViajesPendientesConductorUseCase {
     ) {
       return;
     }
+    if (!this.flotaActiva.estaActivoEnFlota(conductorId)) {
+      this.flotaActiva.tocar(conductorId);
+    }
 
     const propios = await this.viajeRepository.obtenerPorConductor(conductorId);
     const ocupado = propios.some((viaje) =>
@@ -65,8 +77,18 @@ export class OfertarViajesPendientesConductorUseCase {
       return;
     }
 
+    const radioKm = await this._leerNumero(
+      C.CLAVE_RADIO_ASIGNACION_KM,
+      RADIO_KM_DEFAULT,
+    );
+    const maxPorConductor = await this._leerNumero(
+      C.CLAVE_MAX_CONDUCTORES_OFERTA_PARALELA,
+      MAX_OFERTAS_CONDUCTOR_DEFAULT,
+    );
+    const maxParaleloViaje = maxPorConductor;
+
     const yaOfertados = new Set(this.ofertas.viajesIdsDeConductor(conductorId));
-    const cupo = Math.max(0, MAX_OFERTAS_SIMULTANEAS - yaOfertados.size);
+    const cupo = Math.max(0, Math.floor(maxPorConductor) - yaOfertados.size);
     if (cupo === 0) {
       return;
     }
@@ -76,14 +98,13 @@ export class OfertarViajesPendientesConductorUseCase {
     const candidatos: { id: string; distancia: number }[] = [];
 
     for (const viaje of pendientes) {
-      const ofertadoA = this.ofertas.conductorDe(viaje.id);
-      if (ofertadoA && ofertadoA !== conductorId) {
-        continue;
-      }
-      if (yaOfertados.has(viaje.id)) {
+      if (this.ofertas.tieneOferta(viaje.id, conductorId)) {
         continue;
       }
       if (viaje.conductoresRechazados.includes(conductorId)) {
+        continue;
+      }
+      if (this.ofertas.conductoresDe(viaje.id).length >= maxParaleloViaje) {
         continue;
       }
 
@@ -93,7 +114,7 @@ export class OfertarViajesPendientesConductorUseCase {
         conductor.ultimaUbicacionLat,
         conductor.ultimaUbicacionLng,
       );
-      if (distancia > RADIO_KM) {
+      if (distancia > radioKm) {
         continue;
       }
       candidatos.push({ id: viaje.id, distancia });
@@ -116,8 +137,10 @@ export class OfertarViajesPendientesConductorUseCase {
       ) {
         continue;
       }
-      const ofertadoA = this.ofertas.conductorDe(viaje.id);
-      if (ofertadoA && ofertadoA !== conductorId) {
+      if (this.ofertas.tieneOferta(viaje.id, conductorId)) {
+        continue;
+      }
+      if (this.ofertas.conductoresDe(viaje.id).length >= maxParaleloViaje) {
         continue;
       }
 
@@ -141,5 +164,12 @@ export class OfertarViajesPendientesConductorUseCase {
       });
       ofertados += 1;
     }
+  }
+
+  private async _leerNumero(clave: string, fallback: number): Promise<number> {
+    const raw = Number(
+      await this.configRepo.obtenerValor(clave, String(fallback)),
+    );
+    return Number.isFinite(raw) && raw > 0 ? raw : fallback;
   }
 }
