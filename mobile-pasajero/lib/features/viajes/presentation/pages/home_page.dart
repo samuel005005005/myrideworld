@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -15,6 +16,7 @@ import '../controllers/home_state_status.dart';
 import '../widgets/home_drawer.dart';
 import '../widgets/home_vehicle_tile.dart';
 import '../widgets/marcador_conductor_flota.dart';
+import '../widgets/marcador_mapa_viaje.dart';
 
 final selectedVehicleProvider = StateProvider<TipoVehiculo>(
   (ref) => TipoVehiculo.sedan,
@@ -143,45 +145,123 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                CapaConductoresFlota(
-                  conductores: estado.conductoresCercanos,
-                ),
+                if (estado.activeTrip == null)
+                  CapaConductoresFlota(
+                    conductores: estado.conductoresCercanos,
+                    onTap: (conductor, punto) => _mostrarDetalleMarcador(
+                      titulo: AppStrings.trackingDetalleConductor,
+                      color: brandPrimary,
+                      icono: Icons.directions_car_filled_rounded,
+                      lugar: AppStrings.marcadorConductorFlota,
+                      punto: punto,
+                    ),
+                    onLongPress: (conductor, punto) =>
+                        _copiarInfoMarcador(punto: punto),
+                  ),
                 MarkerLayer(
                   markers: [
                     if (routePoints.isNotEmpty)
                       Marker(
                         point: routePoints.first,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.green,
-                          size: 36,
+                        width: 148,
+                        height: 98,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFF2563EB),
+                          icono: Icons.person_rounded,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorRecogida,
+                            estado.pickupLabel,
+                          ),
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleRecogida,
+                            color: const Color(0xFF2563EB),
+                            icono: Icons.person_rounded,
+                            lugar: estado.pickupLabel,
+                            punto: routePoints.first,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: routePoints.first,
+                          ),
                         ),
                       )
                     else if (estado.currentLocation != null)
                       Marker(
                         point: estado.currentLocation!,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.green,
-                          size: 36,
+                        width: 148,
+                        height: 98,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFF2563EB),
+                          icono: Icons.person_rounded,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorTu,
+                            estado.pickupLabel,
+                          ),
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleRecogida,
+                            color: const Color(0xFF2563EB),
+                            icono: Icons.person_rounded,
+                            lugar: estado.pickupLabel,
+                            punto: estado.currentLocation!,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: estado.currentLocation!,
+                          ),
                         ),
                       ),
                     if (routePoints.isNotEmpty)
                       Marker(
                         point: routePoints.last,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 36,
+                        width: 148,
+                        height: 98,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFFDC2626),
+                          icono: Icons.place_rounded,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorDestino,
+                            estado.dropoffLabel,
+                          ),
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleDestino,
+                            color: const Color(0xFFDC2626),
+                            icono: Icons.place_rounded,
+                            lugar: estado.dropoffLabel,
+                            punto: routePoints.last,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: routePoints.last,
+                          ),
                         ),
                       )
                     else if (ubicacionDestino != null)
                       Marker(
                         point: ubicacionDestino,
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.red,
-                          size: 36,
+                        width: 148,
+                        height: 98,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
+                          color: const Color(0xFFDC2626),
+                          icono: Icons.place_rounded,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.trackingMarcadorDestino,
+                            estado.dropoffLabel,
+                          ),
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.trackingDetalleDestino,
+                            color: const Color(0xFFDC2626),
+                            icono: Icons.place_rounded,
+                            lugar: estado.dropoffLabel,
+                            punto: ubicacionDestino,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: ubicacionDestino,
+                          ),
                         ),
                       ),
                   ],
@@ -627,6 +707,141 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _copiarInfoMarcador({required LatLng punto}) async {
+    final texto = AppStrings.formatoCoordenada(
+      punto.latitude,
+      punto.longitude,
+    );
+    await Clipboard.setData(ClipboardData(text: texto));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(AppStrings.trackingMarcadorCopiado),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _mostrarDetalleMarcador({
+    required String titulo,
+    required Color color,
+    required IconData icono,
+    required String? lugar,
+    required LatLng punto,
+  }) {
+    final textoLugar = (lugar == null || lugar.trim().isEmpty)
+        ? AppStrings.trackingDireccionCargando
+        : lugar;
+    final coords = AppStrings.formatoCoordenada(
+      punto.latitude,
+      punto.longitude,
+    );
+
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icono, color: color, size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titulo,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            textoLugar,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            coords,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                      await _copiarInfoMarcador(punto: punto);
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    label: const Text(AppStrings.trackingMarcadorCopiarCoords),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text(AppStrings.trackingMarcadorCerrar),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

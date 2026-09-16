@@ -7,4 +7,7 @@ export class ConductorResumenPublicoDto {
   vehiculoModelo: string;
   vehiculoColor: string;
   vehiculoPlaca: string;
+  /** Última ubicación conocida (para tracking pasajero). */
+  lat: number | null;
+  lng: number | null;
 }

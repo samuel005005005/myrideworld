@@ -35,6 +35,7 @@ class BusquedaConductorController extends Notifier<BusquedaConductorState> {
 
     final gateway = _gateway;
     await gateway.conectar();
+    gateway.dejarDeObservarFlota();
 
     gateway.escucharViajeAceptado((ConductorAsignado? conductor) {
       state = state.copyWith(

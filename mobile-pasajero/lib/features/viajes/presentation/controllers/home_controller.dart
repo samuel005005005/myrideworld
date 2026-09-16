@@ -97,6 +97,7 @@ class HomeController extends Notifier<HomeState> {
       (_) {},
       (viajeActivo) {
         if (viajeActivo != null) {
+          _detenerFlotaEnMapa();
           state = state.copyWith(viajeParaRestaurar: viajeActivo);
         }
       },
@@ -132,6 +133,18 @@ class HomeController extends Notifier<HomeState> {
     });
   }
 
+  void _detenerFlotaEnMapa() {
+    _timerFlota?.cancel();
+    _timerFlota = null;
+    if (_flotaActiva) {
+      ref.read(viajeRealtimeGatewayProvider).dejarDeObservarFlota();
+      _flotaActiva = false;
+    }
+    if (state.conductoresCercanos.isNotEmpty) {
+      state = state.copyWith(conductoresCercanos: const []);
+    }
+  }
+
   Future<void> _refrescarFlotaEnMapa() async {
     final ubicacion = state.currentLocation;
     if (ubicacion == null || !_flotaActiva) {
@@ -154,6 +167,9 @@ class HomeController extends Notifier<HomeState> {
       'HomeController.refrescarFlota',
       (_) {},
       (lista) {
+        if (!_flotaActiva) {
+          return;
+        }
         final previos = <String, ConductorCercano>{
           for (final c in state.conductoresCercanos) c.id: c,
         };
@@ -168,6 +184,9 @@ class HomeController extends Notifier<HomeState> {
   }
 
   void _actualizarConductorFlota(ConductorCercano actualizado) {
+    if (!_flotaActiva) {
+      return;
+    }
     final actuales = List<ConductorCercano>.from(state.conductoresCercanos);
     final indice = actuales.indexWhere((c) => c.id == actualizado.id);
     double? rumbo = actualizado.rumboGrados;
@@ -189,6 +208,9 @@ class HomeController extends Notifier<HomeState> {
   }
 
   void _quitarConductorFlota(String conductorId) {
+    if (!_flotaActiva) {
+      return;
+    }
     state = state.copyWith(
       conductoresCercanos: state.conductoresCercanos
           .where((c) => c.id != conductorId)
@@ -311,6 +333,7 @@ class HomeController extends Notifier<HomeState> {
         );
       },
       (viaje) {
+        _detenerFlotaEnMapa();
         state = state.copyWith(
           status: HomeStateStatus.tripRequested,
           activeTrip: viaje,

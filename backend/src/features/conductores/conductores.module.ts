@@ -18,6 +18,7 @@ import { ActualizarDisponibilidadUseCase } from './aplicacion/casos-uso/actualiz
 import { RegistrarTokenPushUseCase } from './aplicacion/casos-uso/registrar-token-push.use-case.js';
 import { ActualizarUbicacionConductorUseCase } from './aplicacion/casos-uso/actualizar-ubicacion-conductor.use-case.js';
 import { ListarConductoresCercanosUseCase } from './aplicacion/casos-uso/listar-conductores-cercanos.use-case.js';
+import { FlotaConductoresActivosRegistry } from './aplicacion/servicios/flota-conductores-activos.registry.js';
 import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js';
 
 @Module({
@@ -44,6 +45,7 @@ import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js
     RegistrarTokenPushUseCase,
     ActualizarUbicacionConductorUseCase,
     ListarConductoresCercanosUseCase,
+    FlotaConductoresActivosRegistry,
   ],
   exports: [
     CONDUCTOR_REPOSITORY,
@@ -52,6 +54,7 @@ import { SeguridadModule } from '../../compartidos/seguridad/seguridad.module.js
     ObtenerConductorUseCase,
     ActualizarConductorUseCase,
     ActualizarDisponibilidadUseCase,
+    FlotaConductoresActivosRegistry,
   ],
 })
 export class ConductoresModule {}

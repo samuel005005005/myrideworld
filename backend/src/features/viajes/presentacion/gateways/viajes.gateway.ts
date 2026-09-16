@@ -30,6 +30,7 @@ import {
 } from '../../../../compartidos/utilidades/geo-flota.util.js';
 import { OfertasViajeActivasRegistry } from '../../aplicacion/servicios/ofertas-viaje-activas.registry.js';
 import { OfertarViajesPendientesConductorUseCase } from '../../aplicacion/casos-uso/ofertar-viajes-pendientes-conductor.use-case.js';
+import { FlotaConductoresActivosRegistry } from '../../../conductores/aplicacion/servicios/flota-conductores-activos.registry.js';
 
 type SocketAutenticado = Socket & {
   user?: { sub: string; rol: string };
@@ -59,6 +60,7 @@ export class ViajesGateway
     private readonly configService: ConfigService,
     private readonly moduleRef: ModuleRef,
     private readonly ofertas: OfertasViajeActivasRegistry,
+    private readonly flotaActiva: FlotaConductoresActivosRegistry,
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
     @Inject(VIAJE_REPOSITORY)
@@ -220,6 +222,8 @@ export class ViajesGateway
       await this.conductorRepository.guardar(conductor);
     }
 
+    this.flotaActiva.tocar(user.sub);
+
     const salasPrevias = client.data.salasFlotaConductor ?? [];
     const salas = clavesSalasFlotaAlrededor(data.lat, data.lng);
     for (const sala of salasPrevias) {
@@ -313,6 +317,20 @@ export class ViajesGateway
   notificarViajeAceptado(notificacion: ViajeAceptadoNotificacion) {
     const room = `viaje_${notificacion.viajeId}`;
     this.server.to(room).emit('viajeAceptado', notificacion);
+    const lat = notificacion.conductor?.lat;
+    const lng = notificacion.conductor?.lng;
+    if (
+      typeof lat === 'number' &&
+      typeof lng === 'number' &&
+      Number.isFinite(lat) &&
+      Number.isFinite(lng)
+    ) {
+      this.server.to(room).emit('ubicacionActualizada', {
+        lat,
+        lng,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   notificarConductorLlego(viajeId: string) {
@@ -360,6 +378,7 @@ export class ViajesGateway
   }
 
   private _emitirFueraDeFlota(client: SocketAutenticado, conductorId: string) {
+    this.flotaActiva.salir(conductorId);
     const salas = client.data.salasFlotaConductor ?? [];
     for (const sala of salas) {
       this.server.to(sala).emit('conductorFueraDeFlota', { conductorId });

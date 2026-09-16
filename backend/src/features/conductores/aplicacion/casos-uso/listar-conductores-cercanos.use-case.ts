@@ -7,6 +7,7 @@ import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
 import { calcularDistanciaKm } from '../../../../compartidos/utilidades/geo.util.js';
 import { ConductorMapper } from '../mappers/conductor.mapper.js';
 import type { ConductorCercanoMapaDto } from '../dto/conductor-cercano-mapa.dto.js';
+import { FlotaConductoresActivosRegistry } from '../servicios/flota-conductores-activos.registry.js';
 
 const C = MENSAJES.EXCEPCIONES.CONFIGURACION;
 const RADIO_DEFAULT = '25';
@@ -18,6 +19,7 @@ export class ListarConductoresCercanosUseCase {
     private readonly conductorRepository: IConductorRepository,
     @Inject(CONFIGURACION_REPOSITORY)
     private readonly configRepo: IConfiguracionRepository,
+    private readonly flotaActiva: FlotaConductoresActivosRegistry,
   ) {}
 
   async ejecutar(params: {
@@ -40,6 +42,9 @@ export class ListarConductoresCercanosUseCase {
 
     const resultado: ConductorCercanoMapaDto[] = [];
     for (const conductor of candidatos) {
+      if (!this.flotaActiva.estaActivoEnFlota(conductor.id)) {
+        continue;
+      }
       const lat = conductor.ultimaUbicacionLat;
       const lng = conductor.ultimaUbicacionLng;
       if (lat === null || lng === null) {

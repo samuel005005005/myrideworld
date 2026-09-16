@@ -33,6 +33,8 @@ export class ConductorMapper {
     resumen.vehiculoModelo = conductor.vehiculoModelo;
     resumen.vehiculoColor = conductor.vehiculoColor;
     resumen.vehiculoPlaca = conductor.vehiculoPlaca;
+    resumen.lat = conductor.ultimaUbicacionLat;
+    resumen.lng = conductor.ultimaUbicacionLng;
     return resumen;
   }
 

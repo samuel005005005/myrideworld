@@ -4,12 +4,20 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/entities/conductor_cercano.dart';
+import 'marcador_mapa_viaje.dart';
 
 /// Markers de conductores online con interpolación suave entre updates GPS.
 class CapaConductoresFlota extends StatefulWidget {
   final List<ConductorCercano> conductores;
+  final void Function(ConductorCercano conductor, LatLng punto)? onTap;
+  final void Function(ConductorCercano conductor, LatLng punto)? onLongPress;
 
-  const CapaConductoresFlota({super.key, required this.conductores});
+  const CapaConductoresFlota({
+    super.key,
+    required this.conductores,
+    this.onTap,
+    this.onLongPress,
+  });
 
   @override
   State<CapaConductoresFlota> createState() => _CapaConductoresFlotaState();
@@ -105,39 +113,46 @@ class _CapaConductoresFlotaState extends State<CapaConductoresFlota>
 
   @override
   Widget build(BuildContext context) {
+    const colorConductor = Color(0xFFF59E0B);
     return MarkerLayer(
       markers: [
         for (final entry in _animaciones.entries)
           Marker(
             key: ValueKey(entry.key),
-            width: 48,
-            height: 48,
+            width: 148,
+            height: 88,
+            alignment: Alignment.center,
             point: LatLng(entry.value.latVisible, entry.value.lngVisible),
-            child: Transform.rotate(
-              angle: entry.value.rumbo * 3.1415926535 / 180,
-              child: Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.local_taxi,
-                  color: Colors.white,
-                  size: 22,
-                  semanticLabel: AppStrings.marcadorConductorFlota,
-                ),
-              ),
+            child: MarcadorMapaViaje(
+              color: colorConductor,
+              icono: Icons.directions_car_filled_rounded,
+              etiqueta: AppStrings.marcadorConductorFlota,
+              onTap: () {
+                final conductor = widget.conductores
+                    .where((c) => c.id == entry.key)
+                    .firstOrNull;
+                if (conductor == null) {
+                  return;
+                }
+                final punto = LatLng(
+                  entry.value.latVisible,
+                  entry.value.lngVisible,
+                );
+                widget.onTap?.call(conductor, punto);
+              },
+              onLongPress: () {
+                final conductor = widget.conductores
+                    .where((c) => c.id == entry.key)
+                    .firstOrNull;
+                if (conductor == null) {
+                  return;
+                }
+                final punto = LatLng(
+                  entry.value.latVisible,
+                  entry.value.lngVisible,
+                );
+                widget.onLongPress?.call(conductor, punto);
+              },
             ),
           ),
       ],

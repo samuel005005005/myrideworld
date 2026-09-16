@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/logging/resultado_logging.dart';
+import '../../domain/entities/conductor_asignado.dart';
 import '../../domain/repositories/viaje_realtime_gateway.dart';
 import '../../domain/usecases/cancelar_viaje_params.dart';
 import '../../domain/usecases/obtener_direccion_params.dart';
@@ -57,6 +58,8 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
         : Future<void>.value();
 
     await gateway.conectar();
+    // Viaje activo: solo tracking del asignado, no flota del mapa home.
+    gateway.dejarDeObservarFlota();
     if (viajeId != null && viajeId.isNotEmpty) {
       gateway.unirseAViaje(viajeId);
     }
@@ -75,6 +78,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
         haciaDestino: false,
         conductor: conductor,
       );
+      _aplicarUbicacionConductorInicial(conductor);
       unawaited(_actualizarRuta(forzar: true));
     });
 
@@ -82,7 +86,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       state = state.copyWith(
         estadoViaje: AppStrings.trackingConductorHaLlegado,
         infoEta: null,
-        puntosRuta: const <LatLng>[],
+        // Mantiene la última ruta visible hasta iniciar el viaje.
       );
     });
 
@@ -153,6 +157,7 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
         direccionRecogida: AppStrings.trackingDireccionCargando,
         direccionDestino: AppStrings.trackingDireccionCargando,
       );
+      _aplicarUbicacionConductorInicial(viaje.conductor);
       unawaited(_actualizarRuta(forzar: true));
       unawaited(
         _resolverDireccionesFijas(
@@ -164,6 +169,19 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
         ),
       );
     });
+  }
+
+  void _aplicarUbicacionConductorInicial(ConductorAsignado? conductor) {
+    if (conductor == null || !conductor.tieneUbicacion) {
+      return;
+    }
+    if (state.ubicacionConductor != null) {
+      return;
+    }
+    final punto = LatLng(conductor.latitud!, conductor.longitud!);
+    state = state.copyWith(ubicacionConductor: punto);
+    _actualizarEtaLocal(punto);
+    unawaited(_resolverDireccionConductorSiCorresponde(punto));
   }
 
   Future<void> _resolverDireccionesFijas({
@@ -324,12 +342,18 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
     );
 
     resultado.fold(
-      (_) {},
+      (_) {
+        // Sin OSRM: al menos una línea recta para ver de dónde viene.
+        state = state.copyWith(puntosRuta: <LatLng>[conductor, objetivo]);
+      },
       (ruta) {
+        final puntos = ruta.puntos
+            .map((punto) => LatLng(punto.latitud, punto.longitud))
+            .toList();
         state = state.copyWith(
-          puntosRuta: ruta.puntos
-              .map((punto) => LatLng(punto.latitud, punto.longitud))
-              .toList(),
+          puntosRuta: puntos.isNotEmpty
+              ? puntos
+              : <LatLng>[conductor, objetivo],
           infoEta: AppStrings.formatoEtaTracking(
             ruta.distanciaKm,
             ruta.duracionMinutos,

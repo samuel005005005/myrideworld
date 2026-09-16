@@ -12,6 +12,9 @@ class ConductorAsignadoMapper {
       return null;
     }
 
+    final lat = _aDouble(json['lat'] ?? json['ultimaUbicacionLat']);
+    final lng = _aDouble(json['lng'] ?? json['ultimaUbicacionLng']);
+
     return ConductorAsignado(
       id: id,
       nombreCompleto: nombre,
@@ -21,6 +24,18 @@ class ConductorAsignadoMapper {
       vehiculoModelo: json['vehiculoModelo'] as String? ?? '',
       vehiculoColor: json['vehiculoColor'] as String? ?? '',
       vehiculoPlaca: json['vehiculoPlaca'] as String? ?? '',
+      latitud: lat,
+      longitud: lng,
     );
+  }
+
+  static double? _aDouble(Object? valor) {
+    if (valor is num) {
+      return valor.toDouble();
+    }
+    if (valor is String) {
+      return double.tryParse(valor);
+    }
+    return null;
   }
 }
