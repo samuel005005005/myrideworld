@@ -2,10 +2,12 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/viaje.dart';
 import '../models/viaje_model.dart';
+import 'pasajero_asignado_mapper.dart';
 
 class ViajeMapper {
   static ViajeModel fromApiData(Map<String, dynamic> data) {
     try {
+      final pasajeroRaw = data['pasajero'];
       return ViajeModel(
         id: data['id'] as String,
         pasajeroId: data['pasajeroId'] as String? ?? '',
@@ -25,6 +27,11 @@ class ViajeMapper {
                   '',
             ) ??
             DateTime.now(),
+        pasajero: PasajeroAsignadoMapper.fromJson(
+          pasajeroRaw is Map
+              ? Map<String, dynamic>.from(pasajeroRaw)
+              : null,
+        ),
       );
     } catch (_) {
       throw const AppException(AppStrings.errorViajeInvalido);
@@ -45,6 +52,7 @@ class ViajeMapper {
       origenDireccion: modelo.origenDireccion,
       destinoDireccion: modelo.destinoDireccion,
       fechaCreacion: modelo.fechaCreacion,
+      pasajero: modelo.pasajero,
     );
   }
 

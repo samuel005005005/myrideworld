@@ -17,7 +17,7 @@ class AuthController extends AsyncNotifier<SesionUsuario?> {
       if (anterior == siguiente) {
         return;
       }
-      Future(() => invalidarSesion());
+      invalidarSesion();
     });
 
     final resultado = await ref.read(obtenerSesionProvider)(NoParams());

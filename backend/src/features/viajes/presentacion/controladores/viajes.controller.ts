@@ -10,6 +10,7 @@ import {
   Req,
   UseInterceptors,
   Query,
+  Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '../../../../compartidos/middlewares/auth.guard.js';
@@ -34,6 +35,12 @@ import { ObtenerViajeActivoUseCase } from '../../aplicacion/casos-uso/obtener-vi
 import { ObtenerViajePorIdUseCase } from '../../aplicacion/casos-uso/obtener-viaje-por-id.use-case.js';
 import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
 import { ConductorMapper } from '../../../conductores/aplicacion/mappers/conductor.mapper.js';
+import { PasajeroMapper } from '../../../pasajeros/aplicacion/mappers/pasajero.mapper.js';
+import type { IPasajeroRepository } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
+import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
+import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import { Viaje } from '../../dominio/entidades/viaje.entity.js';
 import {
   AceptarViajeDto,
   aceptarViajeSchema,
@@ -62,6 +69,10 @@ export class ViajesController {
     private readonly rechazarViaje: RechazarViajeUseCase,
     private readonly obtenerViajeActivo: ObtenerViajeActivoUseCase,
     private readonly obtenerViajePorId: ObtenerViajePorIdUseCase,
+    @Inject(PASAJERO_REPOSITORY)
+    private readonly pasajeroRepository: IPasajeroRepository,
+    @Inject(CONDUCTOR_REPOSITORY)
+    private readonly conductorRepository: IConductorRepository,
   ) {}
 
   @Get()
@@ -91,7 +102,50 @@ export class ViajesController {
         hasta: hasta ? new Date(hasta) : undefined,
       },
     );
-    return viajes.map((v) => ViajeMapper.toResponse(v));
+    return this._mapearViajesAdmin(viajes);
+  }
+
+  private async _mapearViajesAdmin(viajes: Viaje[]) {
+    const pasajeroIds = [...new Set(viajes.map((v) => v.pasajeroId))];
+    const conductorIds = [
+      ...new Set(
+        viajes
+          .map((v) => v.conductorId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    ];
+
+    const [pasajeros, conductores] = await Promise.all([
+      Promise.all(
+        pasajeroIds.map((id) => this.pasajeroRepository.obtenerPorId(id)),
+      ),
+      Promise.all(
+        conductorIds.map((id) => this.conductorRepository.obtenerPorId(id)),
+      ),
+    ]);
+
+    const mapaPasajero = new Map(
+      pasajeros
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+        .map((p) => [p.id, p] as const),
+    );
+    const mapaConductor = new Map(
+      conductores
+        .filter((c): c is NonNullable<typeof c> => c !== null)
+        .map((c) => [c.id, c] as const),
+    );
+
+    return viajes.map((viaje) => {
+      const pasajero = mapaPasajero.get(viaje.pasajeroId) ?? null;
+      const conductor = viaje.conductorId
+        ? (mapaConductor.get(viaje.conductorId) ?? null)
+        : null;
+      return ViajeMapper.toResponse(
+        viaje,
+        conductor ? ConductorMapper.toResumenPublico(conductor) : null,
+        pasajero ? PasajeroMapper.toResumenPublico(pasajero) : null,
+      );
+    });
   }
 
   @Get('mis-viajes')
@@ -119,14 +173,30 @@ export class ViajesController {
       req.user.sub,
       req.user.rol as RolesEnum,
     );
-    return viaje ? ViajeMapper.toResponse(viaje) : null;
+    if (!viaje) {
+      return null;
+    }
+    const detalle = await this.obtenerViajePorId.ejecutar(
+      viaje.id,
+      req.user.sub,
+      req.user.rol as RolesEnum,
+    );
+    return ViajeMapper.toResponse(
+      detalle.viaje,
+      detalle.conductor
+        ? ConductorMapper.toResumenPublico(detalle.conductor)
+        : null,
+      detalle.pasajero
+        ? PasajeroMapper.toResumenPublico(detalle.pasajero)
+        : null,
+    );
   }
 
   @Get(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesEnum.PASAJERO, RolesEnum.CONDUCTOR, RolesEnum.ADMIN)
   @ApiOperation({
-    summary: 'Detalle de viaje (participantes) con resumen del conductor',
+    summary: 'Detalle de viaje (participantes) con resumen conductor/pasajero',
   })
   async obtenerPorId(
     @Param('id') id: string,
@@ -141,6 +211,9 @@ export class ViajesController {
       detalle.viaje,
       detalle.conductor
         ? ConductorMapper.toResumenPublico(detalle.conductor)
+        : null,
+      detalle.pasajero
+        ? PasajeroMapper.toResumenPublico(detalle.pasajero)
         : null,
     );
   }
@@ -171,8 +244,21 @@ export class ViajesController {
     @Req() req: { user: { sub: string } },
   ) {
     dto.conductorId = req.user.sub;
-    const viaje = await this.aceptarViaje.ejecutar(id, dto);
-    return ViajeMapper.toResponse(viaje);
+    await this.aceptarViaje.ejecutar(id, dto);
+    const detalle = await this.obtenerViajePorId.ejecutar(
+      id,
+      req.user.sub,
+      RolesEnum.CONDUCTOR,
+    );
+    return ViajeMapper.toResponse(
+      detalle.viaje,
+      detalle.conductor
+        ? ConductorMapper.toResumenPublico(detalle.conductor)
+        : null,
+      detalle.pasajero
+        ? PasajeroMapper.toResumenPublico(detalle.pasajero)
+        : null,
+    );
   }
 
   @Post(':id/llegada')

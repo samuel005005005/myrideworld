@@ -362,6 +362,7 @@ class HomeController extends Notifier<HomeState> {
       currentLocation: origen,
       destinationLocation: destino,
       tarifaEstimada: null,
+      tipoViaje: null,
       errorMessage: null,
     );
 
@@ -373,6 +374,7 @@ class HomeController extends Notifier<HomeState> {
         routeDistanceKm: 0,
         routeDurationMin: 0,
         tarifaEstimada: null,
+        tipoViaje: null,
       );
       return;
     }
@@ -424,12 +426,14 @@ class HomeController extends Notifier<HomeState> {
       (failure) {
         state = state.copyWith(
           tarifaEstimada: null,
+          tipoViaje: null,
           errorMessage: failure.mensaje,
         );
       },
       (estimacion) {
         state = state.copyWith(
           tarifaEstimada: estimacion.precio,
+          tipoViaje: estimacion.tipoViaje,
           errorMessage: null,
         );
       },

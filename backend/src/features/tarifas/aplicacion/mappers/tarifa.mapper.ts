@@ -7,6 +7,7 @@ export class TarifaMapper {
       precio: resultado.precio,
       distanciaKm: Math.round(resultado.distanciaKm * 100) / 100,
       tarifaId: resultado.tarifaId,
+      tipoViaje: resultado.tipoViaje,
     };
   }
 

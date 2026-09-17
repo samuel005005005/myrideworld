@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/conductor_cercano.dart';
+import '../../domain/entities/tipo_viaje_tarifa.dart';
 import '../../domain/entities/viaje.dart';
 import 'home_state_status.dart';
 
@@ -16,6 +17,7 @@ class HomeState {
   final double routeDistanceKm;
   final int routeDurationMin;
   final double? tarifaEstimada;
+  final TipoViajeTarifa? tipoViaje;
   final Viaje? activeTrip;
   final Viaje? viajeParaRestaurar;
   final List<ConductorCercano> conductoresCercanos;
@@ -31,6 +33,7 @@ class HomeState {
     required this.routeDistanceKm,
     required this.routeDurationMin,
     this.tarifaEstimada,
+    this.tipoViaje,
     this.activeTrip,
     this.viajeParaRestaurar,
     this.conductoresCercanos = const [],
@@ -47,6 +50,7 @@ class HomeState {
     double? routeDistanceKm,
     int? routeDurationMin,
     Object? tarifaEstimada = _sinCambio,
+    Object? tipoViaje = _sinCambio,
     Object? activeTrip = _sinCambio,
     Object? viajeParaRestaurar = _sinCambio,
     List<ConductorCercano>? conductoresCercanos,
@@ -64,6 +68,9 @@ class HomeState {
       tarifaEstimada: identical(tarifaEstimada, _sinCambio)
           ? this.tarifaEstimada
           : tarifaEstimada as double?,
+      tipoViaje: identical(tipoViaje, _sinCambio)
+          ? this.tipoViaje
+          : tipoViaje as TipoViajeTarifa?,
       activeTrip: identical(activeTrip, _sinCambio)
           ? this.activeTrip
           : activeTrip as Viaje?,

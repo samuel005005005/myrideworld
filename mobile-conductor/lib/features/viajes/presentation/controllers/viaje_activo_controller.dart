@@ -64,7 +64,9 @@ class ViajeActivoController extends Notifier<ViajeActivoState> {
       }
       final nuevoEstado = MapeadorEstadoViajeActivo.desdeApi(sincronizado.estado);
       state = state.copyWith(
-        viaje: sincronizado,
+        viaje: sincronizado.copyWith(
+          pasajero: sincronizado.pasajero ?? state.viaje?.pasajero,
+        ),
         estado: nuevoEstado,
       );
     });

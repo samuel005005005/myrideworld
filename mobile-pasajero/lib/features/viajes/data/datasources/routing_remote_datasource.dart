@@ -21,6 +21,8 @@ class RoutingRemoteDataSourceImpl implements RoutingRemoteDataSource {
 
   RoutingRemoteDataSourceImpl({required this.dio});
 
+  static const int _maxIntentos = 2;
+
   @override
   Future<RutaViajeModel> obtenerRuta({
     required double origenLat,
@@ -28,32 +30,55 @@ class RoutingRemoteDataSourceImpl implements RoutingRemoteDataSource {
     required double destinoLat,
     required double destinoLng,
   }) async {
-    try {
-      final response = await dio.get(
-        ApiEndpoints.construirRutaOsrmConduccion(
-          origenLat: origenLat,
-          origenLng: origenLng,
-          destinoLat: destinoLat,
-          destinoLng: destinoLng,
-        ),
-      );
+    Object? ultimoError;
+    StackTrace? ultimoStack;
 
-      return RutaViajeMapper.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      if (e.response?.data != null) {
-        final payload = e.response?.data;
-        if (payload is Map<String, dynamic>) {
-          final message = payload['message'] ?? AppStrings.errorObtenerRuta;
-          throw ServerException(message.toString());
+    for (var intento = 1; intento <= _maxIntentos; intento++) {
+      try {
+        final response = await dio.get(
+          ApiEndpoints.construirRutaOsrmConduccion(
+            origenLat: origenLat,
+            origenLng: origenLng,
+            destinoLat: destinoLat,
+            destinoLng: destinoLng,
+          ),
+        );
+
+        return RutaViajeMapper.fromJson(response.data as Map<String, dynamic>);
+      } on DioException catch (e, stack) {
+        ultimoError = e;
+        ultimoStack = stack;
+        final reintentable = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError;
+        if (reintentable && intento < _maxIntentos) {
+          AppLogger.warning(
+            'RoutingRemoteDataSourceImpl.obtenerRuta',
+            'Timeout OSRM, reintento $intento/$_maxIntentos',
+          );
+          continue;
         }
+        if (e.response?.data != null) {
+          final payload = e.response?.data;
+          if (payload is Map<String, dynamic>) {
+            final message = payload['message'] ?? AppStrings.errorObtenerRuta;
+            throw ServerException(message.toString());
+          }
+        }
+        break;
+      } on ServerException {
+        rethrow;
+      } catch (e, stack) {
+        AppLogger.error('RoutingRemoteDataSourceImpl.obtenerRuta', e, stack);
+        throw ServerException('${AppStrings.errorUnexpected}$e');
       }
-
-      throw ServerException(AppStrings.errorServerConnection);
-    } on ServerException {
-      rethrow;
-    } catch (e, stack) {
-      AppLogger.error('RoutingRemoteDataSourceImpl.obtenerRuta', e, stack);
-      throw ServerException('${AppStrings.errorUnexpected}$e');
     }
+
+    AppLogger.warning(
+      'RoutingRemoteDataSourceImpl.obtenerRuta',
+      'OSRM no respondió: $ultimoError',
+      ultimoStack,
+    );
+    throw ServerException(AppStrings.errorServerConnection);
   }
 }

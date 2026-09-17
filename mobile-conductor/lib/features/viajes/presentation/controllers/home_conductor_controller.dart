@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/auth/sesion_invalida_tick.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/logging/resultado_logging.dart';
@@ -39,6 +40,16 @@ class HomeConductorController extends Notifier<HomeConductorState> {
 
   @override
   HomeConductorState build() {
+    ref.listen<int>(sesionInvalidaTickProvider, (anterior, siguiente) {
+      if (anterior == siguiente) {
+        return;
+      }
+      _heartbeatGps?.cancel();
+      _heartbeatGps = null;
+      unawaited(_suscripcionGpsFlota?.cancel());
+      _suscripcionGpsFlota = null;
+      unawaited(OfertaViajeAlertaService.instancia.detener());
+    });
     ref.onDispose(() {
       _heartbeatGps?.cancel();
       unawaited(_suscripcionGpsFlota?.cancel());
@@ -70,6 +81,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       }
 
       _sesionUsuario = sesion;
+      await _conectarSocketSesion(sesion);
 
       await OfertaViajeAlertaService.instancia
           .inicializar()
@@ -189,6 +201,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       (failure) async {
         if (disponible) {
           ref.read(viajeRealtimeGatewayProvider).desconectar();
+          await _conectarSocketSesion(sesion);
         }
         state = state.copyWith(
           cambiandoDisponibilidad: false,
@@ -216,6 +229,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     await _detenerPublicacionGpsFlota();
     await OfertaViajeAlertaService.instancia.detener();
     ref.read(viajeRealtimeGatewayProvider).desconectar();
+    await _conectarSocketSesion(sesion);
     state = state.copyWith(
       cambiandoDisponibilidad: false,
       enLinea: false,
@@ -369,7 +383,8 @@ class HomeConductorController extends Notifier<HomeConductorState> {
   }
 
   Future<void> cerrarSesion() async {
-    if (state.enLinea) {
+    final token = await ref.read(sessionStorageProvider).obtenerToken();
+    if (state.enLinea && token != null && token.isNotEmpty) {
       await ref.read(actualizarDisponibilidadProvider)(
         const ActualizarDisponibilidadParams(disponible: false),
       );
@@ -401,7 +416,7 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     _iniciarPublicacionGpsFlota();
   }
 
-  Future<void> _configurarSocket(SesionUsuario sesion) async {
+  Future<void> _conectarSocketSesion(SesionUsuario sesion) async {
     final gateway = ref.read(viajeRealtimeGatewayProvider);
     await gateway.conectar();
     gateway.escucharNuevoViaje((viaje) {
@@ -431,12 +446,19 @@ class HomeConductorController extends Notifier<HomeConductorState> {
     });
     gateway.escucharEstadoConexion(
       onConnect: () {
-        gateway.identificarConductor(sesion.userId);
+        if (state.enLinea || state.cambiandoDisponibilidad) {
+          gateway.identificarConductor(sesion.userId);
+        }
       },
       onDisconnect: () {
-        // Sigue en línea: FCM cubre app cerrada / sin socket.
+        // Sigue logueado: el socket de sesión se reengancha; FCM cubre app cerrada.
       },
     );
+  }
+
+  Future<void> _configurarSocket(SesionUsuario sesion) async {
+    final gateway = ref.read(viajeRealtimeGatewayProvider);
+    await _conectarSocketSesion(sesion);
     gateway.identificarConductor(sesion.userId);
   }
 
@@ -467,9 +489,20 @@ class HomeConductorController extends Notifier<HomeConductorState> {
       return;
     }
     state = state.copyWith(ofertas: quedan);
+    unawaited(_actualizarAlertaTrasQuitarOferta(viajeId, quedan));
+  }
+
+  Future<void> _actualizarAlertaTrasQuitarOferta(
+    String viajeIdQuitado,
+    List<OfertaEnCola> quedan,
+  ) async {
+    final alerta = OfertaViajeAlertaService.instancia;
     if (quedan.isEmpty) {
-      unawaited(OfertaViajeAlertaService.instancia.detener());
+      await alerta.detener();
+      return;
     }
+    await alerta.detener(viajeId: viajeIdQuitado);
+    await alerta.reanudarAlerta(quedan.first.viaje);
   }
 
   Future<void> _resolverEtiquetasOferta(Viaje viaje) async {

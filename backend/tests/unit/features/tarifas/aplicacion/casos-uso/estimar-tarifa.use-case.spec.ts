@@ -65,6 +65,7 @@ describe('EstimarTarifaUseCase', () => {
     expect(resultado).toBeDefined();
     expect(resultado.precio).toBe(1697.92);
     expect(resultado.distanciaKm).toBeGreaterThan(100);
+    expect(resultado.tipoViaje).toBe('EXTERNO');
     expect(tarifaRepositoryMock.guardar).not.toHaveBeenCalled();
   });
 
@@ -79,6 +80,7 @@ describe('EstimarTarifaUseCase', () => {
     const resultado = await useCase.ejecutar(dto);
 
     expect(resultado.precio).toBe(50.0);
+    expect(resultado.tipoViaje).toBe('EXTERNO');
   });
 
   it('DebeFallar_CuandoAdminNoDefinioTarifaBase', async () => {
@@ -116,6 +118,7 @@ describe('EstimarTarifaUseCase', () => {
     const resultado = await useCase.ejecutar(dto);
 
     expect(resultado.precio).toBe(4);
+    expect(resultado.tipoViaje).toBe('INTERNO_CAP_CANA');
     expect(tarifaRepositoryMock.obtenerTarifaActiva).not.toHaveBeenCalled();
   });
 
@@ -142,6 +145,7 @@ describe('EstimarTarifaUseCase', () => {
 
     expect(resultado.precio).toBe(45);
     expect(resultado.tarifaId).toBe('od-1');
+    expect(resultado.tipoViaje).toBe('EXTERNO');
   });
 
   it('DebeFallar_CuandoGeocercaCapCanaEsInvalida', async () => {

@@ -27,6 +27,7 @@ import { NotificadorViajeCompuesto } from './aplicacion/servicios/notificador-vi
 import { OfertasViajeActivasRegistry } from './aplicacion/servicios/ofertas-viaje-activas.registry.js';
 import { ProgramadorTimeoutOfertaService } from './aplicacion/servicios/programador-timeout-oferta.service.js';
 import { ConductoresModule } from '../conductores/conductores.module.js';
+import { PasajerosModule } from '../pasajeros/pasajeros.module.js';
 import { AsignadorConductorService } from './aplicacion/servicios/asignador-conductor.service.js';
 import { ValidadorProximidadViajeService } from './aplicacion/servicios/validador-proximidad-viaje.service.js';
 import { JwtAuthModule } from '../../compartidos/seguridad/jwt-auth.module.js';
@@ -37,6 +38,7 @@ import { JwtAuthModule } from '../../compartidos/seguridad/jwt-auth.module.js';
     TarifasModule,
     PagosBalancesModule,
     forwardRef(() => ConductoresModule),
+    PasajerosModule,
     BitacoraModule,
     JwtAuthModule,
   ],

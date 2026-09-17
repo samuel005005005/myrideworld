@@ -12,30 +12,55 @@ class RoutingRemoteDataSource {
 
   final Dio dio;
 
+  static const int _maxIntentos = 2;
+
   Future<RutaViajeModel> obtenerRuta({
     required double origenLat,
     required double origenLng,
     required double destinoLat,
     required double destinoLng,
   }) async {
-    try {
-      final response = await dio.get(
-        ApiEndpoints.construirRutaOsrmConduccion(
-          origenLat: origenLat,
-          origenLng: origenLng,
-          destinoLat: destinoLat,
-          destinoLng: destinoLng,
-        ),
-      );
+    Object? ultimoError;
+    StackTrace? ultimoStack;
 
-      return RutaViajeMapper.fromJson(response.data as Map<String, dynamic>);
-    } on DioException {
-      throw const AppException(AppStrings.errorObtenerRuta);
-    } on AppException {
-      rethrow;
-    } catch (error, stack) {
-      AppLogger.error('RoutingRemoteDataSource.obtenerRuta', error, stack);
-      throw const AppException(AppStrings.errorObtenerRuta);
+    for (var intento = 1; intento <= _maxIntentos; intento++) {
+      try {
+        final response = await dio.get(
+          ApiEndpoints.construirRutaOsrmConduccion(
+            origenLat: origenLat,
+            origenLng: origenLng,
+            destinoLat: destinoLat,
+            destinoLng: destinoLng,
+          ),
+        );
+
+        return RutaViajeMapper.fromJson(response.data as Map<String, dynamic>);
+      } on DioException catch (error, stack) {
+        ultimoError = error;
+        ultimoStack = stack;
+        final reintentable = error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.connectionError;
+        if (!reintentable || intento == _maxIntentos) {
+          break;
+        }
+        AppLogger.warning(
+          'RoutingRemoteDataSource.obtenerRuta',
+          'Timeout OSRM, reintento $intento/$_maxIntentos',
+        );
+      } on AppException {
+        rethrow;
+      } catch (error, stack) {
+        AppLogger.error('RoutingRemoteDataSource.obtenerRuta', error, stack);
+        throw const AppException(AppStrings.errorObtenerRuta);
+      }
     }
+
+    AppLogger.warning(
+      'RoutingRemoteDataSource.obtenerRuta',
+      'OSRM no respondió: $ultimoError',
+      ultimoStack,
+    );
+    throw const AppException(AppStrings.errorObtenerRuta);
   }
 }

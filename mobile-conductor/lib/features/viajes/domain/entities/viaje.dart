@@ -1,3 +1,5 @@
+import '../../domain/entities/pasajero_asignado.dart';
+
 class Viaje {
   final String id;
   final String pasajeroId;
@@ -11,6 +13,7 @@ class Viaje {
   final String? origenDireccion;
   final String? destinoDireccion;
   final DateTime fechaCreacion;
+  final PasajeroAsignado? pasajero;
 
   const Viaje({
     required this.id,
@@ -25,9 +28,14 @@ class Viaje {
     this.origenDireccion,
     this.destinoDireccion,
     required this.fechaCreacion,
+    this.pasajero,
   });
 
-  Viaje copyWith({String? conductorId, String? estado}) {
+  Viaje copyWith({
+    String? conductorId,
+    String? estado,
+    PasajeroAsignado? pasajero,
+  }) {
     return Viaje(
       id: id,
       pasajeroId: pasajeroId,
@@ -41,6 +49,7 @@ class Viaje {
       origenDireccion: origenDireccion,
       destinoDireccion: destinoDireccion,
       fechaCreacion: fechaCreacion,
+      pasajero: pasajero ?? this.pasajero,
     );
   }
 }

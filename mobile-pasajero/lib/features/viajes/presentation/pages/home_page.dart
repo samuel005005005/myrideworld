@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../domain/entities/metodo_pago.dart';
 import '../../domain/entities/tipo_vehiculo.dart';
+import '../../domain/entities/tipo_viaje_tarifa.dart';
 import '../../domain/mappers/estados_viaje_pasajero.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/home_state.dart';
@@ -282,11 +283,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           DraggableScrollableSheet(
-            initialChildSize: 0.52,
-            minChildSize: 0.14,
+            initialChildSize: 0.62,
+            minChildSize: 0.22,
             maxChildSize: 0.92,
             snap: true,
-            snapSizes: const [0.14, 0.52, 0.92],
+            snapSizes: const [0.22, 0.62, 0.92],
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
@@ -303,401 +304,471 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ],
                 ),
-                child: ListView(
-                  controller: scrollController,
-                  padding: EdgeInsets.zero,
+                child: Column(
                   children: [
-                    Center(
-                      child: Container(
-                        margin: const EdgeInsets.only(top: 8, bottom: 8),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    Expanded(
+                      child: ListView(
+                        controller: scrollController,
+                        padding: EdgeInsets.zero,
                         children: [
-                          Icon(
-                            Icons.verified_user,
-                            color: brandPrimary,
-                            size: 14,
-                          ),
-                          SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              AppStrings.homeOfficialRatesMitur,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: brandPrimary,
-                                fontWeight: FontWeight.w600,
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 8, bottom: 8),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (estado.destinationLocation == null)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          AppStrings.homeMoveMap,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: dividerColor),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Column(
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
+                                Icon(
+                                  Icons.verified_user,
+                                  color: brandPrimary,
+                                  size: 14,
                                 ),
-                                Container(
-                                  width: 1,
-                                  height: 28,
-                                  color: Colors.grey,
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ),
-                                ),
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black,
-                                    shape: BoxShape.rectangle,
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    AppStrings.homeOfficialRatesMitur,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: brandPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
+                          ),
+                          const SizedBox(height: 12),
+                          if (estado.destinationLocation == null)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                AppStrings.homeMoveMap,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: dividerColor),
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
                                 children: [
-                                  _LocationTrigger(
-                                    value: estado.pickupLabel,
-                                    onTap: () async {
-                                      final result = await context.push<String>(
-                                        '/search-location',
-                                        extra: {
-                                          'pickup': estado.pickupLabel,
-                                          'dropoff': estado.dropoffLabel,
-                                          'focusDropoff': false,
-                                        },
-                                      );
-                                      if (result != null) {
-                                        await ref
-                                            .read(
-                                              homeControllerProvider.notifier,
-                                            )
-                                            .seleccionarOrigen(result);
-                                      }
-                                    },
+                                  Column(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.grey,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 1,
+                                        height: 28,
+                                        color: Colors.grey,
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black,
+                                          shape: BoxShape.rectangle,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  _LocationTrigger(
-                                    value: estado.dropoffLabel,
-                                    onTap: () async {
-                                      final result = await context.push<String>(
-                                        '/search-location',
-                                        extra: {
-                                          'pickup': estado.pickupLabel,
-                                          'dropoff': estado.dropoffLabel,
-                                          'focusDropoff': true,
-                                        },
-                                      );
-                                      if (result != null) {
-                                        await ref
-                                            .read(
-                                              homeControllerProvider.notifier,
-                                            )
-                                            .seleccionarDestino(result);
-                                      }
-                                    },
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        _LocationTrigger(
+                                          value: estado.pickupLabel,
+                                          onTap: () async {
+                                            final result =
+                                                await context.push<String>(
+                                              '/search-location',
+                                              extra: {
+                                                'pickup': estado.pickupLabel,
+                                                'dropoff': estado.dropoffLabel,
+                                                'focusDropoff': false,
+                                              },
+                                            );
+                                            if (result != null) {
+                                              await ref
+                                                  .read(
+                                                    homeControllerProvider
+                                                        .notifier,
+                                                  )
+                                                  .seleccionarOrigen(result);
+                                            }
+                                          },
+                                        ),
+                                        const SizedBox(height: 8),
+                                        _LocationTrigger(
+                                          value: estado.dropoffLabel,
+                                          onTap: () async {
+                                            final result =
+                                                await context.push<String>(
+                                              '/search-location',
+                                              extra: {
+                                                'pickup': estado.pickupLabel,
+                                                'dropoff': estado.dropoffLabel,
+                                                'focusDropoff': true,
+                                              },
+                                            );
+                                            if (result != null) {
+                                              await ref
+                                                  .read(
+                                                    homeControllerProvider
+                                                        .notifier,
+                                                  )
+                                                  .seleccionarDestino(result);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (routeDistanceKm > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              size: 16,
-                              color: Colors.black54,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                AppStrings.homeResumenRuta(
-                                  routeDistanceKm,
-                                  routeDurationMin,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          ),
+                          if (routeDistanceKm > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: Colors.black54,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      AppStrings.homeResumenRuta(
+                                        routeDistanceKm,
+                                        routeDurationMin,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1, color: dividerColor),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: dividerColor),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            AppStrings.homeResumenDistancia(routeDistanceKm),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: textDark,
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: dividerColor),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 16,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              AppStrings.homeResumenEta(routeDurationMin),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textDark,
-                              ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: dividerColor),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    HomeVehicleTile(
-                      id: TipoVehiculo.sedan.name,
-                      name: AppStrings.homeVehicleSedan,
-                      eta: etaSedan,
-                      capacity: 4,
-                      tarifaOficial: estado.tarifaEstimada,
-                      estimandoTarifa:
-                          estado.destinationLocation != null &&
-                          estado.tarifaEstimada == null,
-                      icon: Icons.directions_car,
-                      selectedId: selectedVehicle.name,
-                      brandPrimary: brandPrimary,
-                      onTap: () =>
-                          ref.read(selectedVehicleProvider.notifier).state =
-                              TipoVehiculo.sedan,
-                    ),
-                    HomeVehicleTile(
-                      id: TipoVehiculo.minivan.name,
-                      name: AppStrings.homeVehicleMinivan,
-                      eta: etaMinivan,
-                      capacity: 6,
-                      tarifaOficial: estado.tarifaEstimada,
-                      estimandoTarifa:
-                          estado.destinationLocation != null &&
-                          estado.tarifaEstimada == null,
-                      icon: Icons.airport_shuttle,
-                      selectedId: selectedVehicle.name,
-                      brandPrimary: brandPrimary,
-                      onTap: () =>
-                          ref.read(selectedVehicleProvider.notifier).state =
-                              TipoVehiculo.minivan,
-                    ),
-                    HomeVehicleTile(
-                      id: TipoVehiculo.suv.name,
-                      name: AppStrings.homeVehicleSuv,
-                      eta: etaSuv,
-                      capacity: 6,
-                      tarifaOficial: estado.tarifaEstimada,
-                      estimandoTarifa:
-                          estado.destinationLocation != null &&
-                          estado.tarifaEstimada == null,
-                      icon: Icons.time_to_leave,
-                      selectedId: selectedVehicle.name,
-                      brandPrimary: brandPrimary,
-                      onTap: () =>
-                          ref.read(selectedVehicleProvider.notifier).state =
-                              TipoVehiculo.suv,
-                    ),
-                    const Divider(height: 1, color: dividerColor),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 12,
-                        bottom: MediaQuery.of(context).padding.bottom + 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: InkWell(
-                              onTap: () =>
-                                  ref
-                                          .read(
-                                            selectedPaymentProvider.notifier,
-                                          )
-                                          .state =
-                                      selectedPayment == MetodoPago.efectivo
-                                      ? MetodoPago.tarjeta
-                                      : MetodoPago.efectivo,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
+                            child: Row(
+                              children: [
+                                Text(
+                                  AppStrings.homeResumenDistancia(
+                                    routeDistanceKm,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: textDark,
+                                  ),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: bgGrey,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      selectedPayment == MetodoPago.efectivo
-                                          ? Icons.money
-                                          : Icons.credit_card,
-                                      size: 20,
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    AppStrings.homeResumenEta(routeDurationMin),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
                                       color: textDark,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        selectedPayment == MetodoPago.efectivo
-                                            ? AppStrings.homePaymentCashShort
-                                            : AppStrings.homePaymentCardShort,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (estado.destinationLocation != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppStrings.homeTipoViajeTitulo,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _TipoViajeChip(
+                                          etiqueta:
+                                              AppStrings.homeTipoViajeInternoCapCana,
+                                          activo: estado.tipoViaje ==
+                                              TipoViajeTarifa.internoCapCana,
+                                          colorFondo: const Color(0xFFDCFCE7),
+                                          colorTexto: const Color(0xFF166534),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(
-                                      Icons.keyboard_arrow_up,
-                                      size: 16,
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: _TipoViajeChip(
+                                          etiqueta:
+                                              AppStrings.homeTipoViajeExterno,
+                                          activo: estado.tipoViaje ==
+                                              TipoViajeTarifa.externo,
+                                          colorFondo: const Color(0xFFE0F2FE),
+                                          colorTexto: const Color(0xFF075985),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (estado.tipoViaje == null) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      AppStrings.homeTipoViajePendiente,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
                                     ),
                                   ],
-                                ),
+                                ],
                               ),
                             ),
+                          HomeVehicleTile(
+                            id: TipoVehiculo.sedan.name,
+                            name: AppStrings.homeVehicleSedan,
+                            eta: etaSedan,
+                            capacity: 4,
+                            tarifaOficial: estado.tarifaEstimada,
+                            estimandoTarifa:
+                                estado.destinationLocation != null &&
+                                estado.tarifaEstimada == null,
+                            icon: Icons.directions_car,
+                            selectedId: selectedVehicle.name,
+                            brandPrimary: brandPrimary,
+                            onTap: () =>
+                                ref
+                                        .read(selectedVehicleProvider.notifier)
+                                        .state =
+                                    TipoVehiculo.sedan,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed:
-                                  isRequesting ||
-                                      estado.tarifaEstimada == null ||
-                                      estado.destinationLocation == null
-                                  ? null
-                                  : () async {
-                                      await ref
-                                          .read(
-                                            homeControllerProvider.notifier,
-                                          )
-                                          .requestTrip();
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: brandPrimary,
-                                foregroundColor: Colors.black87,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                  horizontal: 8,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 0,
-                              ),
-                              child: isRequesting
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.black87,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        estado.tarifaEstimada == null
-                                            ? AppStrings
-                                                  .homeSolicitarVehiculoSinPrecio(
-                                                _etiquetaVehiculo(
-                                                  selectedVehicle,
-                                                ),
-                                              )
-                                            : AppStrings.homeSolicitarVehiculo(
-                                                _etiquetaVehiculo(
-                                                  selectedVehicle,
-                                                ),
-                                                estado.tarifaEstimada!,
-                                              ),
-                                        maxLines: 1,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                            ),
+                          HomeVehicleTile(
+                            id: TipoVehiculo.minivan.name,
+                            name: AppStrings.homeVehicleMinivan,
+                            eta: etaMinivan,
+                            capacity: 6,
+                            tarifaOficial: estado.tarifaEstimada,
+                            estimandoTarifa:
+                                estado.destinationLocation != null &&
+                                estado.tarifaEstimada == null,
+                            icon: Icons.airport_shuttle,
+                            selectedId: selectedVehicle.name,
+                            brandPrimary: brandPrimary,
+                            onTap: () =>
+                                ref
+                                        .read(selectedVehicleProvider.notifier)
+                                        .state =
+                                    TipoVehiculo.minivan,
+                          ),
+                          HomeVehicleTile(
+                            id: TipoVehiculo.suv.name,
+                            name: AppStrings.homeVehicleSuv,
+                            eta: etaSuv,
+                            capacity: 6,
+                            tarifaOficial: estado.tarifaEstimada,
+                            estimandoTarifa:
+                                estado.destinationLocation != null &&
+                                estado.tarifaEstimada == null,
+                            icon: Icons.time_to_leave,
+                            selectedId: selectedVehicle.name,
+                            brandPrimary: brandPrimary,
+                            onTap: () =>
+                                ref
+                                        .read(selectedVehicleProvider.notifier)
+                                        .state =
+                                    TipoVehiculo.suv,
                           ),
                         ],
+                      ),
+                    ),
+                    const Divider(height: 1, color: dividerColor),
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: InkWell(
+                                onTap: () =>
+                                    ref
+                                            .read(
+                                              selectedPaymentProvider.notifier,
+                                            )
+                                            .state =
+                                        selectedPayment == MetodoPago.efectivo
+                                        ? MetodoPago.tarjeta
+                                        : MetodoPago.efectivo,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: bgGrey,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        selectedPayment == MetodoPago.efectivo
+                                            ? Icons.money
+                                            : Icons.credit_card,
+                                        size: 20,
+                                        color: textDark,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          selectedPayment ==
+                                                  MetodoPago.efectivo
+                                              ? AppStrings.homePaymentCashShort
+                                              : AppStrings.homePaymentCardShort,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.keyboard_arrow_up,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: ElevatedButton(
+                                onPressed:
+                                    isRequesting ||
+                                        estado.tarifaEstimada == null ||
+                                        estado.destinationLocation == null
+                                    ? null
+                                    : () async {
+                                        await ref
+                                            .read(
+                                              homeControllerProvider.notifier,
+                                            )
+                                            .requestTrip();
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: brandPrimary,
+                                  foregroundColor: Colors.black87,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                    horizontal: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: isRequesting
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.black87,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          estado.tarifaEstimada == null
+                                              ? AppStrings
+                                                    .homeSolicitarVehiculoSinPrecio(
+                                                  _etiquetaVehiculo(
+                                                    selectedVehicle,
+                                                  ),
+                                                )
+                                              : AppStrings.homeSolicitarVehiculo(
+                                                  _etiquetaVehiculo(
+                                                    selectedVehicle,
+                                                  ),
+                                                  estado.tarifaEstimada!,
+                                                ),
+                                          maxLines: 1,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -912,6 +983,47 @@ class _HomePageState extends ConsumerState<HomePage> {
       TipoVehiculo.suv => AppStrings.homeVehicleSuvLabel,
       TipoVehiculo.sedan => AppStrings.homeVehicleSedanLabel,
     };
+  }
+}
+
+class _TipoViajeChip extends StatelessWidget {
+  final String etiqueta;
+  final bool activo;
+  final Color colorFondo;
+  final Color colorTexto;
+
+  const _TipoViajeChip({
+    required this.etiqueta,
+    required this.activo,
+    required this.colorFondo,
+    required this.colorTexto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: activo ? colorFondo : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: activo ? colorTexto.withValues(alpha: 0.35) : Colors.grey.shade300,
+          width: activo ? 1.5 : 1,
+        ),
+      ),
+      child: Text(
+        etiqueta,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: activo ? FontWeight.w800 : FontWeight.w600,
+          color: activo ? colorTexto : Colors.grey.shade600,
+        ),
+      ),
+    );
   }
 }
 

@@ -27,6 +27,7 @@ class OfertaViajeAlertaService {
 
   bool _inicializado = false;
   String? _viajeSonandoId;
+  int _generacionAlerta = 0;
 
   Stream<Viaje> get ofertas => _ofertas.stream;
   Stream<String> get cancelaciones => _cancelaciones.stream;
@@ -78,12 +79,16 @@ class OfertaViajeAlertaService {
 
   Future<void> iniciarAlerta(Viaje viaje) async {
     await inicializar();
+    final generacion = ++_generacionAlerta;
     _viajeSonandoId = viaje.id;
     if (!_ofertas.isClosed) {
       _ofertas.add(viaje);
     }
 
     await _iniciarSonido();
+    if (generacion != _generacionAlerta) {
+      return;
+    }
 
     await _notificaciones.show(
       id: 91001,
@@ -135,20 +140,65 @@ class OfertaViajeAlertaService {
         _viajeSonandoId != viajeId) {
       return;
     }
+    final generacion = ++_generacionAlerta;
     _viajeSonandoId = null;
     if (Platform.isIOS) {
       await _playerIos.stop();
     } else {
       await FlutterRingtonePlayer().stop();
     }
+    if (generacion != _generacionAlerta) {
+      return;
+    }
     await _notificaciones.cancel(id: 91001);
   }
 
+  /// Reanuda timbre/notificación sin reemitir al stream de ofertas
+  /// (evita duplicar la cola cuando queda más de un viaje sonando).
+  Future<void> reanudarAlerta(Viaje viaje) async {
+    await inicializar();
+    if (_viajeSonandoId == viaje.id) {
+      return;
+    }
+    final generacion = ++_generacionAlerta;
+    _viajeSonandoId = viaje.id;
+    await _iniciarSonido();
+    if (generacion != _generacionAlerta) {
+      return;
+    }
+    await _notificaciones.show(
+      id: 91001,
+      title: 'Nuevo viaje MyRide',
+      body:
+          'US\$${viaje.tarifaEstimada.toStringAsFixed(2)} — Abrí la app para aceptar o rechazar',
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'ofertas_viaje',
+          'Ofertas de viaje',
+          channelDescription: 'Alerta sonora de nuevo viaje MyRide',
+          importance: Importance.max,
+          priority: Priority.max,
+          category: AndroidNotificationCategory.call,
+          fullScreenIntent: true,
+          ongoing: true,
+          autoCancel: false,
+          playSound: true,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentSound: true,
+          interruptionLevel: InterruptionLevel.timeSensitive,
+        ),
+      ),
+      payload: viaje.id,
+    );
+  }
+
+  /// Avisa a la UI; el controller decide si para el timbre o reanuda otra oferta.
   void avisarCancelacion(String viajeId) {
     if (!_cancelaciones.isClosed) {
       _cancelaciones.add(viajeId);
     }
-    unawaited(detener(viajeId: viajeId));
   }
 
   Viaje? viajeDesdePayloadData(Map<String, dynamic> data) {

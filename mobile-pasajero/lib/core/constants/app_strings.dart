@@ -188,6 +188,11 @@ class AppStrings {
   static const String homeConfirmBtn = 'Confirmar Solicitud de Taxi';
   static const String homeOfficialRatesMitur =
       'Tarifas Oficiales Reguladas (MITUR)';
+  static const String homeTipoViajeTitulo = 'Tipo de viaje';
+  static const String homeTipoViajeInternoCapCana = 'Interno · Cap Cana';
+  static const String homeTipoViajeExterno = 'Externo';
+  static const String homeTipoViajePendiente =
+      'Se confirma al calcular la tarifa';
   static const String homeRouteEtaLabel = 'ETA';
   static const String homeEtaNoDisponible = '--:--';
   static const String homeVehicleSedanLabel = 'Sedan';
@@ -255,6 +260,7 @@ class AppStrings {
   static const String trackingDetalleRecogida = 'Tu punto de recogida';
   static const String trackingDetalleDestino = 'Destino del viaje';
   static const String trackingMarcadorCerrar = 'Cerrar';
+  static const String trackingCentrarMapa = 'Volver al viaje';
   static const String trackingMarcadorCopiado = 'Coordenadas copiadas';
   static const String trackingMarcadorCopiarCoords = 'Copiar latitud y longitud';
   static const String trackingDireccionCargando = 'Obteniendo nombre del lugar...';

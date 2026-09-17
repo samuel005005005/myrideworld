@@ -57,6 +57,7 @@ final viajeRealtimeGatewayProvider = Provider<ViajeRealtimeGateway>((ref) {
     sessionStorage: ref.watch(sessionStorageProvider),
   );
   gateway.escucharSesionReemplazada((_) async {
+    gateway.desconectar();
     await ref.read(sessionStorageProvider).limpiar();
     ref.read(sesionInvalidaTickProvider.notifier).notificar();
   });

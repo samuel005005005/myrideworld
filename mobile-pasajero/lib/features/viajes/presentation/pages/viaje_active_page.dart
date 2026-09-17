@@ -28,6 +28,8 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
       ref.read(viajeActivoControllerProvider.notifier);
   String? _ultimaClaveCamara;
   bool _mapaListo = false;
+  /// Si el usuario hace zoom/pan, no pisar su vista con fitCamera.
+  bool _seguirCamaraAutomatica = true;
 
   @override
   void initState() {
@@ -46,26 +48,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
     super.dispose();
   }
 
-  void _ajustarCamara(ViajeActivoState estado) {
+  void _ajustarCamara(ViajeActivoState estado, {bool forzar = false}) {
     if (!_mapaListo) {
+      return;
+    }
+    if (!_seguirCamaraAutomatica && !forzar) {
       return;
     }
 
     final puntos = <LatLng>[
       if (estado.ubicacionConductor != null) estado.ubicacionConductor!,
       if (estado.origen != null && !estado.haciaDestino) estado.origen!,
-      if (estado.destino != null) estado.destino!,
+      // Destino final solo cuando ya van hacia allá (evita pin en agua en pickup).
+      if (estado.destino != null && estado.haciaDestino) estado.destino!,
       ...estado.puntosRuta,
     ];
     if (puntos.isEmpty) {
       return;
     }
+    // Sin lat del conductor: el marcador se mueve solo; no resetear zoom
+    // en cada fix GPS.
     final clave =
         '${estado.viajeId}|${estado.haciaDestino}|${estado.puntosRuta.length}|'
-        // Cámara solo ante cambios gruesos (~100 m), no en cada fix GPS.
-        '${estado.ubicacionConductor?.latitude.toStringAsFixed(3)}|'
-        '${estado.origen?.latitude.toStringAsFixed(3)}';
-    if (_ultimaClaveCamara == clave) {
+        '${estado.origen?.latitude.toStringAsFixed(4)}|'
+        '${estado.destino?.latitude.toStringAsFixed(4)}';
+    if (!forzar && _ultimaClaveCamara == clave) {
       return;
     }
     _ultimaClaveCamara = clave;
@@ -92,6 +99,14 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
     });
   }
 
+  void _reactivarSeguimientoCamara() {
+    setState(() {
+      _seguirCamaraAutomatica = true;
+      _ultimaClaveCamara = null;
+    });
+    _ajustarCamara(ref.read(viajeActivoControllerProvider), forzar: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(viajeActivoControllerProvider);
@@ -100,11 +115,14 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
       anterior,
       siguiente,
     ) {
-      if (anterior?.ubicacionConductor != siguiente.ubicacionConductor ||
-          anterior?.puntosRuta != siguiente.puntosRuta ||
+      final cambioEstructural =
+          anterior?.viajeId != siguiente.viajeId ||
           anterior?.haciaDestino != siguiente.haciaDestino ||
+          anterior?.puntosRuta != siguiente.puntosRuta ||
           anterior?.origen != siguiente.origen ||
-          anterior?.destino != siguiente.destino) {
+          anterior?.destino != siguiente.destino;
+      // No reajustar cámara solo porque se movió el conductor.
+      if (cambioEstructural) {
         _ajustarCamara(siguiente);
       }
 
@@ -141,6 +159,14 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                 onMapReady: () {
                   _mapaListo = true;
                   _ajustarCamara(estado);
+                },
+                onPositionChanged: (camera, hasGesture) {
+                  if (!hasGesture || !_seguirCamaraAutomatica) {
+                    return;
+                  }
+                  setState(() {
+                    _seguirCamaraAutomatica = false;
+                  });
                 },
               ),
               children: [
@@ -186,7 +212,7 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                           ),
                         ),
                       ),
-                    if (estado.destino != null)
+                    if (estado.destino != null && estado.haciaDestino)
                       Marker(
                         point: estado.destino!,
                         width: 148,
@@ -242,6 +268,39 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
               ],
             ),
           ),
+
+          if (!_seguirCamaraAutomatica)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 72,
+              right: 16,
+              child: Material(
+                color: Colors.white,
+                elevation: 3,
+                borderRadius: BorderRadius.circular(24),
+                child: InkWell(
+                  onTap: _reactivarSeguimientoCamara,
+                  borderRadius: BorderRadius.circular(24),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.my_location, size: 20, color: textDark),
+                        SizedBox(width: 8),
+                        Text(
+                          AppStrings.trackingCentrarMapa,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: textDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,

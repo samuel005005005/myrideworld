@@ -4,14 +4,14 @@
 
 - **Modo:** desarrollo
 - **Hecho:**
-  - Canal viaje: `unirseAViaje` emite `estadoViaje` (resync BD)
-  - Sesión única: JWT `sid` + `SesionesActivasRegistry`; kick `sesionReemplazada`
-  - Apps: escuchan resync + logout al kick
-- **Falta:** reiniciar API + hot restart apps; probar 2 dispositivos mismo user + reconnect en viaje
-- **Reanudar:** Validar sesión única y resync del room `viaje_{id}`
+  - Cap Cana: catálogo lugares + geocerca = interno solo Cap→Cap
+  - Admin: Tarifario simple + card precio Cap Cana; Config sin claves; Viajes con nombres
+  - Pasajero: chips Interno/Externo siempre visibles al elegir destino
+- **Falta:** deploy API (campo `tipoViaje` en estimar) + seed; rebuild web-admin; hot restart pasajero
+- **Reanudar:** Confirmar highlight Interno/Externo tras estimar con API desplegada
 
 ## Histórico
 
-- 2026-09-16: Canal viaje + sesión 1 dispositivo; flota post-viaje; escala ofertas.
+- 2026-09-16: Identidad viaje; Cap Cana UI; OSRM; admin UX tarifas
 - 2026-09-15: Direcciones; cancel; flota; oferta al Conectado.
 - 2026-09-12: Checkpoint `.agents`→`.cursor`.

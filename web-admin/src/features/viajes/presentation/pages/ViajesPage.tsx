@@ -43,9 +43,31 @@ function badgeEstado(estado: string) {
   return <span className="badge">{estado}</span>;
 }
 
-function idCorto(id: string | null | undefined) {
-  if (!id) return <span className="muted">—</span>;
-  return <code title={id}>{id.slice(0, 8)}</code>;
+function etiquetaPersona(
+  nombre: string | null | undefined,
+  fallback: string,
+) {
+  const texto = nombre?.trim();
+  if (texto) {
+    return texto;
+  }
+  return <span className="muted">{fallback}</span>;
+}
+
+function etiquetaLugar(
+  direccion: string | null | undefined,
+  lat: number,
+  lng: number,
+) {
+  const texto = direccion?.trim();
+  if (texto) {
+    return texto;
+  }
+  return (
+    <span className="coords muted">
+      {lat.toFixed(4)}, {lng.toFixed(4)}
+    </span>
+  );
 }
 
 export function ViajesPage() {
@@ -100,13 +122,13 @@ export function ViajesPage() {
       activos,
       completados,
       cancelados,
-      tarifaSum,
+      tarifaPromedio: items.length ? tarifaSum / items.length : 0,
     };
   }, [items]);
 
   async function verDetalle(id: string) {
-    setError(null);
     setCargandoDetalle(true);
+    setError(null);
     try {
       setDetalle(await obtenerViajeAdmin(id));
     } catch (err) {
@@ -123,14 +145,31 @@ export function ViajesPage() {
       <header className="page-header">
         <div>
           <h1>Viajes</h1>
-          <p className="muted">
-            Historial y seguimiento operativo de solicitudes
-          </p>
+          <p className="muted">Operación en tiempo casi real (últimos 200)</p>
         </div>
         <button type="button" className="chip" onClick={() => void cargar()}>
           Actualizar
         </button>
       </header>
+
+      <div className="stats-row">
+        <div className="stat-card">
+          <span className="stat-label">Total</span>
+          <strong>{resumen.total}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Activos</span>
+          <strong>{resumen.activos}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Completados</span>
+          <strong>{resumen.completados}</strong>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Cancelados</span>
+          <strong>{resumen.cancelados}</strong>
+        </div>
+      </div>
 
       <div className="filters filters-form">
         <label>
@@ -141,9 +180,9 @@ export function ViajesPage() {
               setEstado(e.target.value as (typeof ESTADOS)[number])
             }
           >
-            {ESTADOS.map((op) => (
-              <option key={op} value={op}>
-                {op}
+            {ESTADOS.map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </select>
@@ -166,34 +205,8 @@ export function ViajesPage() {
         </label>
       </div>
 
-      {!cargando && items.length > 0 ? (
-        <div className="stats-grid stats-grid-compact">
-          <article className="stat-card">
-            <span className="stat-label">En listado</span>
-            <strong className="stat-value">{resumen.total}</strong>
-          </article>
-          <article className="stat-card">
-            <span className="stat-label">En curso / pipeline</span>
-            <strong className="stat-value">{resumen.activos}</strong>
-          </article>
-          <article className="stat-card">
-            <span className="stat-label">Completados</span>
-            <strong className="stat-value">{resumen.completados}</strong>
-          </article>
-          <article className="stat-card">
-            <span className="stat-label">Cancelados</span>
-            <strong className="stat-value">{resumen.cancelados}</strong>
-          </article>
-          <article className="stat-card">
-            <span className="stat-label">Tarifa est. (suma)</span>
-            <strong className="stat-value money-lg">
-              US${resumen.tarifaSum.toFixed(0)}
-            </strong>
-          </article>
-        </div>
-      ) : null}
-
       {error ? <p className="error-text">{error}</p> : null}
+
       {cargando ? (
         <p className="muted">Cargando…</p>
       ) : (
@@ -233,12 +246,36 @@ export function ViajesPage() {
                     <td>
                       {new Date(v.fechaSolicitud).toLocaleString()}
                     </td>
-                    <td>{idCorto(v.pasajeroId)}</td>
-                    <td>{idCorto(v.conductorId)}</td>
-                    <td className="coords">
-                      {v.origenLat.toFixed(3)},{v.origenLng.toFixed(3)}
-                      <span className="ruta-sep"> → </span>
-                      {v.destinoLat.toFixed(3)},{v.destinoLng.toFixed(3)}
+                    <td>
+                      {etiquetaPersona(
+                        v.pasajeroNombre ?? v.pasajero?.nombreCompleto,
+                        'Sin nombre',
+                      )}
+                    </td>
+                    <td>
+                      {etiquetaPersona(
+                        v.conductorNombre ?? v.conductor?.nombreCompleto,
+                        'Sin asignar',
+                      )}
+                    </td>
+                    <td>
+                      <div className="ruta-texto">
+                        <div>
+                          {etiquetaLugar(
+                            v.origenDireccion,
+                            v.origenLat,
+                            v.origenLng,
+                          )}
+                        </div>
+                        <div className="muted">↓</div>
+                        <div>
+                          {etiquetaLugar(
+                            v.destinoDireccion,
+                            v.destinoLat,
+                            v.destinoLng,
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <button
@@ -262,9 +299,21 @@ export function ViajesPage() {
         <div className="detail-panel">
           <header className="page-header">
             <div>
-              <h2>Viaje {detalle.id.slice(0, 8)}</h2>
+              <h2>
+                {etiquetaLugar(
+                  detalle.origenDireccion,
+                  detalle.origenLat,
+                  detalle.origenLng,
+                )}{' '}
+                →{' '}
+                {etiquetaLugar(
+                  detalle.destinoDireccion,
+                  detalle.destinoLat,
+                  detalle.destinoLng,
+                )}
+              </h2>
               <p className="muted">
-                <code title={detalle.id}>{detalle.id}</code>
+                {new Date(detalle.fechaSolicitud).toLocaleString()}
               </p>
             </div>
             <button
@@ -286,35 +335,55 @@ export function ViajesPage() {
             <dd>{new Date(detalle.fechaSolicitud).toLocaleString()}</dd>
             <dt>Inicio</dt>
             <dd>
-              {detalle.fechaInicio
-                ? new Date(detalle.fechaInicio).toLocaleString()
-                : <span className="muted">—</span>}
+              {detalle.fechaInicio ? (
+                new Date(detalle.fechaInicio).toLocaleString()
+              ) : (
+                <span className="muted">—</span>
+              )}
             </dd>
             <dt>Fin</dt>
             <dd>
-              {detalle.fechaFin
-                ? new Date(detalle.fechaFin).toLocaleString()
-                : <span className="muted">—</span>}
+              {detalle.fechaFin ? (
+                new Date(detalle.fechaFin).toLocaleString()
+              ) : (
+                <span className="muted">—</span>
+              )}
             </dd>
             <dt>Pasajero</dt>
             <dd>
-              <code>{detalle.pasajeroId}</code>
+              {etiquetaPersona(
+                detalle.pasajeroNombre ?? detalle.pasajero?.nombreCompleto,
+                'Sin nombre',
+              )}
+              {detalle.pasajero?.telefono ? (
+                <div className="muted cell-sub">{detalle.pasajero.telefono}</div>
+              ) : null}
             </dd>
             <dt>Conductor</dt>
             <dd>
-              {detalle.conductorId ? (
-                <code>{detalle.conductorId}</code>
-              ) : (
-                <span className="muted">Sin asignar</span>
+              {etiquetaPersona(
+                detalle.conductorNombre ?? detalle.conductor?.nombreCompleto,
+                'Sin asignar',
               )}
+              {detalle.conductor?.telefono ? (
+                <div className="muted cell-sub">{detalle.conductor.telefono}</div>
+              ) : null}
             </dd>
             <dt>Origen</dt>
-            <dd className="coords">
-              {detalle.origenLat.toFixed(5)}, {detalle.origenLng.toFixed(5)}
+            <dd>
+              {etiquetaLugar(
+                detalle.origenDireccion,
+                detalle.origenLat,
+                detalle.origenLng,
+              )}
             </dd>
             <dt>Destino</dt>
-            <dd className="coords">
-              {detalle.destinoLat.toFixed(5)}, {detalle.destinoLng.toFixed(5)}
+            <dd>
+              {etiquetaLugar(
+                detalle.destinoDireccion,
+                detalle.destinoLat,
+                detalle.destinoLng,
+              )}
             </dd>
           </dl>
         </div>

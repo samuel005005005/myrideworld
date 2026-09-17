@@ -67,12 +67,23 @@ export class AdministradoresSeeder {
     rolAdmin: RolesAdmin;
   }): Promise<void> {
     const existente = await this.repo.obtenerPorEmail(datos.email);
+    const passwordHash = await this.hasheador.hashear(datos.password);
+
     if (existente) {
-      this.logger.log(`Admin seed ya existe: ${datos.email}`);
+      // Re-seed alinea hash con ADMIN_PASSWORD del .env actual.
+      existente.actualizar({
+        nombreCompleto: datos.nombreCompleto,
+        rolAdmin: datos.rolAdmin,
+        passwordHash,
+      });
+      if (!existente.activo) {
+        existente.activar();
+      }
+      await this.repo.guardar(existente);
+      this.logger.log(`Admin seed actualizado: ${datos.email}`);
       return;
     }
 
-    const passwordHash = await this.hasheador.hashear(datos.password);
     const admin = Administrador.crear({
       nombreCompleto: datos.nombreCompleto,
       email: datos.email,

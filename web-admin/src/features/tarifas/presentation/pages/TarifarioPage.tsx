@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '../../../../core/auth/auth-provider';
 import { ApiError } from '../../../../core/http/api-error';
+import {
+  actualizarConfiguracion,
+  listarConfiguraciones,
+} from '../../../configuracion/infrastructure/configuracion-api';
 import type { TarifaItem } from '../../domain/tarifa-item';
 import type { ZonaTarifaItem } from '../../domain/zona-tarifa-item';
 import {
@@ -10,6 +14,8 @@ import {
   listarTarifas,
   listarZonasTarifa,
 } from '../../infrastructure/tarifas-api';
+
+const CLAVE_TARIFA_CAP_CANA = 'TARIFA_ZONA_CAP_CANA';
 
 function SelectorZona({
   label,
@@ -26,7 +32,7 @@ function SelectorZona({
     <label className="zona-field">
       <span>{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} required>
-        <option value="">Elegir zona…</option>
+        <option value="">Elegir…</option>
         {opciones.map((z) => (
           <option key={z} value={z}>
             {z}
@@ -40,6 +46,7 @@ function SelectorZona({
 export function TarifarioPage() {
   const { puedeEscribir } = useAuth();
   const puedeEditar = puedeEscribir('tarifario');
+  const puedeEditarConfig = puedeEscribir('configuracion');
 
   const [items, setItems] = useState<TarifaItem[]>([]);
   const [zonas, setZonas] = useState<ZonaTarifaItem[]>([]);
@@ -47,6 +54,8 @@ export function TarifarioPage() {
   const [destinoSel, setDestinoSel] = useState('');
   const [precio, setPrecio] = useState('');
   const [nuevaZona, setNuevaZona] = useState('');
+  const [precioCapCana, setPrecioCapCana] = useState('');
+  const [precioCapCanaGuardado, setPrecioCapCanaGuardado] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'Todos' | 'Activo' | 'Inactivo'>(
     'Activo',
   );
@@ -60,12 +69,17 @@ export function TarifarioPage() {
     setCargando(true);
     setError(null);
     try {
-      const [tarifas, catalogo] = await Promise.all([
+      const [tarifas, catalogo, configs] = await Promise.all([
         listarTarifas(),
         listarZonasTarifa(),
+        listarConfiguraciones().catch(() => []),
       ]);
       setItems(tarifas);
       setZonas(catalogo);
+      const cap = configs.find((c) => c.clave === CLAVE_TARIFA_CAP_CANA);
+      const valor = cap?.valor ?? '';
+      setPrecioCapCana(valor);
+      setPrecioCapCanaGuardado(valor);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : 'No se pudo cargar el tarifario',
@@ -86,6 +100,12 @@ export function TarifarioPage() {
         .map((z) => z.nombre)
         .sort((a, b) => a.localeCompare(b, 'es')),
     [zonas],
+  );
+
+  const zonasCapCana = useMemo(
+    () =>
+      opciones.filter((n) => n.toLowerCase().includes('cap cana')),
+    [opciones],
   );
 
   const visibles = useMemo(() => {
@@ -109,6 +129,35 @@ export function TarifarioPage() {
     setDestinoSel(origenSel);
   }
 
+  async function guardarCapCana(event: FormEvent) {
+    event.preventDefault();
+    if (!puedeEditarConfig) {
+      return;
+    }
+    const valor = precioCapCana.trim();
+    const num = Number(valor);
+    if (!Number.isFinite(num) || num <= 0) {
+      setError('Indicá un precio Cap Cana válido en USD');
+      return;
+    }
+    setProcesando('capcana');
+    setError(null);
+    setOkMsg(null);
+    try {
+      await actualizarConfiguracion(CLAVE_TARIFA_CAP_CANA, String(num));
+      setPrecioCapCanaGuardado(String(num));
+      setOkMsg(`Precio interno Cap Cana actualizado a US$${num.toFixed(2)}`);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : 'No se pudo guardar el precio Cap Cana',
+      );
+    } finally {
+      setProcesando(null);
+    }
+  }
+
   async function onCrearZona(event: FormEvent) {
     event.preventDefault();
     if (!puedeEditar) {
@@ -116,7 +165,7 @@ export function TarifarioPage() {
     }
     const nombre = nuevaZona.trim();
     if (!nombre) {
-      setError('Indicá el nombre de la zona');
+      setError('Indicá el nombre del lugar / zona');
       return;
     }
     setProcesando('zona');
@@ -125,12 +174,12 @@ export function TarifarioPage() {
     try {
       const zona = await crearZonaTarifa(nombre);
       setNuevaZona('');
-      setOkMsg(`Zona «${zona.nombre}» agregada al catálogo`);
+      setOkMsg(`Lugar «${zona.nombre}» agregado`);
       await cargar();
       setOrigenSel(zona.nombre);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : 'No se pudo crear la zona',
+        err instanceof ApiError ? err.message : 'No se pudo crear el lugar',
       );
     } finally {
       setProcesando(null);
@@ -159,7 +208,7 @@ export function TarifarioPage() {
     try {
       await crearTarifa({ origen, destino, precio: precioNum });
       setPrecio('');
-      setOkMsg(`Tarifa ${origen} → ${destino} creada`);
+      setOkMsg(`Ruta ${origen} → ${destino} creada`);
       await cargar();
     } catch (err) {
       setError(
@@ -222,7 +271,7 @@ export function TarifarioPage() {
         <div>
           <h1>Tarifario</h1>
           <p className="muted">
-            Zonas y precios fijos origen → destino (catálogo en base de datos)
+            Interno Cap Cana (precio fijo) y rutas externas por origen → destino
           </p>
         </div>
         <button type="button" className="chip" onClick={() => void cargar()}>
@@ -233,12 +282,54 @@ export function TarifarioPage() {
       {error ? <p className="error-text">{error}</p> : null}
       {okMsg ? <p className="ok-text">{okMsg}</p> : null}
 
+      <div className="tarifario-capcana-card">
+        <div>
+          <h2>Interno Cap Cana</h2>
+          <p className="muted">
+            Si el viaje sale de un punto dentro de Cap Cana y llega a otro punto
+            dentro de Cap Cana, cobra este precio fijo (no el tarifario OD).
+          </p>
+          {zonasCapCana.length > 0 ? (
+            <p className="muted cell-sub">
+              Lugares Cap Cana en catálogo: {zonasCapCana.join(' · ')}
+            </p>
+          ) : null}
+        </div>
+        <form className="tarifario-capcana-form" onSubmit={guardarCapCana}>
+          <label className="zona-field">
+            <span>Precio USD</span>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={precioCapCana}
+              onChange={(e) => setPrecioCapCana(e.target.value)}
+              readOnly={!puedeEditarConfig}
+              required
+            />
+          </label>
+          {puedeEditarConfig ? (
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={
+                procesando === 'capcana' ||
+                precioCapCana.trim() === precioCapCanaGuardado
+              }
+            >
+              {procesando === 'capcana' ? '…' : 'Guardar'}
+            </button>
+          ) : null}
+        </form>
+      </div>
+
       {puedeEditar ? (
         <>
+          <h2 className="tarifario-section-title">Rutas externas (OD)</h2>
           <form className="tarifario-form" onSubmit={onCrear}>
             <div className="tarifario-od-row">
               <SelectorZona
-                label="Origen"
+                label="Desde"
                 value={origenSel}
                 onChange={setOrigenSel}
                 opciones={opciones}
@@ -247,12 +338,12 @@ export function TarifarioPage() {
                 type="button"
                 className="chip swap-btn"
                 onClick={intercambiar}
-                title="Intercambiar origen y destino"
+                title="Intercambiar"
               >
                 ⇄
               </button>
               <SelectorZona
-                label="Destino"
+                label="Hasta"
                 value={destinoSel}
                 onChange={setDestinoSel}
                 opciones={opciones}
@@ -274,36 +365,17 @@ export function TarifarioPage() {
                 className="btn-primary"
                 disabled={procesando === 'crear' || opciones.length === 0}
               >
-                {procesando === 'crear' ? '…' : 'Agregar tarifa'}
+                {procesando === 'crear' ? '…' : 'Agregar ruta'}
               </button>
             </div>
-            <p className="ruta-preview" aria-live="polite">
-              {origenSel && destinoSel ? (
-                <>
-                  <span className="ruta-label">Origen:</span> {origenSel}
-                  <span className="ruta-sep">→</span>
-                  <span className="ruta-label">Destino:</span> {destinoSel}
-                </>
-              ) : (
-                <span className="muted">
-                  Elegí origen y destino — se muestran acá en texto para
-                  identificar la ruta.
-                </span>
-              )}
-            </p>
-            <p className="muted zonas-hint">
-              {opciones.length === 0
-                ? 'No hay zonas activas. Creá al menos una abajo (o corré el seed).'
-                : `${opciones.length} zonas activas en catálogo.`}
-            </p>
           </form>
 
           <form className="tarifario-form" onSubmit={onCrearZona}>
             <div className="zona-nueva-row">
               <label className="zona-field" style={{ flex: 1 }}>
-                <span>Nueva zona (BD)</span>
+                <span>Agregar lugar al catálogo</span>
                 <input
-                  placeholder="Ej. Cap Cana Marina"
+                  placeholder="Ej. Juanillo Beach Cap Cana"
                   value={nuevaZona}
                   onChange={(e) => setNuevaZona(e.target.value)}
                   required
@@ -314,7 +386,7 @@ export function TarifarioPage() {
                 className="btn-secondary"
                 disabled={procesando === 'zona'}
               >
-                {procesando === 'zona' ? '…' : 'Alta de zona'}
+                {procesando === 'zona' ? '…' : 'Agregar lugar'}
               </button>
             </div>
           </form>
@@ -338,7 +410,7 @@ export function TarifarioPage() {
         <label>
           Buscar
           <input
-            placeholder="Filtrar por zona…"
+            placeholder="Filtrar por lugar…"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
@@ -352,7 +424,7 @@ export function TarifarioPage() {
           <table>
             <thead>
               <tr>
-                <th>Ruta (origen → destino)</th>
+                <th>Desde → Hasta</th>
                 <th>Precio USD</th>
                 <th>Estado</th>
                 {puedeEditar ? <th /> : null}
@@ -361,21 +433,15 @@ export function TarifarioPage() {
             <tbody>
               {visibles.length === 0 ? (
                 <tr>
-                  <td colSpan={puedeEditar ? 4 : 3}>Sin tarifas</td>
+                  <td colSpan={puedeEditar ? 4 : 3}>Sin rutas OD</td>
                 </tr>
               ) : (
                 visibles.map((t) => (
                   <tr key={t.id}>
                     <td>
                       <div className="ruta-texto">
-                        <div>
-                          <span className="ruta-label">Origen:</span>{' '}
-                          {t.origen}
-                        </div>
-                        <div>
-                          <span className="ruta-label">Destino:</span>{' '}
-                          {t.destino}
-                        </div>
+                        <div>{t.origen}</div>
+                        <div className="muted">→ {t.destino}</div>
                       </div>
                     </td>
                     <td>

@@ -11,6 +11,7 @@ import { parsearGeocercaBbox } from '../../../../compartidos/utilidades/parsear-
 import { puntoEnGeocercaBbox } from '../../../../compartidos/utilidades/punto-en-geocerca-bbox.util.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
+import { TiposViajeTarifa } from '../../../../compartidos/constantes/tipos-viaje-tarifa.enum.js';
 
 @Injectable()
 export class EstimarTarifaUseCase {
@@ -39,6 +40,7 @@ export class EstimarTarifaUseCase {
         distancia,
         'Cap Cana',
         'Cap Cana',
+        TiposViajeTarifa.INTERNO_CAP_CANA,
         persistir,
       );
     }
@@ -49,7 +51,12 @@ export class EstimarTarifaUseCase {
         dto.destinoNombre.trim(),
       );
       if (od) {
-        return new EstimacionTarifaResultado(od.precio, distancia, od.id);
+        return new EstimacionTarifaResultado(
+          od.precio,
+          distancia,
+          od.id,
+          TiposViajeTarifa.EXTERNO,
+        );
       }
     }
 
@@ -69,6 +76,7 @@ export class EstimarTarifaUseCase {
       distancia,
       `${dto.origenLat},${dto.origenLng}`,
       `${dto.destinoLat},${dto.destinoLng}`,
+      TiposViajeTarifa.EXTERNO,
       persistir,
     );
   }
@@ -113,6 +121,7 @@ export class EstimarTarifaUseCase {
     distancia: number,
     origen: string,
     destino: string,
+    tipoViaje: TiposViajeTarifa,
     persistir: boolean,
   ): Promise<EstimacionTarifaResultado> {
     const tarifa = Tarifa.crear({ origen, destino, precio });
@@ -123,10 +132,16 @@ export class EstimarTarifaUseCase {
         guardada.precio,
         distancia,
         guardada.id,
+        tipoViaje,
       );
     }
 
-    return new EstimacionTarifaResultado(tarifa.precio, distancia, tarifa.id);
+    return new EstimacionTarifaResultado(
+      tarifa.precio,
+      distancia,
+      tarifa.id,
+      tipoViaje,
+    );
   }
 
   private async obtenerParametroNumerico(clave: string): Promise<number> {

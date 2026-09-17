@@ -1,3 +1,9 @@
+export interface ViajeParticipanteResumen {
+  id: string;
+  nombreCompleto: string;
+  telefono?: string;
+}
+
 export interface ViajeListItem {
   id: string;
   pasajeroId: string;
@@ -8,7 +14,13 @@ export interface ViajeListItem {
   origenLng: number;
   destinoLat: number;
   destinoLng: number;
+  origenDireccion?: string | null;
+  destinoDireccion?: string | null;
   fechaSolicitud: string;
   fechaInicio: string | null;
   fechaFin: string | null;
+  pasajeroNombre?: string | null;
+  conductorNombre?: string | null;
+  pasajero?: ViajeParticipanteResumen | null;
+  conductor?: ViajeParticipanteResumen | null;
 }

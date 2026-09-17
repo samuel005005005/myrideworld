@@ -69,11 +69,14 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MyRide Conductor necesita tu ubicacion GPS para asignacion y seguimiento de viajes.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>MyRide Conductor necesita tu ubicacion GPS para asignacion y seguimiento de viajes.</string>
+	<string>MyRide Conductor necesita tu ubicacion en segundo plano para que el pasajero vea tu movimiento durante el viaje.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>MyRide Conductor necesita tu ubicacion en segundo plano para que el pasajero vea tu movimiento durante el viaje.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 		<string>fetch</string>
+		<string>location</string>
 		<string>remote-notification</string>
 	</array>
 	<key>LSApplicationQueriesSchemes</key>

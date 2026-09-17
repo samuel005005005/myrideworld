@@ -15,7 +15,7 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
   @override
   Future<Resultado<CoordenadaConductor>> obtenerUbicacionActual() async {
     try {
-      final ok = await _asegurarPermisos();
+      final ok = await _asegurarPermisos(pedirBackground: false);
       if (ok != null) {
         return Fallo(ValidationFailure(ok));
       }
@@ -50,13 +50,15 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
 
   @override
   Stream<CoordenadaConductor> observarUbicacion() async* {
-    final ok = await _asegurarPermisos();
+    // Flota / viaje activo: pide "siempre" + foreground service en Android.
+    final ok = await _asegurarPermisos(pedirBackground: true);
     if (ok != null) {
+      debugPrint('[MyRide] GPS stream bloqueado: $ok');
       return;
     }
 
     yield* Geolocator.getPositionStream(
-      locationSettings: _ajustesStream(),
+      locationSettings: _ajustesStreamBackground(),
     ).map(_desdePosicion);
   }
 
@@ -112,18 +114,34 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     ];
   }
 
-  LocationSettings _ajustesStream() {
+  /// Stream con foreground service (Android) / background updates (iOS).
+  LocationSettings _ajustesStreamBackground() {
     if (Platform.isAndroid) {
-      // Sin forceLocationManager: en Pixel 10 / API 37 el LocationManager
-      // nativo no entrega updates del emu geo fix.
       return AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 8,
+        intervalDuration: const Duration(seconds: 5),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: AppStrings.gpsBackgroundNotificationTitle,
+          notificationText: AppStrings.gpsBackgroundNotificationText,
+          notificationChannelName: 'Ubicacion MyRide',
+          notificationIcon: AndroidResource(
+            name: 'ic_launcher',
+            defType: 'mipmap',
+          ),
+          enableWakeLock: true,
+          enableWifiLock: true,
+          setOngoing: true,
+        ),
       );
     }
-    return const LocationSettings(
+    return AppleSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 8,
+      activityType: ActivityType.automotiveNavigation,
+      pauseLocationUpdatesAutomatically: false,
+      showBackgroundLocationIndicator: true,
+      allowBackgroundLocationUpdates: true,
     );
   }
 
@@ -134,7 +152,7 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     );
   }
 
-  Future<String?> _asegurarPermisos() async {
+  Future<String?> _asegurarPermisos({required bool pedirBackground}) async {
     final servicioHabilitado = await Geolocator.isLocationServiceEnabled();
     if (!servicioHabilitado) {
       return AppStrings.errorGpsDesactivado;
@@ -148,6 +166,17 @@ class GeolocatorUbicacionGateway implements UbicacionGateway {
     if (permiso == LocationPermission.denied ||
         permiso == LocationPermission.deniedForever) {
       return AppStrings.errorGpsPermiso;
+    }
+
+    if (pedirBackground && permiso == LocationPermission.whileInUse) {
+      // Segunda petición: "Permitir siempre" (Android 10+ / iOS).
+      permiso = await Geolocator.requestPermission();
+      if (permiso != LocationPermission.always) {
+        debugPrint(
+          '[MyRide] GPS: sin Always; se usa foreground service (Android) '
+          'igual. Ideal: ${AppStrings.errorGpsPermisoBackground}',
+        );
+      }
     }
 
     return null;

@@ -46,6 +46,10 @@ class AppStrings {
   static const String viajeEstadoEnCamino = 'En camino al pasajero';
   static const String viajeEstadoEsperando = 'Esperando pasajero';
   static const String viajeEstadoEnCurso = 'En viaje';
+  static const String viajePasajeroPendiente = 'Pasajero';
+  static const String viajeLlamarPasajero = 'Llamar';
+  static const String viajeSinTelefonoPasajero =
+      'El pasajero no tiene telefono registrado';
   static const String viajeBotonLlegada = 'LLEGUE AL PUNTO';
   static const String viajeBotonIniciar = 'INICIAR VIAJE';
   static const String viajeBotonCompletar = 'FINALIZAR VIAJE';
@@ -55,6 +59,7 @@ class AppStrings {
   static const String viajeMarcadorDestino = 'Destino';
   static const String viajeMarcadorConductor = 'Tu auto';
   static const String viajeMarcadorCerrar = 'Cerrar';
+  static const String viajeCentrarMapa = 'Volver al viaje';
   static const String viajeMarcadorCopiado = 'Coordenadas copiadas';
   static const String viajeDetalleRecogida = 'Punto de recogida del pasajero';
   static const String viajeDetalleDestino = 'Destino del viaje';
@@ -101,6 +106,11 @@ class AppStrings {
   static const String errorGpsDesactivado = 'Activa el GPS para continuar';
   static const String errorGpsPermiso =
       'Se requiere permiso de ubicacion para operar';
+  static const String errorGpsPermisoBackground =
+      'Activa "Permitir siempre" la ubicacion para que el pasajero te vea con la app en segundo plano';
+  static const String gpsBackgroundNotificationTitle = 'MyRide Conductor activo';
+  static const String gpsBackgroundNotificationText =
+      'Compartiendo tu ubicacion con pasajeros y la flota';
   static const String errorGpsObtener = 'No se pudo obtener la ubicacion GPS';
   static const String errorApiUbicacion =
       'No se pudo enviar la ubicacion al servidor';

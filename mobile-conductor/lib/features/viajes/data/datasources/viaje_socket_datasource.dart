@@ -54,6 +54,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
         socketUrl,
         io.OptionBuilder()
             .setTransports(['websocket'])
+            .enableForceNew()
             .enableReconnection()
             .setReconnectionAttempts(20)
             .setReconnectionDelay(1200)
@@ -256,7 +257,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     }
     _socket?.off('sesionReemplazada');
     _socket?.on('sesionReemplazada', (data) {
-      var motivo = 'Sesión reemplazada';
+      var motivo = AppStrings.errorSinSesion;
       if (data is Map && data['motivo'] is String) {
         motivo = data['motivo'] as String;
       }
@@ -306,14 +307,25 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
     _flotaPendiente = null;
     _onConnectExtra = null;
     _onDisconnectExtra = null;
+    _onSesionReemplazada = null;
     _listenersViajeCancelado.clear();
-    _socket?.off('nuevoViajeDisponible');
-    _socket?.off('ofertaViajeCancelada');
-    _socket?.off('viajeCancelado');
-    _socket?.off('estadoViaje');
-    _socket?.off('sesionReemplazada');
-    _socket?.disconnect();
-    _socket?.dispose();
+    final socket = _socket;
     _socket = null;
+    if (socket == null) {
+      return;
+    }
+    socket.off('nuevoViajeDisponible');
+    socket.off('ofertaViajeCancelada');
+    socket.off('viajeCancelado');
+    socket.off('estadoViaje');
+    socket.off('sesionReemplazada');
+    try {
+      socket.io.reconnection = false;
+      socket.io.skipReconnect = true;
+    } catch (_) {
+      // Manager antiguo: dispose corta el ciclo igual.
+    }
+    socket.disconnect();
+    socket.dispose();
   }
 }

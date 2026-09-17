@@ -47,6 +47,7 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
         AppEnv.socketUrl,
         io.OptionBuilder()
             .setTransports(['websocket'])
+            .enableForceNew()
             .enableReconnection()
             .setReconnectionAttempts(20)
             .setReconnectionDelay(1200)
@@ -286,17 +287,28 @@ class ViajeSocketDataSource implements ViajeRealtimeGateway {
   void desconectar() {
     _viajePendienteId = null;
     _flotaPendiente = null;
-    _socket?.off('ubicacionConductorFlota');
-    _socket?.off('conductorFueraDeFlota');
-    _socket?.off('ubicacionActualizada');
-    _socket?.off('viajeAceptado');
-    _socket?.off('conductorLlego');
-    _socket?.off('viajeIniciado');
-    _socket?.off('viajeCompletado');
-    _socket?.off('estadoViaje');
-    _socket?.off('sesionReemplazada');
-    _socket?.disconnect();
-    _socket?.dispose();
+    _onSesionReemplazada = null;
+    final socket = _socket;
     _socket = null;
+    if (socket == null) {
+      return;
+    }
+    socket.off('ubicacionConductorFlota');
+    socket.off('conductorFueraDeFlota');
+    socket.off('ubicacionActualizada');
+    socket.off('viajeAceptado');
+    socket.off('conductorLlego');
+    socket.off('viajeIniciado');
+    socket.off('viajeCompletado');
+    socket.off('estadoViaje');
+    socket.off('sesionReemplazada');
+    try {
+      socket.io.reconnection = false;
+      socket.io.skipReconnect = true;
+    } catch (_) {
+      // Manager antiguo: dispose corta el ciclo igual.
+    }
+    socket.disconnect();
+    socket.dispose();
   }
 }

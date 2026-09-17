@@ -104,8 +104,7 @@ export function ConfiguracionPage() {
           <table>
             <thead>
               <tr>
-                <th>Clave</th>
-                <th>Descripción</th>
+                <th>Parámetro</th>
                 <th>Valor</th>
                 <th />
               </tr>
@@ -113,7 +112,7 @@ export function ConfiguracionPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="table-empty">
+                  <td colSpan={3} className="table-empty">
                     Sin parámetros visibles para su rol
                   </td>
                 </tr>
@@ -124,18 +123,15 @@ export function ConfiguracionPage() {
                     puedeEditarClaveConfig(adminRol, item.clave);
                   const dirty =
                     (valores[item.clave] ?? '') !== item.valor;
+                  const titulo =
+                    item.descripcion?.trim() || item.clave;
                   return (
                     <tr key={item.id}>
                       <td>
-                        <code>{item.clave}</code>
+                        <div className="config-titulo">{titulo}</div>
                         {!editable ? (
                           <div className="muted cell-sub">Solo lectura</div>
                         ) : null}
-                      </td>
-                      <td className="detalle-cell">
-                        {item.descripcion || (
-                          <span className="muted">Sin descripción</span>
-                        )}
                       </td>
                       <td>
                         <input

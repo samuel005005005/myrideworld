@@ -137,6 +137,10 @@ describe('LoginUseCase', () => {
       });
 
       expect(result.token).toBe(FAKE_TOKEN);
+      expect(sesionesActivasMock.activar).toHaveBeenCalledWith(
+        'uuid-2',
+        expect.any(String),
+      );
       expect(generadorTokenMock.firmar).toHaveBeenCalledWith(
         expect.objectContaining({
           sub: 'uuid-2',

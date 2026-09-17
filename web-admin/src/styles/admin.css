@@ -604,6 +604,42 @@ td select {
   box-shadow: var(--shadow-sm);
 }
 
+.tarifario-capcana-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 22px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #fff 55%);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.tarifario-capcana-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+}
+
+.tarifario-capcana-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.tarifario-section-title {
+  margin: 8px 0 12px;
+  font-size: 1.05rem;
+}
+
+.config-titulo {
+  font-weight: 650;
+  color: var(--ink);
+}
+
 .filters-panel label,
 .filters-form label,
 .zona-field {

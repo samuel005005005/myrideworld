@@ -19,6 +19,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     final viajeId = data['viajeId'];
     if (viajeId is String) {
       alerta.avisarCancelacion(viajeId);
+      await alerta.detener(viajeId: viajeId);
     }
     return;
   }

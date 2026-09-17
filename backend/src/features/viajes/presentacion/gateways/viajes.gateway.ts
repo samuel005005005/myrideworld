@@ -24,6 +24,8 @@ import type { INotificadorViaje } from '../../aplicacion/puertos/notificador-via
 import type { ViajeDisponibleNotificacion } from '../../aplicacion/puertos/viaje-disponible-notificacion.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
+import type { IPasajeroRepository } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
+import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import type { IViajeRepository } from '../../dominio/repositorios/viaje.repository.js';
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
@@ -43,16 +45,19 @@ import { SesionesActivasRegistry } from '../../../../compartidos/seguridad/sesio
 import type { JwtClaims } from '../../../../compartidos/seguridad/jwt-claims.js';
 import { ViajeMapper } from '../../aplicacion/mappers/viaje.mapper.js';
 import { ConductorMapper } from '../../../conductores/aplicacion/mappers/conductor.mapper.js';
+import { PasajeroMapper } from '../../../pasajeros/aplicacion/mappers/pasajero.mapper.js';
 
 type SocketAutenticado = Socket & {
   user?: JwtClaims;
   data: {
+    sid?: string;
     salasFlota?: string[];
     salasFlotaConductor?: string[];
   };
 };
 
 const INTERVALO_GPS_MS = 10_000;
+const RETRASO_KICK_MS = 150;
 
 @Injectable()
 @WebSocketGateway({
@@ -80,6 +85,8 @@ export class ViajesGateway
     private readonly sesionesActivas: SesionesActivasRegistry,
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
+    @Inject(PASAJERO_REPOSITORY)
+    private readonly pasajeroRepository: IPasajeroRepository,
     @Inject(VIAJE_REPOSITORY)
     private readonly viajeRepository: IViajeRepository,
   ) {}
@@ -90,6 +97,7 @@ export class ViajesGateway
   onModuleInit() {
     this.sesionesActivas.registrarExpulsor((userId, sidVigente) => {
       void this._expulsarSesionesAnteriores(userId, sidVigente);
+      void this._revocarPresenciaConductor(userId);
     });
   }
 
@@ -106,14 +114,12 @@ export class ViajesGateway
         secret,
       });
       if (!this.sesionesActivas.esVigente(payload.sub, payload.sid)) {
-        client.emit('sesionReemplazada', {
-          motivo: MENSAJES.EXCEPCIONES.AUTH.SESION_OTRO_DISPOSITIVO,
-        });
-        client.disconnect(true);
+        this._notificarSesionReemplazada(client);
         return;
       }
 
       client.user = payload;
+      client.data.sid = payload.sid;
       client.join(`usuario_${payload.sub}`);
       // Un solo socket vivo por cuenta: cierra otras pestañas/emuladores.
       await this._expulsarSesionesAnteriores(
@@ -455,7 +461,19 @@ export class ViajesGateway
         }
       }
 
-      const base = ViajeMapper.toResponse(viaje, conductorResumen);
+      let pasajeroResumen = null;
+      const pasajero = await this.pasajeroRepository.obtenerPorId(
+        viaje.pasajeroId,
+      );
+      if (pasajero) {
+        pasajeroResumen = PasajeroMapper.toResumenPublico(pasajero);
+      }
+
+      const base = ViajeMapper.toResponse(
+        viaje,
+        conductorResumen,
+        pasajeroResumen,
+      );
       const payload: EstadoViajeSocketPayload = {
         ...base,
         ubicacionConductor,
@@ -470,7 +488,7 @@ export class ViajesGateway
 
   private async _expulsarSesionesAnteriores(
     userId: string,
-    _sidVigente: string,
+    sidVigente: string,
     conservarSocketId?: string,
   ): Promise<void> {
     if (!this.server) {
@@ -482,14 +500,54 @@ export class ViajesGateway
         if (conservarSocketId && remoto.id === conservarSocketId) {
           continue;
         }
-        remoto.emit('sesionReemplazada', {
-          motivo: MENSAJES.EXCEPCIONES.AUTH.SESION_OTRO_DISPOSITIVO,
-        });
-        remoto.disconnect(true);
+        const sidRemoto = (remoto.data as { sid?: string }).sid;
+        // Mismo sid = reconexión del mismo dispositivo: no forzar logout.
+        if (sidRemoto && sidRemoto === sidVigente) {
+          remoto.disconnect(true);
+          continue;
+        }
+        this._notificarSesionReemplazada(remoto);
       }
     } catch (error) {
       this.logger.warn(
         `No se pudo expulsar sesiones de ${userId}: ${String(error)}`,
+      );
+    }
+  }
+
+  private _notificarSesionReemplazada(remoto: {
+    emit: (evento: string, payload: { motivo: string }) => void;
+    disconnect: (cerrar?: boolean) => void;
+  }): void {
+    remoto.emit('sesionReemplazada', {
+      motivo: MENSAJES.EXCEPCIONES.AUTH.SESION_OTRO_DISPOSITIVO,
+    });
+    setTimeout(() => {
+      remoto.disconnect(true);
+    }, RETRASO_KICK_MS);
+  }
+
+  /** Login nuevo: el dispositivo anterior no debe seguir en flota ni recibir FCM. */
+  private async _revocarPresenciaConductor(userId: string): Promise<void> {
+    try {
+      this.flotaActiva.salir(userId);
+      const conductor = await this.conductorRepository.obtenerPorId(userId);
+      if (!conductor) {
+        return;
+      }
+      conductor.registrarTokenPush(null);
+      if (
+        conductor.estadoDisponibilidad ===
+        EstadosDisponibilidadConductor.CONECTADO
+      ) {
+        conductor.actualizarDisponibilidad(
+          EstadosDisponibilidadConductor.DESCONECTADO,
+        );
+      }
+      await this.conductorRepository.guardar(conductor);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo revocar presencia del conductor ${userId}: ${String(error)}`,
       );
     }
   }

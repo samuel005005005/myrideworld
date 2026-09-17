@@ -6,6 +6,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../auth/sesion_invalida_tick.dart';
 import '../auth/validador_jwt.dart';
 import '../config/app_env.dart';
+import '../constants/app_strings.dart';
 import '../logging/app_logger.dart';
 import '../network/http_logging_interceptor.dart';
 import '../network/network_info.dart';
@@ -45,7 +46,17 @@ final dioProvider = Provider<Dio>((ref) {
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await sessionStorage.obtenerToken();
+        final esLogin = options.path.contains('/auth/login');
+        final token = (await sessionStorage.obtenerToken())?.trim();
+        if (!esLogin && (token == null || token.isEmpty)) {
+          return handler.reject(
+            DioException(
+              requestOptions: options,
+              type: DioExceptionType.cancel,
+              error: AppStrings.errorSinSesion,
+            ),
+          );
+        }
         if (token != null && token.isNotEmpty) {
           if (!ValidadorJwt.tieneFormatoValido(token) ||
               ValidadorJwt.estaVencido(token)) {
@@ -57,7 +68,7 @@ final dioProvider = Provider<Dio>((ref) {
               DioException(
                 requestOptions: options,
                 type: DioExceptionType.cancel,
-                error: 'Sesion vencida o token invalido',
+                error: AppStrings.errorTokenInvalido,
               ),
             );
           }
@@ -91,8 +102,9 @@ final routingDioProvider = Provider<Dio>((ref) {
   final dio = Dio(
     BaseOptions(
       baseUrl: AppEnv.osrmBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
+      // El demo público OSRM suele ser lento o saturar; timeout corto falla mucho.
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
       headers: const {'Content-Type': 'application/json'},
     ),
   );

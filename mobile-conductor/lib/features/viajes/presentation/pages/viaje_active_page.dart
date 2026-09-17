@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -28,6 +29,9 @@ class ViajeActivePage extends ConsumerStatefulWidget {
 class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
   final MapController _mapController = MapController();
   String? _ultimoAjusteCamaraClave;
+  bool _mapaListo = false;
+  /// Si el usuario hace zoom/pan, no pisar su vista con fitCamera.
+  bool _seguirCamaraAutomatica = true;
   late final ViajeActivoController _viajeActivoController =
       ref.read(viajeActivoControllerProvider.notifier);
 
@@ -57,53 +61,113 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
   void _ajustarCamara({
     required LatLng conductor,
     required LatLng? recogida,
-    required LatLng destino,
+    required LatLng? destino,
     required List<LatLng> puntosRuta,
+    bool forzar = false,
   }) {
+    if (!_mapaListo) {
+      return;
+    }
+    if (!_seguirCamaraAutomatica && !forzar) {
+      return;
+    }
+
     final todos = <LatLng>[
       if (conductor.latitude != 0 || conductor.longitude != 0) conductor,
       ?recogida,
-      destino,
+      ?destino,
       ...puntosRuta,
     ];
+    if (todos.isEmpty) {
+      return;
+    }
     if (todos.length < 2) {
-      _mapController.move(todos.isEmpty ? destino : todos.first, 14);
+      _mapController.move(todos.first, 14);
       return;
     }
     _mapController.fitCamera(
       CameraFit.bounds(
         bounds: LatLngBounds.fromPoints(todos),
-        padding: const EdgeInsets.fromLTRB(48, 140, 48, 160),
+        padding: const EdgeInsets.fromLTRB(48, 180, 48, 160),
       ),
     );
   }
 
-  void _programarAjusteCamara(ViajeActivoState estado) {
+  void _programarAjusteCamara(ViajeActivoState estado, {bool forzar = false}) {
     final viaje = estado.viaje;
     if (viaje == null) {
       return;
     }
-    final clave =
-        '${viaje.id}|${estado.estado.name}|${estado.puntosRuta.length}';
-    if (_ultimoAjusteCamaraClave == clave) {
+    if (!_seguirCamaraAutomatica && !forzar) {
+      return;
+    }
+    // Sin GPS del conductor en la clave: no resetear zoom en cada fix.
+    final clave = '${viaje.id}|${estado.estado.name}|${estado.puntosRuta.length}';
+    if (!forzar && _ultimoAjusteCamaraClave == clave) {
       return;
     }
     _ultimoAjusteCamaraClave = clave;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
+      if (!mounted || !_mapaListo) {
         return;
       }
       final incluirRecogida = _mostrarMarcadorRecogida(estado.estado);
+      // En pickup no incluir destino final: puede estar lejos/en agua y robar el encuadre.
       _ajustarCamara(
         conductor: LatLng(estado.latitudActual, estado.longitudActual),
         recogida: incluirRecogida
             ? LatLng(viaje.origenLat, viaje.origenLng)
             : null,
-        destino: LatLng(viaje.destinoLat, viaje.destinoLng),
+        destino: incluirRecogida
+            ? null
+            : LatLng(viaje.destinoLat, viaje.destinoLng),
         puntosRuta: estado.puntosRuta,
+        forzar: forzar,
       );
     });
+  }
+
+  void _reactivarSeguimientoCamara() {
+    final estado = ref.read(viajeActivoControllerProvider);
+    setState(() {
+      _seguirCamaraAutomatica = true;
+      _ultimoAjusteCamaraClave = null;
+    });
+    _programarAjusteCamara(estado, forzar: true);
+  }
+
+  String _inicialesPasajero(String? nombre) {
+    final texto = (nombre ?? '').trim();
+    if (texto.isEmpty) {
+      return 'P';
+    }
+    final partes = texto.split(RegExp(r'\s+'));
+    if (partes.length == 1) {
+      return partes.first.substring(0, 1).toUpperCase();
+    }
+    return '${partes.first.substring(0, 1)}${partes.last.substring(0, 1)}'
+        .toUpperCase();
+  }
+
+  Future<void> _llamarPasajero(String? telefono) async {
+    final limpio = (telefono ?? '').replaceAll(RegExp(r'[^\d+]'), '');
+    if (limpio.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.viajeSinTelefonoPasajero)),
+      );
+      return;
+    }
+    final uri = Uri(scheme: 'tel', path: limpio);
+    final ok = await launchUrl(uri);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.viajeSinTelefonoPasajero)),
+      );
+    }
   }
 
   Future<void> _copiarInfoMarcador({
@@ -275,8 +339,6 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
     final puntosRuta = estado.puntosRuta;
     final mostrarRecogida = _mostrarMarcadorRecogida(estado.estado);
 
-    _programarAjusteCamara(estado);
-
     return Scaffold(
       body: Stack(
         children: [
@@ -286,6 +348,15 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
               options: MapOptions(
                 initialCenter: mostrarRecogida ? pasajero : destino,
                 initialZoom: 13,
+                onMapReady: () {
+                  _mapaListo = true;
+                  _programarAjusteCamara(estado, forzar: true);
+                },
+                onPositionChanged: (camera, hasGesture) {
+                  if (hasGesture && _seguirCamaraAutomatica && mounted) {
+                    setState(() => _seguirCamaraAutomatica = false);
+                  }
+                },
               ),
               children: [
                 TileLayer(
@@ -329,30 +400,31 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                           ),
                         ),
                       ),
-                    Marker(
-                      point: destino,
-                      width: 148,
-                      height: 98,
-                      alignment: Alignment.bottomCenter,
-                      child: MarcadorMapaViaje(
-                        color: const Color(0xFFDC2626),
-                        icono: Icons.place_rounded,
-                        etiqueta: AppStrings.formatoMarcadorConLugar(
-                          AppStrings.viajeMarcadorDestino,
-                          estado.direccionDestino,
-                        ),
-                        conPunta: true,
-                        onTap: () => _mostrarDetalleMarcador(
-                          titulo: AppStrings.viajeDetalleDestino,
+                    if (!mostrarRecogida)
+                      Marker(
+                        point: destino,
+                        width: 148,
+                        height: 98,
+                        alignment: Alignment.bottomCenter,
+                        child: MarcadorMapaViaje(
                           color: const Color(0xFFDC2626),
                           icono: Icons.place_rounded,
-                          lugar: estado.direccionDestino,
-                        ),
-                        onLongPress: () => _copiarInfoMarcador(
-                          punto: destino,
+                          etiqueta: AppStrings.formatoMarcadorConLugar(
+                            AppStrings.viajeMarcadorDestino,
+                            estado.direccionDestino,
+                          ),
+                          conPunta: true,
+                          onTap: () => _mostrarDetalleMarcador(
+                            titulo: AppStrings.viajeDetalleDestino,
+                            color: const Color(0xFFDC2626),
+                            icono: Icons.place_rounded,
+                            lugar: estado.direccionDestino,
+                          ),
+                          onLongPress: () => _copiarInfoMarcador(
+                            punto: destino,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 CapaMarcadorPosicionSuave(
@@ -402,47 +474,127 @@ class _ViajeActivePageState extends ConsumerState<ViajeActivePage> {
                   BoxShadow(color: Colors.black12, blurRadius: 10),
                 ],
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.brandPrimaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.navigation_outlined,
-                      color: AppTheme.brandPrimary,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.brandPrimaryLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.navigation_outlined,
+                          color: AppTheme.brandPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              controller.obtenerTituloEstado(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: AppTheme.textDark,
+                              ),
+                            ),
+                            if (estado.etaInfo.isNotEmpty &&
+                                controller.obtenerTituloEstado() !=
+                                    AppStrings.viajeEstadoEsperando)
+                              Text(
+                                estado.etaInfo,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textGrey,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          controller.obtenerTituloEstado(),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppTheme.brandPrimaryLight,
+                        child: Text(
+                          _inicialesPasajero(
+                            estado.viaje?.pasajero?.nombreCompleto,
+                          ),
                           style: const TextStyle(
                             fontWeight: FontWeight.w800,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          estado.viaje?.pasajero?.nombreCompleto ??
+                              AppStrings.viajePasajeroPendiente,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
                             fontSize: 15,
                             color: AppTheme.textDark,
                           ),
                         ),
-                        if (estado.etaInfo.isNotEmpty &&
-                            controller.obtenerTituloEstado() !=
-                                AppStrings.viajeEstadoEsperando)
-                          Text(
-                            estado.etaInfo,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textGrey,
-                            ),
-                          ),
-                      ],
-                    ),
+                      ),
+                      IconButton(
+                        tooltip: AppStrings.viajeLlamarPasajero,
+                        onPressed: () => _llamarPasajero(
+                          estado.viaje?.pasajero?.telefono,
+                        ),
+                        icon: const Icon(
+                          Icons.call,
+                          color: AppTheme.brandPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 148,
+            right: 16,
+            child: Material(
+              color: Colors.white,
+              elevation: 3,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: _reactivarSeguimientoCamara,
+                borderRadius: BorderRadius.circular(24),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.my_location, size: 20, color: AppTheme.textDark),
+                      SizedBox(width: 8),
+                      Text(
+                        AppStrings.viajeCentrarMapa,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

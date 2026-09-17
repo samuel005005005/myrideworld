@@ -3,8 +3,10 @@ import type { IViajeRepository } from '../../dominio/repositorios/viaje.reposito
 import { VIAJE_REPOSITORY } from '../../dominio/repositorios/viaje.repository.js';
 import type { IConductorRepository } from '../../../conductores/dominio/repositorios/conductor.repository.js';
 import { CONDUCTOR_REPOSITORY } from '../../../conductores/dominio/repositorios/conductor.repository.js';
-import { Viaje } from '../../dominio/entidades/viaje.entity.js';
+import type { IPasajeroRepository } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
+import { PASAJERO_REPOSITORY } from '../../../pasajeros/dominio/repositorios/pasajero.repository.js';
 import { Conductor } from '../../../conductores/dominio/entidades/conductor.entity.js';
+import { Pasajero } from '../../../pasajeros/dominio/entidades/pasajero.entity.js';
 import { Roles } from '../../../../compartidos/constantes/roles.enum.js';
 import { DomainException } from '../../../../compartidos/excepciones/domain.exception.js';
 import { MENSAJES } from '../../../../compartidos/constantes/mensajes.const.js';
@@ -17,6 +19,8 @@ export class ObtenerViajePorIdUseCase {
     private readonly viajeRepository: IViajeRepository,
     @Inject(CONDUCTOR_REPOSITORY)
     private readonly conductorRepository: IConductorRepository,
+    @Inject(PASAJERO_REPOSITORY)
+    private readonly pasajeroRepository: IPasajeroRepository,
   ) {}
 
   async ejecutar(
@@ -46,6 +50,10 @@ export class ObtenerViajePorIdUseCase {
       conductor = await this.conductorRepository.obtenerPorId(viaje.conductorId);
     }
 
-    return new ViajeConConductor(viaje, conductor);
+    const pasajero = await this.pasajeroRepository.obtenerPorId(
+      viaje.pasajeroId,
+    );
+
+    return new ViajeConConductor(viaje, conductor, pasajero);
   }
 }

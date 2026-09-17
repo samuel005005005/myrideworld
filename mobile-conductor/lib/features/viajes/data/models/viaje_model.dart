@@ -1,3 +1,5 @@
+import '../../domain/entities/pasajero_asignado.dart';
+
 class ViajeModel {
   final String id;
   final String pasajeroId;
@@ -11,6 +13,7 @@ class ViajeModel {
   final String? origenDireccion;
   final String? destinoDireccion;
   final DateTime fechaCreacion;
+  final PasajeroAsignado? pasajero;
 
   const ViajeModel({
     required this.id,
@@ -25,5 +28,6 @@ class ViajeModel {
     this.origenDireccion,
     this.destinoDireccion,
     required this.fechaCreacion,
+    this.pasajero,
   });
 }

@@ -73,14 +73,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
 
       return ViajeMapper.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final message =
-            e.response?.data['message'] ?? AppStrings.errorTripRequest;
-        throw ServerException(
-          message is List ? message.first : message.toString(),
-        );
-      }
-      throw ServerException(AppStrings.errorServerConnection);
+      throw _excepcionDesdeDio(e, AppStrings.errorTripRequest);
     } on ServerException {
       rethrow;
     } catch (e, stack) {
@@ -92,6 +85,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
   @override
   Future<List<ViajeModel>> listarMisViajes() async {
     try {
+      await _exigirToken();
       final response = await dio.get(ApiEndpoints.misViajes);
       final data = response.data;
       if (data is! List) {
@@ -105,14 +99,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
           )
           .toList();
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final message =
-            e.response?.data['message'] ?? AppStrings.errorHistorial;
-        throw ServerException(
-          message is List ? message.first : message.toString(),
-        );
-      }
-      throw ServerException(AppStrings.errorServerConnection);
+      throw _excepcionDesdeDio(e, AppStrings.errorHistorial);
     } on ServerException {
       rethrow;
     } catch (e, stack) {
@@ -124,19 +111,13 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
   @override
   Future<ViajeModel> obtenerViajePorId(String viajeId) async {
     try {
+      await _exigirToken();
       final response = await dio.get(ApiEndpoints.viajePorId(viajeId));
       return ViajeMapper.fromJson(
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final message =
-            e.response?.data['message'] ?? AppStrings.errorViajeDetalle;
-        throw ServerException(
-          message is List ? message.first : message.toString(),
-        );
-      }
-      throw ServerException(AppStrings.errorServerConnection);
+      throw _excepcionDesdeDio(e, AppStrings.errorViajeDetalle);
     } on ServerException {
       rethrow;
     } catch (e, stack) {
@@ -148,6 +129,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
   @override
   Future<ViajeModel?> obtenerViajeActivo() async {
     try {
+      await _exigirToken();
       final response = await dio.get(ApiEndpoints.viajeActivo);
       final data = response.data;
       if (data == null || data == '' || data == 'null') {
@@ -158,14 +140,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
       }
       return ViajeMapper.fromJson(Map<String, dynamic>.from(data));
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final message =
-            e.response?.data['message'] ?? AppStrings.errorViajeActivo;
-        throw ServerException(
-          message is List ? message.first : message.toString(),
-        );
-      }
-      throw ServerException(AppStrings.errorServerConnection);
+      throw _excepcionDesdeDio(e, AppStrings.errorViajeActivo);
     } on ServerException {
       rethrow;
     } catch (e, stack) {
@@ -180,6 +155,7 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
     String? motivo,
   }) async {
     try {
+      await _exigirToken();
       final response = await dio.post(
         ApiEndpoints.cancelarViaje(viajeId),
         data: {?motivo: motivo},
@@ -188,19 +164,37 @@ class ViajeRemoteDataSourceImpl implements ViajeRemoteDataSource {
         Map<String, dynamic>.from(response.data as Map),
       );
     } on DioException catch (e) {
-      if (e.response != null && e.response?.data != null) {
-        final message =
-            e.response?.data['message'] ?? AppStrings.errorCancelarViaje;
-        throw ServerException(
-          message is List ? message.first : message.toString(),
-        );
-      }
-      throw ServerException(AppStrings.errorServerConnection);
+      throw _excepcionDesdeDio(e, AppStrings.errorCancelarViaje);
     } on ServerException {
       rethrow;
     } catch (e, stack) {
       AppLogger.error('ViajeRemoteDataSourceImpl.cancelarViaje', e, stack);
       throw ServerException('${AppStrings.errorUnexpected}$e');
     }
+  }
+
+  Future<void> _exigirToken() async {
+    final token = (await sessionStorage.obtenerToken())?.trim();
+    if (token == null || token.isEmpty) {
+      throw ServerException(AppStrings.errorNoSession);
+    }
+  }
+
+  Never _excepcionDesdeDio(DioException e, String fallback) {
+    if (e.type == DioExceptionType.cancel) {
+      final motivo = e.error;
+      throw ServerException(
+        motivo is String && motivo.trim().isNotEmpty
+            ? motivo
+            : AppStrings.errorNoSession,
+      );
+    }
+    if (e.response != null && e.response?.data != null) {
+      final message = e.response?.data['message'] ?? fallback;
+      throw ServerException(
+        message is List ? message.first.toString() : message.toString(),
+      );
+    }
+    throw ServerException(AppStrings.errorServerConnection);
   }
 }
